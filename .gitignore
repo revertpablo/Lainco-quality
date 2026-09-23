@@ -1,0 +1,43 @@
+# Cache local de issues aceptados en Sonar (fase 4). Nunca se commitea.
+sonar-accepted.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+TestResults/
+*.nupkg
+*.snupkg
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Node / TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+eslint-report.json
+
+# Next.js (app de catálogo)
+.next/
+.vercel/
+next-env.d.ts
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# SonarQube
+.sonarqube/
+.scannerwork/
+
+# macOS
+.DS_Store
+
+# Herramientas locales
+.claude-workbench/

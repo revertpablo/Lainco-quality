@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proyecto de empaquetado. No tiene código propio: arma el paquete NuGet con
+      - los analyzers en analyzers/dotnet/cs
+      - el .globalconfig con las severidades, en buildTransitive
+
+    A partir de la Fase 6, el .globalconfig lo genera la app de catálogo a partir de las
+    decisiones registradas. Por ahora se mantiene a mano.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <!-- El proyecto no aporta assembly propio al paquete. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+
+    <PackageId>Lainco.Analyzers</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Lainco</Authors>
+    <Company>Lainco</Company>
+    <Description>
+      Reglas de análisis estático propias de Lainco para C# (LAIN###).
+      Las severidades vienen en un .globalconfig incluido en el paquete.
+    </Description>
+    <PackageTags>analyzers;roslyn;lainco</PackageTags>
+
+    <!-- TODO: confirmar la URL real del repositorio (ver "Pendientes" del README). -->
+    <RepositoryUrl>https://github.com/lainco/lainco-quality</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <IncludeSymbols>false</IncludeSymbols>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      PrivateAssets="all" + ReferenceOutputAssembly="false": solo se usa para forzar el
+      orden de compilación; el DLL se agrega a mano en el ItemGroup de abajo, en la ruta
+      que espera NuGet para los analyzers.
+    -->
+    <ProjectReference Include="..\Lainco.Analyzers\Lainco.Analyzers.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Lainco.Analyzers\bin\$(Configuration)\netstandard2.0\Lainco.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+
+    <!--
+      NuGet importa automáticamente buildTransitive/<PackageId>.props en el proyecto
+      consumidor. Ese .props es el que engancha el .globalconfig.
+    -->
+    <None Include="build\Lainco.Analyzers.props"
+          Pack="true"
+          PackagePath="buildTransitive/Lainco.Analyzers.props"
+          Visible="false" />
+
+    <None Include="build\Lainco.Analyzers.globalconfig"
+          Pack="true"
+          PackagePath="buildTransitive/Lainco.Analyzers.globalconfig"
+          Visible="false" />
+  </ItemGroup>
+
+</Project>

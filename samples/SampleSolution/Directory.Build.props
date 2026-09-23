@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    Configuración común de la solución de ejemplo.
+
+    La referencia a Lainco.Analyzers está acá para que la tomen todos los proyectos sin
+    repetirla en cada .csproj. Es la misma forma en que la van a referenciar los
+    repositorios reales.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!--
+      Deshabilitado a propósito: las entidades NHibernate se construyen por reflexión
+      y sus properties se asignan desde los mapeos, así que el análisis de nulabilidad
+      produce advertencias del compilador que no corresponden a ninguna regla LAIN.
+    -->
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      El paquete trae los analyzers y el .globalconfig con las severidades.
+      PrivateAssets="all" evita que la referencia se propague a quien consuma estos
+      proyectos: cada repositorio referencia el paquete por su cuenta.
+    -->
+    <PackageReference Include="Lainco.Analyzers" Version="0.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

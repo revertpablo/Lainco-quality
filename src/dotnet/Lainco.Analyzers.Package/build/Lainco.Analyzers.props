@@ -1,0 +1,14 @@
+<Project>
+
+  <!--
+    NuGet importa este archivo automáticamente en todo proyecto que referencie
+    Lainco.Analyzers. Su única función es sumar el .globalconfig del paquete a los
+    archivos de configuración del compilador, para que las severidades de las reglas
+    LAIN viajen con el paquete en lugar de configurarse repo por repo.
+  -->
+
+  <ItemGroup>
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.globalconfig" />
+  </ItemGroup>
+
+</Project>
