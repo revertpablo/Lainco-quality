@@ -27,8 +27,14 @@ A partir de ahí, cada regla que se activa lo hace porque alguien del equipo lo 
 | **Roslyn propias** | Metadata del assembly de `Lainco.Analyzers` | Entrega 6.4 (requiere Fase 3) |
 | **ESLint propias** | `meta` de las reglas de `@lainco/eslint-plugin` | Entrega 6.4 (requiere Fase 5) |
 | **Normas de IA** | Archivos `normas/*.yaml` del repositorio | Entrega 6.6 (junto con Fase 7) |
+| **Compilador y SDK de .NET** (`CS####`, `CA####`, `IDE####`) | Listado del compilador y de los analyzers del SDK | Fase 8 (posterior) — ver `docs/PLAN.md` |
 
 Todas conviven en el mismo inventario, con el mismo ciclo de vida.
+
+El quinto origen tiene una particularidad: sus diagnósticos **no llegan a SonarQube**, así
+que no tienen estados de aceptación ni afectan el quality gate. Su ciclo de vida se
+reduce a decidir la severidad, y su único destino de publicación es el `.globalconfig`
+del paquete de analyzers. El detalle está en la Fase 8 de `docs/PLAN.md`.
 
 ---
 
@@ -166,6 +172,55 @@ Una primera pasada automática sobre las reglas pendientes, para que el equipo p
 
 Las relaciones se cargan manualmente o se aceptan desde las sugerencias de la IA. Son bidireccionales y cruzan orígenes: una regla de Sonar puede tener conflicto con una regla Roslyn propia o con una norma de IA.
 
+### 7.1 Grupos de equivalencia: decidir juntas las reglas que dicen lo mismo
+
+Las relaciones de a pares alcanzan para *avisar*, pero no para *decidir*. Con cinco
+orígenes, la misma observación llega por varios caminos: `CA1822` (SDK) y
+`csharpsquid:S2325` (Sonar) piden las dos convertir en estáticos los métodos que no usan
+datos de instancia, y las dos contradicen LAIN005. No tiene sentido que una quede
+Incorporada y la otra Descartada.
+
+Por eso las equivalencias no se modelan solo como pares, sino como **grupo de
+equivalencia**: un conjunto de reglas de distintos orígenes que detectan lo mismo.
+
+- **El estado es del grupo, no de cada regla.** Se decide una vez, con una
+  justificación, y la decisión se propaga a todos sus miembros.
+- **La severidad sí es por regla**, porque cada origen la expresa a su manera y se
+  publica en un destino distinto (Quality Profile de Sonar, `.globalconfig`).
+- **Se elige una regla titular**: la que efectivamente queda activa. Las demás quedan
+  Incorporadas pero con severidad `none` en su destino, para no duplicar el issue.
+  Qué origen conviene como titular es una decisión del grupo: la regla de Sonar tiene
+  gestión de issues y quality gate; la del SDK se ve en el IDE sin costo de análisis.
+- **Un conflicto contra cualquier miembro es un conflicto contra el grupo.** Así, el
+  choque con LAIN005 se evalúa una sola vez y no tres.
+
+### 7.2 Cómo se descubren las equivalencias
+
+No existe un mapeo publicado entre orígenes. Se combinan tres mecanismos, de mayor a
+menor confianza:
+
+| Mecanismo | Cómo | Cuándo |
+|---|---|---|
+| **Coincidencia sobre código real** | Dos reglas que, corridas sobre los mismos repositorios, señalan **los mismos símbolos**, son equivalentes en la práctica. Se mide con el índice de Jaccard sobre el conjunto de símbolos señalados. | Reusa el job de la entrega **6.5** ("En prueba"), que ya corre reglas sobre los repos y junta resultados. Es la evidencia más fuerte y sale casi gratis. |
+| **Cercanía semántica de las descripciones** | Embeddings de las descripciones guardados con `pgvector` (ya disponible en Neon, ver `docs/FASE-6-APP.md`). Para cada regla, los `k` vecinos más cercanos. | Sirve para **acotar los candidatos**: comparar todos los pares es inviable (más de 1000 reglas son ~500.000 pares), pero los vecinos más cercanos son unos pocos por regla. |
+| **Confirmación por IA** | El evaluador de la sección 6 recibe **solo los pares candidatos** que salieron de los dos mecanismos anteriores y responde si son equivalentes, con justificación. | Es lo que convierte un candidato en una relación propuesta. Nunca se aplica sola sobre todo el catálogo. |
+
+Ninguno de los tres crea el grupo por su cuenta: proponen, y un decisor confirma. La
+regla de la sección 6 sigue valiendo — la IA sugiere, la persona decide.
+
+**Cuidados de la coincidencia sobre código real**
+
+- Vale solo para reglas marcadas como **probables localmente** (sección 8). Las que solo
+  corren en el motor de Sonar no participan y quedan para los otros dos mecanismos.
+- Hace falta una **muestra mínima**: dos reglas que coinciden en tres símbolos pueden
+  estar coincidiendo por casualidad. Por debajo de un umbral configurable, la señal se
+  descarta.
+- Se compara por **símbolo**, no por línea: las líneas se mueven, y una regla puede
+  señalar la firma mientras otra señala el cuerpo del mismo método.
+- Un solapamiento **parcial y consistente** (una regla señala siempre un subconjunto
+  estricto de la otra) no es equivalencia: es "complementa", o una regla más estricta
+  que la otra. Conviene mostrarlo como tal y no forzarlo a equivalencia.
+
 ---
 
 ## 8. Estado "En prueba"
@@ -251,7 +306,9 @@ La app alerta cuando:
 
 **SugerenciaIA:** regla, estado sugerido, justificación, conflictos, equivalencias, confianza, versión de normas, versión del evaluador, fecha.
 
-**Relacion:** regla A, regla B, tipo, origen (manual / sugerencia IA aceptada), autor.
+**Relacion:** regla A, regla B, tipo, origen (manual / sugerencia IA aceptada / coincidencia sobre código real), autor, evidencia (por ejemplo, el índice de Jaccard y la cantidad de símbolos comparados).
+
+**GrupoEquivalencia:** nombre, regla titular, justificación de la decisión. El estado del ciclo de vida cuelga del grupo cuando la regla pertenece a uno (ver sección 7.1); `EstadoRegla` conserva la severidad y los parámetros, que siguen siendo por regla.
 
 **CorridaPrueba:** fecha, repositorios, configuración usada.
 

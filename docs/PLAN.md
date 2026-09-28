@@ -204,3 +204,103 @@ Se detalla cuando las fases anteriores estén en producción. Resumen del diseñ
 - Comando en comentario de PR (`/sonar <ID>`) para que un revisor registre un hallazgo; solo usuarios con rol de revisor.
 - Registro fuera del código; en cada análisis se genera un reporte de issues externos (SARIF o formato genérico de Sonar).
 - Cierre explícito (`/sonar-resolve`) o por reverificación cuando cambia el símbolo.
+
+---
+
+## Fase 8 — Warnings del compilador y analyzers del SDK (posterior)
+
+**Objetivo:** extender el principio rector a los diagnósticos que hoy no gobierna nadie.
+
+### El problema
+
+La arquitectura gobierna cuatro orígenes de reglas (Sonar, Roslyn propias, ESLint,
+normas de IA), pero deja afuera dos que igual le aparecen al programador en el IDE y en
+el build:
+
+| Origen | Ejemplo | Situación actual |
+|---|---|---|
+| **Warnings del compilador de C#** (`CS####`) | `CS1591`: falta el comentario XML en un miembro público. | Sin gobierno. Cada repo lo resuelve como puede. |
+| **Analyzers del SDK de .NET** (`CA####`, `IDE####`) | `CA1822`: el método puede ser estático. | La Fase 2 los apaga en bloque con `EnableNETAnalyzers=false`, para que a Sonar solo lleguen reglas LAIN. Es una medida gruesa y temporal. |
+
+El síntoma concreto que motivó esta fase: en los `DataContract`, `CS1591` pide un
+comentario XML por cada property, y hoy se silencia **poniendo un comentario vacío** en
+cada una. Eso es exactamente lo que la sección "Gobernanza" de `CLAUDE.md` prohíbe para
+los issues de Sonar — una supresión desparramada por el código, decidida caso por caso
+por el programador — solo que disfrazada de documentación.
+
+El principio es el mismo que para las reglas: **ningún warning está encendido o apagado
+si el equipo no lo decidió, y la decisión vive en un solo lugar.**
+
+### Mecanismo
+
+No hace falta inventar nada: el vehículo ya existe desde la Fase 1. El paquete
+`Lainco.Analyzers` distribuye un `.globalconfig` en `buildTransitive`, y ese archivo
+también configura diagnósticos del compilador.
+
+**Verificado (2026-09-28)** sobre un proyecto con `GenerateDocumentationFile=true` y un
+`DataContract` sin comentarios:
+
+```
+# lainco.globalconfig
+is_global = true
+dotnet_diagnostic.CS1591.severity = none
+```
+
+- Las advertencias `CS1591` desaparecen.
+- El archivo `.xml` de documentación **se sigue generando**, así que los miembros que sí
+  tienen comentario conservan su IntelliSense. Es la diferencia con apagar
+  `GenerateDocumentationFile`, que los perdería todos.
+
+Los comentarios vacíos se borran: dejan de hacer falta.
+
+### Tareas
+
+1. **Inventariar** los `CS####` y `CA####`/`IDE####` que hoy aparecen en los
+   repositorios reales, con su frecuencia. Sin ese dato, la decisión se toma a ciegas.
+2. **Incorporarlos como quinto origen** del inventario de la Fase 6, con el mismo ciclo
+   de vida (ver `docs/FASE-6.md`, sección 2).
+3. **Generar las severidades** en el mismo `.globalconfig` que ya produce la app.
+4. **Reemplazar `EnableNETAnalyzers=false`** por la lista explícita de analyzers del SDK
+   que el equipo haya incorporado.
+5. **Limpiar los comentarios XML vacíos** de los `DataContract` una vez que `CS1591`
+   quede decidido.
+
+### Consecuencia de incorporar los analyzers del SDK (D8.3)
+
+El SDK de .NET trae varios cientos de reglas `CA####` e `IDE####`, que se suman a las
+460+ de Sonar para C#. Dos efectos a tener en cuenta:
+
+- **Volumen de triage.** Las herramientas de la sección 5 de `docs/FASE-6.md` (descarte
+  masivo por tag, vistas guardadas, pre-clasificación por IA) pasan a ser todavía más
+  necesarias. Conviene triagearlos después de las reglas de Sonar, no en paralelo.
+- **Solapamiento entre orígenes.** Muchas reglas `CA` dicen lo mismo que una regla de
+  Sonar, y a veces las dos chocan con una regla propia. El caso testigo: `CA1822` y
+  `csharpsquid:S2325` piden ambas convertir en estáticos los métodos que no usan datos
+  de instancia, y las dos contradicen LAIN005.
+
+  Esto vuelve **crítico** el mecanismo de relaciones entre reglas (sección 7 de
+  `docs/FASE-6.md`): sin él, la misma observación llegaría por tres caminos distintos y
+  el equipo decidiría tres veces sobre lo mismo. La pre-clasificación por IA de la
+  entrega 6.3 tiene que poder detectar equivalencias **cruzando orígenes**, no solo
+  dentro de cada uno.
+
+### Diferencias con los otros orígenes
+
+- **No pasan por SonarQube.** Los warnings del compilador no se importan como issues de
+  Sonar, así que no afectan el quality gate ni tienen estados de aceptación. El ciclo de
+  vida se reduce a decidir la severidad, y el único destino de publicación es el
+  `.globalconfig`. Tampoco les aplica el suppressor de la Fase 4.
+- **Algunos no son configurables.** Ciertos diagnósticos del compilador son errores o
+  están marcados como no configurables, y no se pueden ajustar por `.globalconfig`.
+  El inventario tiene que distinguirlos, igual que hoy distingue las reglas de Sonar
+  "no probables localmente".
+- **Ojo con `TreatWarningsAsErrors`.** Si un repo lo tiene activo, una severidad
+  `warning` rompe el build. Conviene relevarlo en la tarea 1.
+
+### Decisiones pendientes
+
+| # | Decisión | Opciones | Estado |
+|---|---|---|---|
+| D8.1 | ¿`CS1591` se apaga en todos lados o solo donde están los DTO? | Global (`.globalconfig` del paquete) / por ruta (`.editorconfig` con secciones, que el `.globalconfig` no permite). | **Resuelta (2026-09-28): en todos lados.** Va en el `.globalconfig` del paquete, que es el mecanismo que ya existe. No hace falta `.editorconfig` por ruta. |
+| D8.2 | ¿El equipo quiere documentación XML en algún assembly? | Apagar solo la advertencia (`CS1591`) / apagar además `GenerateDocumentationFile`. | **Abierta a propósito.** Se deja como duda a futuro: por ahora se apaga solo la advertencia, que es reversible y conserva el `.xml` para los miembros que sí tienen comentario. Revisar si alguna vez se publica un assembly para consumo externo. |
+| D8.3 | ¿Los analyzers del SDK (`CA####`, `IDE####`) entran al inventario o se dejan apagados? | Entran como origen / quedan fuera del alcance. | **Resuelta (2026-09-28): entran al inventario**, con el mismo ciclo de vida que el resto. `EnableNETAnalyzers=false` de la Fase 2 queda como medida temporal hasta que estén triageados. |
