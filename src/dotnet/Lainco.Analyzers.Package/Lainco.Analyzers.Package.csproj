@@ -27,8 +27,7 @@
     </Description>
     <PackageTags>analyzers;roslyn;lainco</PackageTags>
 
-    <!-- TODO: confirmar la URL real del repositorio (ver "Pendientes" del README). -->
-    <RepositoryUrl>https://github.com/lainco/lainco-quality</RepositoryUrl>
+    <RepositoryUrl>https://github.com/revertpablo/Lainco-quality</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
 
     <IncludeSymbols>false</IncludeSymbols>

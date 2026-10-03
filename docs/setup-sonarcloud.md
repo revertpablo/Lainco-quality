@@ -55,7 +55,13 @@ Anotar acá una vez hechos los pasos, para tenerlos a mano en las fases siguient
 
 | Dato | Valor |
 |---|---|
-| Clave de organización | _(completar)_ |
+| Clave de organización | `revertpablo` |
+| Repositorio | `https://github.com/revertpablo/Lainco-quality` (público) |
 | Quality Profile C# | `Lainco C#` |
 | Quality Profile TypeScript | `Lainco TypeScript` |
-| Análisis automático desactivado | _(sí / no)_ |
+| Análisis automático desactivado | Se configura por proyecto al importarlo (Fase 2), no a nivel organización |
+
+> **Cuenta de prueba.** La organización `revertpablo` y el repositorio son de una cuenta
+> creada solo para validar la arquitectura. Al pasar a la cuenta definitiva de Lainco hay
+> que actualizar: la clave de organización acá, el `RepositoryUrl` de
+> `Lainco.Analyzers.Package.csproj` y el `BaseUrl` de `Convenciones.cs` (helpLinkUri).

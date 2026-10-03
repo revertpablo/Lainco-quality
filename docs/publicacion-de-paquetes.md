@@ -13,7 +13,7 @@ local `artifacts/nupkg`, configurado en `samples/SampleSolution/nuget.config`.
 
 | # | Paso | Nota |
 |---|---|---|
-| 1 | Confirmar la URL real del repositorio en GitHub. | Hoy hay un valor provisorio (`https://github.com/lainco/lainco-quality`) en dos lugares: `RepositoryUrl` de `Lainco.Analyzers.Package.csproj` y `BaseUrl` de `Convenciones.cs` (el `helpLinkUri` de las reglas). **Los dos tienen que apuntar al repo real.** |
+| 1 | Confirmar la URL del repositorio en GitHub. | Hoy apunta a la **cuenta de prueba**: `https://github.com/revertpablo/Lainco-quality`, en `RepositoryUrl` de `Lainco.Analyzers.Package.csproj` y en `BaseUrl` de `Convenciones.cs` (el `helpLinkUri` de las reglas). Al pasar a la cuenta definitiva de Lainco hay que actualizar **los dos**. |
 | 2 | Crear un Personal Access Token (classic) con permiso `write:packages`. | GitHub Packages para NuGet no acepta tokens de solo `read:packages` para publicar. |
 | 3 | Verificar que `RepositoryUrl` apunte al repo de la organización. | GitHub Packages usa ese campo para vincular el paquete al repositorio. Si no coincide, el push se rechaza. |
 

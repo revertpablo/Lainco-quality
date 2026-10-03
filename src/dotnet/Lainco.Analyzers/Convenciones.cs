@@ -19,7 +19,7 @@ internal static class Categorias
 internal static class Ayuda
 {
     private const string BaseUrl =
-        "https://github.com/lainco/lainco-quality/blob/main/docs/rules";
+        "https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules";
 
     public static string Para(string idDeRegla)
     {
