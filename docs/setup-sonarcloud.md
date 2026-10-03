@@ -1,5 +1,7 @@
 # Configuración inicial de SonarQube Cloud (Fase 0, tarea 4)
 
+**Estado: completada el 2026-10-03.** Los datos quedaron al final del documento.
+
 Pasos manuales en la web de SonarQube Cloud. No se pueden automatizar desde el repo
 porque crean la organización y las credenciales que después usa todo lo demás.
 
@@ -23,7 +25,7 @@ alguien del equipo la incorpore desde la app de catálogo (Fase 6).
 |---|---|---|
 | 2.1 | Crear un Quality Profile de **C#** llamado `Lainco C#`, **sin heredar** de ningún perfil (crear nuevo, no "extender" ni "copiar" de `Sonar way`). | El perfil existe y muestra **0 reglas activas**. |
 | 2.2 | Marcarlo como **Default** para C# en la organización. | Un proyecto nuevo de C# toma `Lainco C#`, no `Sonar way`. |
-| 2.3 | Repetir 2.1 y 2.2 para **TypeScript**, con el nombre `Lainco TypeScript`. | Ídem, 0 reglas activas y marcado como default. |
+| 2.3 | Repetir 2.1 y 2.2 para **TypeScript**, con el nombre `Lainco Typescript`. | Ídem, 0 reglas activas y marcado como default. |
 
 **Por qué "sin herencia" y no "copia de Sonar way con todo desactivado":** un perfil
 heredado vuelve a traer las reglas cuando Sonar actualiza el perfil padre. La detección
@@ -57,8 +59,9 @@ Anotar acá una vez hechos los pasos, para tenerlos a mano en las fases siguient
 |---|---|
 | Clave de organización | `revertpablo` |
 | Repositorio | `https://github.com/revertpablo/Lainco-quality` (público) |
-| Quality Profile C# | `Lainco C#` |
-| Quality Profile TypeScript | `Lainco TypeScript` |
+| Plan | Trial de Team plan, con **downgrade automático a Free el 17/10/2026**. Nada de lo que usamos es premium. |
+| Quality Profile C# | `Lainco C#` — 0 reglas, Default ✓ |
+| Quality Profile TypeScript | `Lainco Typescript` — 0 reglas, Default ✓ |
 | Análisis automático desactivado | Se configura por proyecto al importarlo (Fase 2), no a nivel organización |
 
 > **Cuenta de prueba.** La organización `revertpablo` y el repositorio son de una cuenta
