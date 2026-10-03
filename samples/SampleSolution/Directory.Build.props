@@ -19,6 +19,18 @@
       produce advertencias del compilador que no corresponden a ninguna regla LAIN.
     -->
     <Nullable>disable</Nullable>
+
+    <!--
+      Fase 2, tarea 3: a Sonar solo deben llegar reglas LAIN.
+
+      Los analyzers del SDK (CA####) y las reglas de estilo (IDE####) se apagan acá
+      para que el análisis no traiga issues que nadie eligió. Es una medida gruesa y
+      temporal: en la Fase 8 estas reglas entran al inventario (decisión D8.3) y se
+      reemplaza esto por la lista explícita de las que el equipo haya incorporado.
+    -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
   </PropertyGroup>
 
   <ItemGroup>

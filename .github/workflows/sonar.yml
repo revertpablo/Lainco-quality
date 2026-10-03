@@ -1,0 +1,77 @@
+# Fase 2 — Análisis de samples/SampleSolution con SonarQube Cloud.
+#
+# El objetivo de esta fase es validar el circuito completo: que los issues de las
+# reglas LAIN lleguen a Sonar como issues externos y se puedan gestionar ahí.
+#
+# Qué se analiza: solo la solución de ejemplo. El código de los analyzers
+# (src/dotnet) todavía no se analiza; se suma cuando el circuito esté validado.
+
+name: Sonar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  analisis:
+    name: Análisis de la sample
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Sonar necesita el historial completo para resolver el "código nuevo"
+          # y atribuir los issues. Con el checkout shallow por defecto, el quality
+          # gate sobre código nuevo no funciona bien.
+          fetch-depth: 0
+
+      - name: Instalar Java
+        # El SonarScanner corre sobre la JVM, aunque el proyecto sea .NET.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cachear el SonarScanner
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: ${{ runner.os }}-sonarscanner
+          restore-keys: ${{ runner.os }}-sonarscanner
+
+      - name: Instalar el SonarScanner
+        run: |
+          dotnet tool install --global dotnet-sonarscanner || \
+          dotnet tool update --global dotnet-sonarscanner
+
+      # El paquete se arma ANTES de abrir el análisis, a propósito: así el build de
+      # Lainco.Analyzers queda fuera del alcance del scanner y a Sonar solo llegan
+      # los issues de la sample.
+      - name: Empaquetar Lainco.Analyzers
+        run: dotnet pack src/dotnet/Lainco.Analyzers.Package -c Release -o artifacts/nupkg
+
+      - name: Sonar — begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"revertpablo_Lainco-quality" \
+            /o:"revertpablo" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.host.url="https://sonarcloud.io"
+
+      - name: Build de la sample
+        run: dotnet build samples/SampleSolution/SampleSolution.sln --no-incremental
+
+      - name: Sonar — end
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
