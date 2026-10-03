@@ -13,3 +13,6 @@ is_global = true
 
 # LAIN004 — No se permite inicialización inline de properties
 dotnet_diagnostic.LAIN004.severity = warning
+
+# LAIN999 — TEMPORAL: spike de la Fase 2. Se elimina al cerrarlo.
+dotnet_diagnostic.LAIN999.severity = warning
