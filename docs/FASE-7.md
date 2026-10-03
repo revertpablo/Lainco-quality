@@ -363,5 +363,5 @@ Resolución de símbolos para TypeScript; métricas de la sección 9 en la app d
 | D7.2 | Definición de "revisor" | Equipo de la plataforma de repos / lista en la app de catálogo / `CODEOWNERS`. |
 | D7.3 | Umbral de confianza por defecto | Ej.: 0,7, ajustable por norma. |
 | D7.4 | Límite de llamadas al modelo por PR | A definir según costo. |
-| D7.5 | ¿Los hallazgos de IA cuentan para el quality gate? | Las condiciones del gate de Sonar trabajan sobre métricas agregadas, no filtran por motor. Probar cómo separarlos antes de habilitar el modo `automatica` en normas que puedan bloquear. |
+| D7.5 | ¿Los hallazgos de IA cuentan para el quality gate? | **Parcialmente medido (2026-10-03, ver `docs/decisiones/quality-gate.md`):** los issues externos cuentan en las métricas de conteo (`new_violations`) pero **no mueven los ratings**. Eso separa reglas nativas de Sonar y reglas externas, pero **no** distingue `lainco-ia` de `external_roslyn`. Sigue abierto cómo lograr que los hallazgos de IA se vean sin bloquear. |
 | D7.6 | Normas iniciales | Seleccionar dos o tres normas de diseño existentes para la entrega 7.4. |
