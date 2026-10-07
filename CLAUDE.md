@@ -2,7 +2,12 @@
 
 Plataforma de control de calidad de código de Lainco. Reemplaza el uso de las reglas por defecto de SonarQube por un conjunto de reglas **elegidas explícitamente por el equipo**, provenientes de cuatro orígenes, gestionadas en un único circuito.
 
+**Antes de empezar cualquier cosa, leé `docs/ESTADO.md`**: dice en qué fase estamos, qué
+está verificado, qué quedó pendiente y qué decisiones siguen abiertas.
+
 El plan de trabajo por fases está en `docs/PLAN.md`. Antes de empezar una tarea, leé la fase correspondiente y sus criterios de aceptación.
+
+Los resultados de los spikes y las decisiones medidas están en `docs/decisiones/`. Al cerrar una entrega, actualizá `docs/ESTADO.md`.
 
 ## Principio rector
 
