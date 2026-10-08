@@ -11,28 +11,65 @@ concretas: **las reglas no son el punto, la maquinaria sí.**
 
 ## El problema
 
-Una herramienta como SonarQube viene con varios cientos de reglas activas por defecto.
-Apuntar un proyecto existente contra ese conjunto produce miles de issues que nadie
-eligió tener. A partir de ahí pasan siempre las mismas tres cosas:
+SonarQube trae varios cientos de reglas activas por defecto. El problema no es la
+cantidad: es que ese conjunto **expresa una forma de diseñar que no es la de Lainco**.
+Al apuntarle un proyecto, aparecen tres clases de desajuste.
 
-1. **El ruido gana.** Como la mayoría de los issues no le importa a nadie, se deja de
-   mirar la herramienta. Los que sí importaban quedan enterrados entre los que no.
-2. **Las excepciones se resuelven en el código.** El programador que necesita avanzar
-   pone un `#pragma warning disable`, un `[SuppressMessage]` o un comentario vacío para
-   callar al compilador. La decisión queda escondida en un archivo, tomada por una
-   persona sola, sin justificación y sin que nadie se entere.
-3. **Lo que está activo nadie lo sabe.** El conjunto de reglas cambia cuando el
-   proveedor actualiza su perfil por defecto. Nadie decidió ese cambio y nadie lo revisó.
+### 1. Reglas que contradicen cómo diseña Lainco
 
-Y queda afuera lo que más le importa a un equipo con criterio propio: **sus propias
-normas de diseño.** Esas no vienen en ninguna herramienta. Hoy viven en la cabeza de los
-que revisan, se transmiten de a poco en los code reviews, y se aplican de manera
-despareja según quién revise.
+Algunas reglas piden exactamente lo contrario de lo que el equipo decidió hacer.
+
+El caso testigo: Sonar marca como problema que un método no use el estado de su objeto,
+y pide convertirlo en `static`. Lainco sostiene lo opuesto — **no usar métodos
+estáticos**. No es un capricho: los métodos estáticos no se pueden sobrescribir, no se
+pueden reemplazar en un test y atan el código a una implementación concreta.
+
+Esa regla no es un falso positivo que haya que ajustar. Es una regla correcta **para otro
+criterio de diseño**, y aplicarla empujaría el código en la dirección contraria a la que
+el equipo quiere.
+
+### 2. Reglas razonables que, aplicadas temprano, impiden programar bien
+
+Otras no están equivocadas, pero el momento en que avisan sí.
+
+El ejemplo claro es el código repetido. Que no haya duplicación es una buena meta **al
+final**. Exigirla desde la primera repetición obliga a inventar una abstracción antes de
+entender el problema — y una abstracción prematura, elegida con dos casos a la vista,
+suele ser peor que la repetición que vino a evitar. Después cuesta mucho más
+desarmarla que haber esperado.
+
+La regla no sobra; sobra su urgencia.
+
+### 3. Reglas que Lainco quiere y Sonar no tiene
+
+Y al revés: el criterio del equipo incluye cosas que ninguna herramienta trae de fábrica.
+
+- Todos los métodos y properties de un objeto deben ser `virtual`.
+- No se usa `sealed`.
+
+Son decisiones coherentes entre sí y con el resto de la arquitectura: nada queda cerrado
+a ser extendido, sustituido o interceptado. Ninguna de las dos existe en el catálogo de
+Sonar, así que hay que escribirlas.
+
+### El efecto de convivir con ese desajuste
+
+Mientras el conjunto de reglas no responda al criterio del equipo, pasa siempre lo mismo:
+como la mayoría de los avisos no le importa a nadie, se deja de mirar la herramienta, y
+los que sí importaban quedan enterrados entre los que no. El que necesita avanzar silencia
+el aviso en el código —un `#pragma`, un `[SuppressMessage]`, un comentario vacío— y esa
+decisión queda escondida en un archivo, tomada por una persona sola, sin justificación.
+Y el conjunto activo cambia solo cada vez que el proveedor actualiza su perfil por
+defecto, sin que nadie lo haya decidido ni revisado.
 
 ## La idea, en una frase
 
 > **Ninguna regla está activa si alguien del equipo no la eligió explícitamente, y esa
 > decisión queda registrada, con autor y justificación.**
+
+Dicho de otro modo: **la herramienta tiene que responder a la forma de diseñar de
+Lainco, y no al revés.** Las reglas que contradicen el criterio del equipo se descartan,
+las que sirven pero molestan temprano se incorporan cuando corresponda, y las que faltan
+se escriben. Quien decide, en los tres casos, es el equipo.
 
 Todo el resto del diseño es consecuencia de tomarse esa frase en serio.
 
@@ -195,8 +232,3 @@ verde con la violación adentro, sin ningún síntoma visible.
 | `FASE-6.md`, `FASE-7.md` | Diseño detallado de la app de catálogo y de los hallazgos de IA. |
 
 ---
-
-> **Nota para Pablo:** la sección "El problema" está escrita a partir de lo que el diseño
-> deja implícito, no de algo que esté documentado. Si el problema concreto de Lainco es
-> otro, o hay un episodio puntual que disparó todo esto, conviene corregirla: es lo
-> primero que va a leer cualquiera que llegue al proyecto.
