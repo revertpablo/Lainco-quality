@@ -51,15 +51,38 @@ Son decisiones coherentes entre sí y con el resto de la arquitectura: nada qued
 a ser extendido, sustituido o interceptado. Ninguna de las dos existe en el catálogo de
 Sonar, así que hay que escribirlas.
 
-### El efecto de convivir con ese desajuste
+### El efecto: la herramienta compite con el criterio del equipo
 
-Mientras el conjunto de reglas no responda al criterio del equipo, pasa siempre lo mismo:
-como la mayoría de los avisos no le importa a nadie, se deja de mirar la herramienta, y
-los que sí importaban quedan enterrados entre los que no. El que necesita avanzar silencia
-el aviso en el código —un `#pragma`, un `[SuppressMessage]`, un comentario vacío— y esa
-decisión queda escondida en un archivo, tomada por una persona sola, sin justificación.
-Y el conjunto activo cambia solo cada vez que el proveedor actualiza su perfil por
-defecto, sin que nadie lo haya decidido ni revisado.
+Lo grave no es que nadie mire la herramienta. Es exactamente lo contrario: **la gente le
+hace caso.** Y ahí empieza el daño.
+
+El quality gate convierte cada regla en una condición para mergear. Ya no es una
+sugerencia que se puede discutir: **para avanzar hay que obedecerla.** Entonces, cuando
+una regla contradice el criterio de Lainco, el programador no tiene más remedio que
+escribir código que va en contra de la forma de diseñar del equipo. No por descuido ni
+por desacuerdo: porque es la única manera de que el PR pase.
+
+El resultado es que el código se va corriendo hacia el criterio de Sonar y no hacia el de
+Lainco, de a un cambio chico por vez, cada uno con su justificación razonable.
+
+Y hay algo peor todavía, que es el fondo del asunto:
+
+> **"Lo dice Sonar" pesa más que "lo decidimos en Lainco".**
+
+La asimetría es de forma, no de contenido. La regla de Sonar llega con identificador,
+documentación, severidad, un enlace que la explica y un check en rojo. La norma de Lainco
+vive en la cabeza de quien revisa y se transmite conversando. Puestas una frente a la
+otra en una discusión, gana la que parece institucional — aunque la que tenga razón para
+este código sea la otra.
+
+Con alguien que recién entra al equipo el efecto es completo: no tiene cómo saber cuál de
+las dos autoridades vale, y la herramienta le contesta al instante mientras el criterio
+del equipo tarda en llegarle.
+
+Así, tener normas de diseño propias se vuelve inútil: pierden cada vez que chocan con la
+herramienta. Y lo que resiste se silencia en el código con un `#pragma` o un
+`[SuppressMessage]` — una decisión escondida en un archivo, tomada por una persona sola y
+sin justificación, que es la peor forma de tener razón.
 
 ## La idea, en una frase
 
@@ -70,6 +93,14 @@ Dicho de otro modo: **la herramienta tiene que responder a la forma de diseñar 
 Lainco, y no al revés.** Las reglas que contradicen el criterio del equipo se descartan,
 las que sirven pero molestan temprano se incorporan cuando corresponda, y las que faltan
 se escriben. Quien decide, en los tres casos, es el equipo.
+
+El objetivo no es callar la herramienta: es que **hable con la voz de Lainco**. Cuando
+algo se marca en rojo, que sea porque el equipo decidió que eso está mal.
+
+De ahí sale algo que al principio parece burocracia y es lo contrario. Cada decisión se
+registra con autor y justificación, y eso le da al criterio del equipo lo que hoy le
+falta frente a la herramienta: queda escrito, se puede citar, se puede discutir y se
+puede cambiar. La autoridad deja de estar del lado del que trae mejor documentación.
 
 Todo el resto del diseño es consecuencia de tomarse esa frase en serio.
 
