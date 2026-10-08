@@ -2,6 +2,8 @@
 
 Plataforma de control de calidad de código de Lainco. Reemplaza el uso de las reglas por defecto de SonarQube por un conjunto de reglas **elegidas explícitamente por el equipo**, provenientes de cuatro orígenes, gestionadas en un único circuito.
 
+Si llegás nuevo al proyecto, empezá por **`docs/CONCEPTO.md`**: explica qué se está construyendo y por qué, sin implementación.
+
 **Antes de empezar cualquier cosa, leé `docs/ESTADO.md`**: dice en qué fase estamos, qué
 está verificado, qué quedó pendiente y qué decisiones siguen abiertas.
 

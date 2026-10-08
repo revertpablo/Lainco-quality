@@ -159,9 +159,10 @@ trabajar en local. Los secretos solo viven en el CI.
 
 ## Qué leer, y en qué orden
 
-1. **`../CLAUDE.md`** — principio rector, arquitectura, gobernanza y convenciones.
-2. **`PLAN.md`** — las fases, con tareas y criterios de aceptación.
-3. **Este archivo** — dónde estamos parados.
-4. `decisiones/` — resultados de los spikes, con lo que cada uno midió y concluyó.
-5. `FASE-6.md`, `FASE-6-APP.md`, `FASE-7.md` — diseño detallado de lo que viene después.
-6. `setup-sonarcloud.md` y `publicacion-de-paquetes.md` — pasos manuales.
+1. **`CONCEPTO.md`** — qué se está construyendo y por qué. Sin implementación; se lee en diez minutos y alcanza para entender la maquinaria completa.
+2. **Este archivo** — dónde estamos parados.
+3. **`../CLAUDE.md`** — principio rector, arquitectura, gobernanza y convenciones.
+4. **`PLAN.md`** — las fases, con tareas y criterios de aceptación.
+5. `decisiones/` — resultados de los spikes, con lo que cada uno midió y concluyó.
+6. `FASE-6.md`, `FASE-6-APP.md`, `FASE-7.md` — diseño detallado de lo que viene después.
+7. `setup-sonarcloud.md` y `publicacion-de-paquetes.md` — pasos manuales.
