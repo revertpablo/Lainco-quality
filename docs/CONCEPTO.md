@@ -102,10 +102,15 @@ Las reglas vienen de orígenes distintos, pero todas terminan en el mismo circui
 **Un solo lugar: SonarQube Cloud.** Todo issue, venga de donde venga, se ve, se discute y
 se resuelve ahí. Mismos estados, mismos permisos, mismo tablero.
 
-Esto es lo que resuelve el problema 2 de más arriba. Si un issue no corresponde, no se
-silencia en el código: **un revisor lo acepta en Sonar, con justificación.** La excepción
-deja de ser una línea escondida en un archivo y pasa a ser una decisión visible, con
-nombre y fecha. Suprimir issues desde el código queda prohibido.
+Acá es donde se corta el hábito de silenciar avisos en el código. Si un issue no
+corresponde, no se tapa con un `#pragma`: **un revisor lo acepta en Sonar, con
+justificación.** La excepción deja de ser una línea escondida en un archivo y pasa a ser
+una decisión visible, con nombre y fecha. Suprimir issues desde el código queda
+prohibido.
+
+Y sirve también para el segundo tipo de desajuste: una regla que molesta temprano puede
+incorporarse igual, aceptando los casos en que todavía no corresponde aplicarla — sin
+perder el registro de que están ahí.
 
 ### 3. Quién decide qué está activo
 
