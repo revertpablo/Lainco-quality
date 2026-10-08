@@ -268,3 +268,63 @@ verde con la violación adentro, sin ningún síntoma visible.
 | `FASE-6.md`, `FASE-7.md` | Diseño detallado de la app de catálogo y de los hallazgos de IA. |
 
 ---
+
+---
+
+## Anexo — Alternativas evaluadas para la gestión de issues
+
+Evaluado en **octubre de 2026**. **No es una decisión**: se sigue con SonarQube Cloud.
+Queda escrito para no volver a discutirlo desde cero.
+
+La pregunta fue si SonarQube Cloud es la mejor pieza para el rol de "dónde se gestionan
+los issues", o si convenía otra cosa.
+
+| Alternativa | A favor | En contra |
+|---|---|---|
+| **SonarQube Cloud** (lo actual) | Validado de punta a punta. Cero infraestructura. Trae lo difícil: identidad del issue entre corridas, cálculo de código nuevo por blame, integración con PRs. | Las cuatro restricciones de abajo, todas derivadas de ser inquilino y no dueño. |
+| **Solución propia** | Control total. Más barato de lo que parece: el registro de la Fase 7 ya construye buena parte de un gestor de hallazgos. | Hay que construir lo difícil: identidad estable, código nuevo por blame, integración con PRs. Y se pierde el motor de análisis de Sonar. |
+| **SonarQube Community Build** autohospedado (LGPL v3) | Mismo motor, open source, sin restricciones para uso interno. **Tiene API de plugins**: un plugin propio podría declarar las reglas LAIN como **nativas** en vez de externas, lo que disuelve las cuatro restricciones de una vez. | Community **no trae análisis de ramas ni de PRs** — hay un plugin open source no oficial que lo agrega, y todo el gate depende de eso. Suma operación (servidor + base + actualizaciones) y el plugin se escribe en Java. |
+| **GitHub Code Scanning** con SARIF | Acepta hallazgos **por API** (sin reemisión forzada). Estados que persisten entre corridas. **La identidad la define quien reporta**, con `partialFingerprints`, no el texto del mensaje. | No es open source. Gratis en repos públicos; en privados requiere GitHub Code Security, ~US$30 por committer por mes *(precio aproximado, verificar)*. |
+
+### Las cuatro restricciones que vienen de usar Sonar como gestor
+
+Todas verificadas, no supuestas. Son las que cualquier alternativa debería mejorar:
+
+1. No se pueden crear issues por API → toda la maquinaria de reemisión de la Fase 7.
+2. La identidad del issue es archivo + regla + **texto del mensaje** → de ahí la
+   convención del símbolo calificado. Y un riesgo operativo: reformular el mensaje de una
+   regla probablemente haga perder sus aceptaciones. **Sin medir todavía.**
+3. Los issues externos no mueven los ratings → el gate tuvo que armarse sobre conteo.
+4. El gate no distingue motores → **D7.5 sigue abierta**: no se puede hacer que los
+   hallazgos de IA se vean sin bloquear.
+
+### Qué decidiría el asunto
+
+**Cuántas reglas de Sonar sobreviven al triage de la Fase 6.** Si se incorporan muchas,
+el motor de Sonar se gana el lugar y no hay con qué reemplazarlo. Si se incorporan pocas,
+es una dependencia pesada para ejecutar un puñado de reglas que podrían escribirse como
+analyzers propios.
+
+Ese número recién se conoce al terminar la Fase 6, así que la decisión se difiere hasta
+ahí. Si se retomara, el primer paso sería un spike corto de Community Build con dos
+preguntas, en orden: **¿el plugin de ramas y PRs funciona de forma confiable?** y, si sí,
+**¿un plugin propio logra que las reglas LAIN sean nativas?**
+
+### Por qué la opción queda abierta casi gratis
+
+La arquitectura ya aísla la dependencia: **la app de catálogo es la fuente de verdad**, su
+modelo de datos es agnóstico del origen, el registro de hallazgos de la Fase 7 es
+independiente de Sonar, y publicar a Sonar es **un adaptador**. Cambiar de gestor sería
+reemplazar una pieza, no rehacer el sistema.
+
+Lo único a cuidar es que conceptos propios de Sonar no se filtren al modelo de la app.
+
+### SARIF, que no depende de esta decisión
+
+SARIF (*Static Analysis Results Interchange Format*) es el estándar en JSON con el que las
+herramientas de análisis reportan resultados. **Ya se usa sin haberlo elegido**: así es
+como los diagnósticos de Roslyn llegan hoy a Sonar.
+
+Es el formato en el que van a salir las reglas propias, las de ESLint y los hallazgos de
+IA, sea cual sea la plataforma. **Es la pieza que no cambia**, y conviene tratarla como
+tal.
