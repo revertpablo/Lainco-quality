@@ -12,7 +12,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 |---|---|
 | 0 — Setup | ✅ Completa |
 | 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
-| 2 — Circuito con SonarQube Cloud | 🔶 **En curso — 4 de 5 criterios cumplidos** |
+| 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | ⬜ Sin empezar |
 | 4 — Suppressor | ⬜ Sin empezar |
 | 5 — TypeScript | ⬜ Sin empezar |
