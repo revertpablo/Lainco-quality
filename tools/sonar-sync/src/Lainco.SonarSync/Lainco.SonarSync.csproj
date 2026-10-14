@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- El ejecutable se llama como la herramienta: sonar-sync.dll -->
+    <AssemblyName>sonar-sync</AssemblyName>
+    <RootNamespace>Lainco.SonarSync</RootNamespace>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!--
+      Sin dependencias de NuGet a propósito: HttpClient y System.Text.Json vienen con el
+      runtime. Así la herramienta corre en cualquier máquina con .NET 8 sin restaurar nada.
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lainco.SonarSync.Tests" />
+  </ItemGroup>
+
+</Project>

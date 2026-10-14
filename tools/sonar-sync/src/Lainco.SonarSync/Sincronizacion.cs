@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Lainco.SonarSync;
+
+/// <summary>
+/// Una corrida completa: lee las opciones y el token, consulta SonarQube y escribe el
+/// archivo. Devuelve el código de salida del proceso.
+///
+/// Si algo falla, el archivo anterior queda como estaba. Quien invoca la herramienta (el
+/// target de MSBuild de la Fase 4) decide qué hacer con el código de salida; el build
+/// local no debe fallar por esto.
+/// </summary>
+internal static class Sincronizacion
+{
+    /// <summary>Variable de entorno con el token personal de SonarQube.</summary>
+    public const string VariableDelToken = "LAINCO_SONAR_TOKEN";
+
+    /// <summary>El archivo se generó.</summary>
+    public const int Exito = 0;
+
+    /// <summary>Faltan opciones o el token: no se consultó a SonarQube.</summary>
+    public const int ErrorDeConfiguracion = 1;
+
+    /// <summary>SonarQube falló o no respondió: el archivo anterior quedó intacto.</summary>
+    public const int ErrorDeSonar = 2;
+
+    private static readonly TimeSpan Espera = TimeSpan.FromSeconds(30);
+
+    public static async Task<int> EjecutarAsync(
+        IReadOnlyList<string> argumentos,
+        string? token,
+        HttpMessageHandler manejador,
+        TextWriter log,
+        Func<DateTimeOffset> reloj)
+    {
+        if (argumentos.Count == 1 && argumentos[0] is ("--ayuda" or "-h" or "--help"))
+        {
+            log.WriteLine(Opciones.Uso);
+            return Exito;
+        }
+
+        Opciones opciones;
+        try
+        {
+            opciones = Opciones.Leer(argumentos);
+        }
+        catch (ErrorDeOpciones error)
+        {
+            log.WriteLine("sonar-sync: " + error.Message);
+            log.WriteLine();
+            log.WriteLine(Opciones.Uso);
+            return ErrorDeConfiguracion;
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            log.WriteLine(
+                $"sonar-sync: falta el token. Definí la variable de entorno {VariableDelToken} " +
+                "con un token personal de SonarQube de solo lectura.");
+            return ErrorDeConfiguracion;
+        }
+
+        using HttpClient http = new(manejador, disposeHandler: false) { Timeout = Espera };
+        ClienteSonar cliente = new(http, opciones, token!);
+
+        IReadOnlyList<IssueAceptado> issues;
+        try
+        {
+            issues = await cliente.BuscarAceptadosAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (ErrorDeSonar error)
+        {
+            log.WriteLine("sonar-sync: " + error.Message + " No se modificó " + opciones.Salida + ".");
+            return ErrorDeSonar;
+        }
+
+        ArchivoDeAceptados.Escribir(opciones.Salida, ArchivoDeAceptados.Serializar(opciones, issues, reloj()));
+
+        log.WriteLine($"sonar-sync: {issues.Count} {(issues.Count == 1 ? "issue aceptado" : "issues aceptados")} " +
+                      $"de '{opciones.Proyecto}' en {opciones.Salida}.");
+        return Exito;
+    }
+}

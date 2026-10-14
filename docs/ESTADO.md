@@ -13,8 +13,8 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 0 — Setup | ✅ Completa |
 | 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
-| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 implementada, falta verla en Sonar |
-| 4 — Suppressor | ⬜ Sin empezar |
+| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
+| 4 — Suppressor | 🟡 En curso: tarea 1 (`tools/sonar-sync`) lista; faltan el target de MSBuild, el suppressor y `LaincoSuppressAccepted` |
 | 5 — TypeScript | ⬜ Sin empezar |
 | 6 — App de catálogo | ⬜ Sin empezar. Stack decidido, diseño en `FASE-6-APP.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
@@ -28,6 +28,8 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 - **LAIN005** implementada, con 29 tests (13 positivos, 16 negativos). D5 resuelta.
 - **Paquete NuGet `Lainco.Analyzers` 0.1.0**, con los analyzers en `analyzers/dotnet/cs`
   y el `.globalconfig` de severidades en `buildTransitive`.
+- **`tools/sonar-sync`** genera `sonar-accepted.json` con los issues LAIN aceptados o falsos
+  positivos en Sonar. 26 tests, sin dependencias de NuGet.
 - La **sample** consume el paquete y produce advertencias solo de reglas LAIN: LAIN004
   (×2, en `Articulo.cs`) y LAIN005 (en `CalculadorDeTotales.cs`).
 - **GitHub Actions** analiza la sample en cada push a `main` y en cada PR.

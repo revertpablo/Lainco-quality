@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{76476338-8096-4077-B7A7-A6D68899E0A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lainco.SonarSync", "src\Lainco.SonarSync\Lainco.SonarSync.csproj", "{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D2C87F6A-D019-4FB9-9C3C-2059EAF9EBCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lainco.SonarSync.Tests", "tests\Lainco.SonarSync.Tests\Lainco.SonarSync.Tests.csproj", "{60B5B837-B378-4E04-B2C0-977AEF1839E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60B5B837-B378-4E04-B2C0-977AEF1839E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60B5B837-B378-4E04-B2C0-977AEF1839E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60B5B837-B378-4E04-B2C0-977AEF1839E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60B5B837-B378-4E04-B2C0-977AEF1839E9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1CD9C7DF-94F6-4E14-AB4D-3215183B28AD} = {76476338-8096-4077-B7A7-A6D68899E0A7}
+		{60B5B837-B378-4E04-B2C0-977AEF1839E9} = {D2C87F6A-D019-4FB9-9C3C-2059EAF9EBCA}
+	EndGlobalSection
+EndGlobal
