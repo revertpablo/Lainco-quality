@@ -28,9 +28,9 @@ public class Articulo
     public virtual decimal PrecioLista { get; set; }
 
     // >>> LAIN004: inicialización inline de property.
-    public virtual string Descripcion { get; set; } = "sin descripción";
+    public virtual string Resumen { get; set; } = "-";
     public virtual decimal PrecioContado { get; set; }
 
     // >>> LAIN004: inicialización inline de property.
-    public virtual string Resumen { get; set; } = "-";
+    public virtual string Descripcion { get; set; } = "sin descripción";
 }
