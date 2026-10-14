@@ -31,6 +31,7 @@ public class Articulo
     // >>> LAIN004: inicialización inline de property.
     public virtual string Descripcion { get; set; } = "sin descripción";
     public virtual decimal PrecioContado { get; set; }
+    public virtual string Sku { get; set; }
     
 }
 //intercambie 2 violaciones y detecto como acepted issue nuevo
