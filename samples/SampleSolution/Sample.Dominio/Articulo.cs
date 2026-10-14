@@ -22,10 +22,10 @@ public class Articulo
 
     public virtual string Codigo { get; set; }
 
-    public virtual string ImagenUrl { get; set; }
-
     // >>> LAIN004: inicialización inline de property.
     public virtual string Descripcion { get; set; } = "sin descripción";
+
+    public virtual string ImagenUrl { get; set; }    
 
     public virtual decimal PrecioLista { get; set; }
 }
