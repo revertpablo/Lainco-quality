@@ -30,9 +30,9 @@ public class Articulo
     public virtual decimal PrecioContado { get; set; }
 
     // >>> LAIN004: inicialización inline de property.
-    public virtual string Resumen { get; set; } = "-";    
+    public virtual string Descripcion { get; set; } = "sin descripción";
 
     // >>> LAIN004: inicialización inline de property.
-    public virtual string Descripcion { get; set; } = "sin descripción";
+    public virtual string Resumen { get; set; } = "-";    
 }
 //intercambie 2 violaciones y detecto como error nuevo
