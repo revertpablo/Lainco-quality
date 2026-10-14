@@ -2,7 +2,7 @@
 
 Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
-Última actualización: **2026-10-07**.
+Última actualización: **2026-10-14**.
 
 ---
 
@@ -13,7 +13,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 0 — Setup | ✅ Completa |
 | 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
-| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | ⬜ Sin empezar |
+| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 implementada, falta verla en Sonar |
 | 4 — Suppressor | ⬜ Sin empezar |
 | 5 — TypeScript | ⬜ Sin empezar |
 | 6 — App de catálogo | ⬜ Sin empezar. Stack decidido, diseño en `FASE-6-APP.md` |
@@ -25,9 +25,11 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 ## Lo que está funcionando hoy
 
 - **LAIN004** implementada, con 13 tests (6 positivos, 7 negativos).
+- **LAIN005** implementada, con 29 tests (13 positivos, 16 negativos). D5 resuelta.
 - **Paquete NuGet `Lainco.Analyzers` 0.1.0**, con los analyzers en `analyzers/dotnet/cs`
   y el `.globalconfig` de severidades en `buildTransitive`.
-- La **sample** consume el paquete y produce exactamente una advertencia: LAIN004.
+- La **sample** consume el paquete y produce advertencias solo de reglas LAIN: LAIN004
+  (×2, en `Articulo.cs`) y LAIN005 (en `CalculadorDeTotales.cs`).
 - **GitHub Actions** analiza la sample en cada push a `main` y en cada PR.
 - Los issues **llegan a SonarQube Cloud** como `external_roslyn:LAIN004`.
 - El **quality gate `Lainco`** falla ante un issue nuevo (verificado con el PR #1).
@@ -84,6 +86,7 @@ el diseño de las fases 4 y 7.
 | D8 | App de catálogo: **Next.js + TypeScript + Neon Postgres en Vercel** (`FASE-6-APP.md`) |
 | D8.1 | `CS1591` se apaga **en todos lados**, vía el `.globalconfig` del paquete |
 | D8.3 | Los analyzers del SDK **entran al inventario** |
+| D5 | LAIN005: se exceptúan en la regla los operators, el `Main` que es **punto de entrada real** y los extension methods sobre tipos **definidos fuera del proyecto** que se compila (incluye otros proyectos de la solución). Además se exceptúan las fuentes de datos de `[MemberData]` de xUnit. Detalle en `rules/LAIN005.md` |
 
 ### Abiertas — hacen falta para la Fase 3
 
@@ -91,7 +94,6 @@ el diseño de las fases 4 y 7.
 |---|---|
 | D3 | LAIN002: ¿el constructor `protected` sin parámetros queda exceptuado de encadenar? |
 | D4 | LAIN002: ¿el encadenamiento puede ser transitivo o debe ser directo? |
-| D5 | LAIN005: ¿extension methods y `Main` se exceptúan, o pasan por aceptación en Sonar? |
 | D6 | LAIN006: qué tipos cuentan como "query a base" además de `IQueryable<T>` |
 
 Hay además una decisión **nueva**, surgida del spike: **sobre qué archivo exactamente
@@ -137,19 +139,19 @@ Requisitos: **.NET SDK 8** (o superior), **git**, y `gh` opcional.
 git clone https://github.com/revertpablo/Lainco-quality.git
 cd Lainco-quality
 
-# 1. Tests de los analyzers — deben pasar 13
+# 1. Tests de los analyzers — deben pasar 42
 dotnet test src/dotnet/Lainco.Analyzers.sln
 
 # 2. Empaquetar: la sample consume el paquete desde este feed local,
 #    que está en .gitignore y hay que generar en cada máquina.
 dotnet pack src/dotnet/Lainco.Analyzers.Package -c Release -o artifacts/nupkg
 
-# 3. Build de la sample — debe dar exactamente 1 advertencia, LAIN004
+# 3. Build de la sample — debe dar 3 advertencias: LAIN004 ×2 y LAIN005
 dotnet build samples/SampleSolution/SampleSolution.sln
 ```
 
-Si el paso 3 da 0 advertencias, es casi seguro el cache de NuGet: al reempaquetar la
-misma versión con contenido distinto, NuGet sirve la vieja. Se limpia con
+Si el paso 3 no muestra las advertencias de alguna regla nueva, es casi seguro el cache
+de NuGet: al reempaquetar la misma versión con contenido distinto, NuGet sirve la vieja. Se limpia con
 `rm -rf ~/.nuget/packages/lainco.analyzers/0.1.0` y se repite desde el paso 2.
 
 No hay nada más que configurar: no hacen falta tokens ni variables de entorno para

@@ -7,3 +7,4 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------------------------------------------------------
 LAIN004 | Diseño   | Warning  | No se permite inicialización inline de properties.
+LAIN005 | Diseño   | Warning  | No se permiten métodos estáticos, salvo operators.

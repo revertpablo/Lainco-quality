@@ -18,8 +18,9 @@ correctos para verificar que los analyzers no produzcan falsos positivos.
 se construyen por reflexión y el análisis de nulabilidad solo agregaría advertencias del
 compilador que no corresponden a ninguna regla LAIN.
 
-**Estado actual (Fase 1):** compila con **1 advertencia**, la de LAIN004, y los 4 tests
-pasan. Esa es la situación deseada: las únicas advertencias que deben aparecer son
+**Estado actual (Fase 3, LAIN005 implementada):** compila con **3 advertencias**: 2 de
+LAIN004 en `Articulo.cs` (`Descripcion` y `Resumen`) y 1 de LAIN005 en
+`CalculadorDeTotales.cs`. Los 4 tests pasan. Esa es la situación deseada: las únicas advertencias que deben aparecer son
 reglas LAIN. A medida que avance la Fase 3 se van a ir sumando las demás.
 
 La sample referencia el paquete `Lainco.Analyzers` desde `Directory.Build.props`, y lo
@@ -58,6 +59,7 @@ Existen para verificar que los analyzers **no** disparen donde no corresponde.
 | LAIN004 | Todas las demás properties | Se inicializan en el constructor. |
 | LAIN005 | `Importe.cs` | Sus miembros estáticos son `operator`, exceptuados por la regla. |
 | LAIN005 | `CalculadorDeTotales.CalcularTotal` | Es método de instancia. |
+| LAIN005 | `ExtensionesDeDecimal.cs` | Extension method sobre `decimal`, un tipo que no pertenece al proyecto: exceptuado (D5). |
 | LAIN006 | `RepositorioDePedidos.BuscarPorId` | Resuelve en el motor con `SingleOrDefault`. |
 | LAIN006 | `RepositorioDePedidos.LineasOrdenadas` | El `ToList()` es sobre una colección en memoria. |
 
@@ -80,6 +82,6 @@ Existen para verificar que los analyzers **no** disparen donde no corresponde.
 ## Comandos
 
 ```bash
-dotnet build      # 1 advertencia: LAIN004 en Articulo.cs
+dotnet build      # 3 advertencias: LAIN004 ×2 en Articulo.cs, LAIN005 en CalculadorDeTotales.cs
 dotnet test       # 4 tests
 ```

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -24,8 +25,27 @@ internal static class Verificador<TAnalyzer>
     /// <summary>
     /// Verifica que el código produzca exactamente los diagnósticos esperados.
     /// Sin diagnósticos esperados, verifica que el analyzer no dispare (caso negativo).
+    /// El código se compila como biblioteca.
     /// </summary>
-    public static async Task VerificarAsync(string codigo, params DiagnosticResult[] esperados)
+    public static Task VerificarAsync(string codigo, params DiagnosticResult[] esperados)
+    {
+        return VerificarAsync(codigo, OutputKind.DynamicallyLinkedLibrary, esperados);
+    }
+
+    /// <summary>
+    /// Igual que <see cref="VerificarAsync(string, DiagnosticResult[])"/>, pero compila el
+    /// código como aplicación de consola. Hace falta para las reglas que dependen del
+    /// punto de entrada (<c>Main</c>), que una biblioteca no tiene.
+    /// </summary>
+    public static Task VerificarEjecutableAsync(string codigo, params DiagnosticResult[] esperados)
+    {
+        return VerificarAsync(codigo, OutputKind.ConsoleApplication, esperados);
+    }
+
+    private static async Task VerificarAsync(
+        string codigo,
+        OutputKind tipoDeSalida,
+        DiagnosticResult[] esperados)
     {
         CSharpAnalyzerTest<TAnalyzer, DefaultVerifier> test = new()
         {
@@ -37,6 +57,7 @@ internal static class Verificador<TAnalyzer>
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
+        test.TestState.OutputKind = tipoDeSalida;
         test.ExpectedDiagnostics.AddRange(esperados);
 
         await test.RunAsync();

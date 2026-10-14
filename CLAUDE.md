@@ -49,7 +49,7 @@ Los resultados de los spikes y las decisiones medidas están en `docs/decisiones
 | LAIN002 | Un solo constructor con código; todos los demás deben encadenar a él (`: this(...)`). |
 | LAIN003 | Cada entidad mapeada en NHibernate debe tener un test que asigne valores a todas sus properties persistidas. |
 | LAIN004 | No se permite inicialización inline de properties (`{ get; set; } = valor`). |
-| LAIN005 | No se permiten métodos estáticos, salvo operators. Las excepciones se aceptan en Sonar. |
+| LAIN005 | No se permiten métodos estáticos, salvo operators, el `Main` que es punto de entrada, extension methods sobre tipos de fuera del proyecto y fuentes de `[MemberData]` de xUnit. Las demás excepciones se aceptan en Sonar. |
 | LAIN006 | No se permite `ToList()` sobre queries a base de datos (receptor `IQueryable` o abstracciones de query propias). |
 
 ## Forma de trabajo

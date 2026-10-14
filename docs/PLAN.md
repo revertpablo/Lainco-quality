@@ -25,7 +25,7 @@ Resolver antes de la fase indicada. Claude Code debe preguntar si alguna sigue a
 | D2 | Estilo de mapeo NHibernate | Fluent NHibernate (`ClassMap<T>`) / Mapping by code (`ClassMapping<T>`) / `.hbm.xml` | Fase 3 (LAIN003) | **Resuelta (2026-09-23): Fluent NHibernate (`ClassMap<T>`)** |
 | D3 | LAIN002: ¿el constructor `protected` sin parámetros (para proxies de NHibernate) queda exceptuado de encadenar? | Exceptuado / Debe encadenar | Fase 3 | Abierta |
 | D4 | LAIN002: ¿el encadenamiento puede ser transitivo (A → B → C) o debe ser directo al constructor con código? | Transitivo / Directo | Fase 3 | Abierta |
-| D5 | LAIN005: ¿extension methods y `Main` se exceptúan en la regla o pasan por aceptación en Sonar? | Exceptuados / Aceptación manual | Fase 3 | Abierta |
+| D5 | LAIN005: ¿extension methods y `Main` se exceptúan en la regla o pasan por aceptación en Sonar? | Exceptuados / Aceptación manual | Fase 3 | **Resuelta (2026-10-14): exceptuados en la regla. `Main` solo si es el punto de entrada real; extension methods solo sobre tipos definidos fuera del proyecto que se compila. También se exceptúan las fuentes de datos de `[MemberData]` de xUnit. Detalle en `docs/rules/LAIN005.md`** |
 | D6 | LAIN006: tipos que cuentan como "query a base" además de `IQueryable<T>` (abstracciones de repositorio propias, `IQueryOver`, etc.) | Lista de tipos | Fase 3 | Abierta |
 | D7 | Feed privado para paquetes NuGet / npm | GitHub Packages / Azure Artifacts / otro | Fase 1 | **Resuelta (2026-09-23): NuGet en GitHub Packages; npm en npmjs.com (scope `@lainco`)** |
 | D8 | Stack de la app de catálogo | A definir | Fase 6 (entrega 6.1, en paralelo con Fase 1) | **Resuelta (2026-09-23): Next.js + TypeScript + Neon Postgres en Vercel. Diseño en `docs/FASE-6-APP.md`** |

@@ -13,3 +13,6 @@ is_global = true
 
 # LAIN004 — No se permite inicialización inline de properties
 dotnet_diagnostic.LAIN004.severity = warning
+
+# LAIN005 — No se permiten métodos estáticos, salvo operators
+dotnet_diagnostic.LAIN005.severity = warning
