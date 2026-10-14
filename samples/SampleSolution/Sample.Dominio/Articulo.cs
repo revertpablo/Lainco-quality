@@ -22,17 +22,15 @@ public class Articulo
 
     public virtual string Codigo { get; set; }
     
-
+    // >>> LAIN004: inicialización inline de property.
+    public virtual string Resumen { get; set; } = "-";    
     public virtual string ImagenUrl { get; set; }    
 
     public virtual decimal PrecioLista { get; set; }
 
-    public virtual decimal PrecioContado { get; set; }
-
     // >>> LAIN004: inicialización inline de property.
     public virtual string Descripcion { get; set; } = "sin descripción";
-
-    // >>> LAIN004: inicialización inline de property.
-    public virtual string Resumen { get; set; } = "-";    
+    public virtual decimal PrecioContado { get; set; }
+    
 }
-//intercambie 2 violaciones y detecto como error nuevo
+//intercambie 2 violaciones y detecto como acepted issue nuevo
