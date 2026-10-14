@@ -34,4 +34,5 @@ public class Articulo
     public virtual string Sku { get; set; }
     
 }
-//intercambie 2 violaciones y detecto como acepted issue nuevo
+//agregue una segunda violacion y la detectó como nuevo issue -> OK
+//Desde entonces, empecé a intercambiar lineas, y en cada analisis a pesar de estar aceptado, me lo muestra en el contador como accepted issues a una de ellas
