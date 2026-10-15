@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lainco.Analyzers\Lainco.Analyzers.csproj" />
+    <ProjectReference Include="..\Lainco.Analyzers.Suppressor\Lainco.Analyzers.Suppressor.csproj" />
   </ItemGroup>
 
 </Project>

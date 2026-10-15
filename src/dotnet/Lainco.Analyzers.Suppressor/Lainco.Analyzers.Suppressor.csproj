@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fase 4, tarea 3: DiagnosticSuppressor que oculta en el IDE los issues LAIN que los
+    revisores aceptaron en SonarQube. Va en un assembly aparte de las reglas porque es
+    otra pieza: las reglas detectan, el suppressor aplica decisiones tomadas en Sonar.
+  -->
+
+  <PropertyGroup>
+    <!-- Igual que las reglas: netstandard2.0 es lo único que cargan VS, Rider y la CLI. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Sin otras dependencias a propósito, ni siquiera System.Text.Json: un analyzer que
+      arrastra assemblies propios choca con las versiones que ya cargó Visual Studio.
+      El JSON se lee con LectorJson.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lainco.Analyzers.Tests" />
+  </ItemGroup>
+
+</Project>

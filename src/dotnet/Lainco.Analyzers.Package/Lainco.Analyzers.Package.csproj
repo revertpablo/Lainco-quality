@@ -2,7 +2,7 @@
 
   <!--
     Proyecto de empaquetado. No tiene código propio: arma el paquete NuGet con
-      - los analyzers en analyzers/dotnet/cs
+      - los analyzers y el suppressor de issues aceptados (Fase 4) en analyzers/dotnet/cs
       - el .globalconfig con las severidades, en buildTransitive
       - sonar-sync en tools/sonar-sync, y el .targets que lo corre antes de compilar
         (Fase 4, tarea 2), en buildTransitive
@@ -46,6 +46,10 @@
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false" />
 
+    <ProjectReference Include="..\Lainco.Analyzers.Suppressor\Lainco.Analyzers.Suppressor.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false" />
+
     <!--
       Lo mismo para sonar-sync, que es net8.0. SkipGetTargetFrameworkProperties evita que
       MSBuild exija compatibilidad de target framework con este proyecto (netstandard2.0):
@@ -60,6 +64,11 @@
 
   <ItemGroup>
     <None Include="..\Lainco.Analyzers\bin\$(Configuration)\netstandard2.0\Lainco.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+
+    <None Include="..\Lainco.Analyzers.Suppressor\bin\$(Configuration)\netstandard2.0\Lainco.Analyzers.Suppressor.dll"
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />

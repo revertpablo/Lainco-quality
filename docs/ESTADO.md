@@ -14,7 +14,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
-| 4 — Suppressor | 🟡 En curso: tareas 1 (`tools/sonar-sync`) y 2 (target de MSBuild) listas; faltan el suppressor y `LaincoSuppressAccepted` |
+| 4 — Suppressor | 🟡 En curso: tareas 1 (`tools/sonar-sync`), 2 (target de MSBuild) y 3 (suppressor) listas; falta `LaincoSuppressAccepted` |
 | 5 — TypeScript | ⬜ Sin empezar |
 | 6 — App de catálogo | ⬜ Sin empezar. Stack decidido, diseño en `FASE-6-APP.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
@@ -32,8 +32,10 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
   positivos en Sonar. 36 tests, sin dependencias de NuGet.
 - **El paquete `Lainco.Analyzers`** trae sonar-sync y un `.targets` que la corre antes de
   cada build local (cada 8 horas, nunca en CI, nunca rompe el build). La sample tiene
-  `LaincoSonarProyecto`. Probado con un repo consumidor de prueba en 13 escenarios;
-  **falta probarlo con el paquete real** en la sample.
+  `LaincoSonarProyecto`. Probado con un repo consumidor de prueba en 13 escenarios.
+- **`Lainco.Analyzers.Suppressor`** oculta en el IDE y en el build local los issues que
+  figuran en `sonar-accepted.json` (archivo + regla + mensaje). 16 tests. Probado de punta
+  a punta con el compilador real.
 - La **sample** consume el paquete y produce advertencias solo de reglas LAIN: LAIN004
   (×2, en `Articulo.cs`) y LAIN005 (en `CalculadorDeTotales.cs`).
 - **GitHub Actions** analiza la sample en cada push a `main` y en cada PR.
@@ -145,7 +147,7 @@ Requisitos: **.NET SDK 8** (o superior), **git**, y `gh` opcional.
 git clone https://github.com/revertpablo/Lainco-quality.git
 cd Lainco-quality
 
-# 1. Tests de los analyzers — deben pasar 42
+# 1. Tests de los analyzers y el suppressor — deben pasar 58
 dotnet test src/dotnet/Lainco.Analyzers.sln
 
 # 2. Empaquetar: la sample consume el paquete desde este feed local,

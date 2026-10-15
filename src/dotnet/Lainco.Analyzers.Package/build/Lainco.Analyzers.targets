@@ -2,8 +2,11 @@
 
   <!--
     Fase 4, tarea 2: antes de compilar, actualiza sonar-accepted.json con los issues LAIN
-    que los revisores aceptaron o marcaron como falso positivo en SonarQube. Ese archivo
-    lo lee el suppressor (tarea 3) para ocultarlos en el IDE.
+    que los revisores aceptaron o marcaron como falso positivo en SonarQube.
+
+    Fase 4, tarea 3: le pasa ese archivo al compilador como AdditionalFiles, junto con la
+    raíz del análisis (LaincoSonarRaiz), para que el suppressor del paquete oculte esos
+    issues en el IDE y en el build.
 
     NuGet importa este archivo en todo proyecto que referencie Lainco.Analyzers, después
     del cuerpo del proyecto: los valores por defecto de abajo solo aplican si el proyecto
@@ -62,6 +65,20 @@
     <_LaincoDotnet Condition="'$(_LaincoDotnet)' == ''">dotnet</_LaincoDotnet>
   </PropertyGroup>
 
+  <!--
+    El suppressor recibe el archivo como AdditionalFiles y la raíz como propiedad visible
+    para el compilador (build_property.LaincoSonarRaiz). Se agrega en la evaluación, y no
+    solo en el target, porque el análisis en vivo del IDE usa los builds de diseño, que no
+    corren el target: sin esto, el IDE no ocultaría nada.
+  -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="LaincoSonarRaiz" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(LaincoSonarAceptados)' != '' and Exists('$(LaincoSonarAceptados)')">
+    <AdditionalFiles Include="$(LaincoSonarAceptados)" />
+  </ItemGroup>
+
   <Target Name="LaincoSincronizarAceptados"
           BeforeTargets="CoreCompile"
           Condition="'$(LaincoSonarSync)' == 'true' and '$(LaincoSonarProyecto)' != '' and '$(DesignTimeBuild)' != 'true'">
@@ -111,6 +128,16 @@
     <Message Importance="high"
              Condition="'$(_LaincoSonarSyncSalida)' != '' and '$(_LaincoSonarSyncSalida)' != '0'"
              Text="Lainco: no se pudo actualizar los issues aceptados; el build sigue con el archivo anterior." />
+
+    <!--
+      Si el archivo no existía al evaluar el proyecto (primer build, o se borró), recién
+      ahora está: se agrega para que este mismo build ya lo use. Remove + Include evita
+      que quede dos veces.
+    -->
+    <ItemGroup Condition="Exists('$(LaincoSonarAceptados)')">
+      <AdditionalFiles Remove="$(LaincoSonarAceptados)" />
+      <AdditionalFiles Include="$(LaincoSonarAceptados)" />
+    </ItemGroup>
   </Target>
 
 </Project>

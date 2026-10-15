@@ -177,8 +177,40 @@ dotnet test tools/sonar-sync/Lainco.SonarSync.sln     # 36 tests
 
 El `.targets` está en `src/dotnet/Lainco.Analyzers.Package/build/Lainco.Analyzers.targets`.
 
+## Cómo lo usa el suppressor (tarea 3)
+
+`Lainco.Analyzers.Suppressor` (`src/dotnet/Lainco.Analyzers.Suppressor/`) es un
+`DiagnosticSuppressor` que viaja en el paquete junto con las reglas. El `.targets` le pasa:
+
+- **El archivo**, como `AdditionalFiles`. Se agrega en la evaluación del proyecto, para
+  que lo vea el análisis en vivo del IDE (que usa builds de diseño y no corre el target),
+  y otra vez al final del target, para que el primer build que lo crea ya lo use.
+  El suppressor lo reconoce **por nombre**: tiene que llamarse `sonar-accepted.json`
+  (`LaincoSonarAceptados` puede cambiar la carpeta, no el nombre).
+- **La raíz**, como `build_property.LaincoSonarRaiz` (`CompilerVisibleProperty`). Las
+  rutas del archivo se comparan contra la ruta de cada diagnóstico relativa a esa raíz.
+  Si no está, se usa la carpeta del archivo.
+
+Un diagnóstico se suprime si coincide en **archivo + regla + mensaje** con un issue del
+archivo. La ruta no distingue mayúsculas ni el tipo de barra; regla y mensaje sí. Como el
+mensaje lleva el nombre completamente calificado del símbolo:
+
+- **mover** el código de línea no cambia nada: sigue suprimido;
+- **renombrar** el símbolo o **moverlo de archivo** genera otro issue, que el revisor
+  tiene que volver a aceptar.
+
+Si el archivo no está, no es JSON válido o tiene otra `version`, **no se suprime nada**
+(y el suppressor nunca lanza excepciones, que en el IDE aparecerían como `AD0001`).
+
+Cada regla suprimible tiene su `SuppressionDescriptor` (`LAINS004` suprime `LAIN004`, y
+así). Roslyn exige declararlos de antemano: **al crear una regla nueva hay que sumarla a
+la lista de `SupresorDeAceptados`**. Un test (`Cada_regla_LAIN_tiene_su_supresion`) falla
+si falta alguna.
+
 ## Pendiente (resto de la Fase 4)
 
-- **Tareas 3 y 4**: el suppressor que lee este archivo y la propiedad
-  `LaincoSuppressAccepted`.
+- **Tarea 4**: la propiedad `LaincoSuppressAccepted`, que en CI apaga el suppressor. Hoy
+  en CI no suprime porque el archivo no existe ahí (no se commitea y la sincronización no
+  corre), pero no hay un apagado explícito: si alguien commiteara el archivo, Sonar
+  dejaría de recibir esos issues.
 - **Reglas de ESLint** (Fase 5): cuando existan, habrá que sumar `lainco/<regla>` al filtro.
