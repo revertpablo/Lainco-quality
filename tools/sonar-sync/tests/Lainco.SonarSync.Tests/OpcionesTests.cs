@@ -12,6 +12,7 @@ public class OpcionesTests
         Assert.Equal("sonar-accepted.json", opciones.Salida);
         Assert.Null(opciones.Rama);
         Assert.Null(opciones.Organizacion);
+        Assert.Null(opciones.VigenciaHoras);
     }
 
     [Fact]
@@ -24,6 +25,7 @@ public class OpcionesTests
             "--organizacion", "lainco",
             "--rama", "develop",
             "--salida", "cache/sonar-accepted.json",
+            "--vigencia-horas", "8",
         });
 
         Assert.Equal("p", opciones.Proyecto);
@@ -31,6 +33,19 @@ public class OpcionesTests
         Assert.Equal("lainco", opciones.Organizacion);
         Assert.Equal("develop", opciones.Rama);
         Assert.Equal("cache/sonar-accepted.json", opciones.Salida);
+        Assert.Equal(8, opciones.VigenciaHoras);
+    }
+
+    [Fact]
+    public void Una_vigencia_que_no_es_un_numero_entero_no_negativo_falla()
+    {
+        foreach (string valor in new[] { "ocho", "-1", "1.5" })
+        {
+            ErrorDeOpciones error = Assert.Throws<ErrorDeOpciones>(
+                () => Opciones.Leer(new[] { "--proyecto", "p", "--vigencia-horas", valor }));
+
+            Assert.Contains("--vigencia-horas", error.Message);
+        }
     }
 
     [Fact]

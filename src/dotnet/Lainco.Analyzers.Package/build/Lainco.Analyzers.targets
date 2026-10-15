@@ -1,0 +1,116 @@
+<Project>
+
+  <!--
+    Fase 4, tarea 2: antes de compilar, actualiza sonar-accepted.json con los issues LAIN
+    que los revisores aceptaron o marcaron como falso positivo en SonarQube. Ese archivo
+    lo lee el suppressor (tarea 3) para ocultarlos en el IDE.
+
+    NuGet importa este archivo en todo proyecto que referencie Lainco.Analyzers, después
+    del cuerpo del proyecto: los valores por defecto de abajo solo aplican si el proyecto
+    o su Directory.Build.props no definieron la propiedad.
+
+    Reglas que sigue:
+      - Solo en builds locales: nunca en CI ni en los builds de diseño del IDE.
+      - Solo si el repo indica su proyecto de Sonar (LaincoSonarProyecto).
+      - Si el archivo tiene menos de LaincoSonarVigenciaHoras horas, no hace nada (ni
+        siquiera lanza la herramienta).
+      - Nunca rompe el build: sin token, sin red o con la API caída, avisa y sigue con
+        el archivo que haya.
+
+    Propiedades que puede definir cada repo (o cada máquina, como variable de entorno):
+
+      LaincoSonarProyecto       Clave del proyecto en SonarQube. Sin ella no se sincroniza.
+      LaincoSonarOrganizacion   Clave de la organización en SonarQube Cloud.
+      LaincoSonarRama           Rama de la que se leen los issues. Por defecto, la principal.
+      LaincoSonarUrl            URL del servidor. Por defecto, https://sonarcloud.io.
+      LaincoSonarVigenciaHoras  Horas antes de volver a consultar. Por defecto, 8.
+      LaincoSonarRaiz           Raíz del análisis de Sonar. Por defecto, la raíz del repo git.
+      LaincoSonarAceptados      Ruta del archivo. Por defecto, sonar-accepted.json en la raíz.
+      LaincoSonarSync           false para apagar la sincronización.
+  -->
+
+  <PropertyGroup>
+    <LaincoSonarVigenciaHoras Condition="'$(LaincoSonarVigenciaHoras)' == ''">8</LaincoSonarVigenciaHoras>
+
+    <!--
+      Raíz del repo: la carpeta con .git/HEAD más cercana hacia arriba. Se busca
+      .git/HEAD y no .git porque GetDirectoryNameOfFileAbove solo encuentra archivos, y
+      en un repo común .git es una carpeta. En worktrees y submódulos .git es un archivo,
+      y lo encuentra la segunda búsqueda.
+
+      Las rutas de Sonar son relativas a esta raíz, que es donde corre el análisis.
+    -->
+    <LaincoSonarRaiz Condition="'$(LaincoSonarRaiz)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '.git/HEAD'))</LaincoSonarRaiz>
+    <LaincoSonarRaiz Condition="'$(LaincoSonarRaiz)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '.git'))</LaincoSonarRaiz>
+    <LaincoSonarRaiz Condition="'$(LaincoSonarRaiz)' != ''">$([MSBuild]::EnsureTrailingSlash('$(LaincoSonarRaiz)'))</LaincoSonarRaiz>
+
+    <LaincoSonarAceptados Condition="'$(LaincoSonarAceptados)' == '' and '$(LaincoSonarRaiz)' != ''">$(LaincoSonarRaiz)sonar-accepted.json</LaincoSonarAceptados>
+
+    <!--
+      Builds de CI: GitHub Actions y la mayoría de los servidores definen CI=true;
+      Azure Pipelines define TF_BUILD. ContinuousIntegrationBuild es la propiedad
+      estándar de .NET para builds deterministas de CI.
+    -->
+    <_LaincoEsCI Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true'">true</_LaincoEsCI>
+    <LaincoSonarSync Condition="'$(LaincoSonarSync)' == '' and '$(_LaincoEsCI)' == 'true'">false</LaincoSonarSync>
+    <LaincoSonarSync Condition="'$(LaincoSonarSync)' == ''">true</LaincoSonarSync>
+
+    <_LaincoSonarSyncDll>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'tools', 'sonar-sync', 'sonar-sync.dll'))</_LaincoSonarSyncDll>
+
+    <!-- DOTNET_HOST_PATH lo define el SDK; si no está, se usa el dotnet del PATH. -->
+    <_LaincoDotnet>$(DOTNET_HOST_PATH)</_LaincoDotnet>
+    <_LaincoDotnet Condition="'$(_LaincoDotnet)' == ''">dotnet</_LaincoDotnet>
+  </PropertyGroup>
+
+  <Target Name="LaincoSincronizarAceptados"
+          BeforeTargets="CoreCompile"
+          Condition="'$(LaincoSonarSync)' == 'true' and '$(LaincoSonarProyecto)' != '' and '$(DesignTimeBuild)' != 'true'">
+
+    <PropertyGroup>
+      <_LaincoAceptadosVigente />
+      <_LaincoSonarSyncSalida />
+
+      <!-- Vigencia: se compara en ticks porque las condiciones de MSBuild no comparan fechas. -->
+      <_LaincoAceptadosVigente Condition="Exists('$(LaincoSonarAceptados)') and $([System.IO.File]::GetLastWriteTime('$(LaincoSonarAceptados)').Ticks) &gt; $([System.DateTime]::Now.AddHours(-$(LaincoSonarVigenciaHoras)).Ticks)">true</_LaincoAceptadosVigente>
+
+      <_LaincoArgumentos>--proyecto &quot;$(LaincoSonarProyecto)&quot; --salida &quot;$(LaincoSonarAceptados)&quot; --vigencia-horas $(LaincoSonarVigenciaHoras)</_LaincoArgumentos>
+      <_LaincoArgumentos Condition="'$(LaincoSonarOrganizacion)' != ''">$(_LaincoArgumentos) --organizacion &quot;$(LaincoSonarOrganizacion)&quot;</_LaincoArgumentos>
+      <_LaincoArgumentos Condition="'$(LaincoSonarRama)' != ''">$(_LaincoArgumentos) --rama &quot;$(LaincoSonarRama)&quot;</_LaincoArgumentos>
+      <_LaincoArgumentos Condition="'$(LaincoSonarUrl)' != ''">$(_LaincoArgumentos) --url &quot;$(LaincoSonarUrl)&quot;</_LaincoArgumentos>
+    </PropertyGroup>
+
+    <Message Importance="high"
+             Condition="'$(LaincoSonarAceptados)' == ''"
+             Text="Lainco: no se encontró la raíz del repo git; definí LaincoSonarRaiz para sincronizar los issues aceptados en SonarQube." />
+
+    <Message Importance="high"
+             Condition="'$(LaincoSonarAceptados)' != '' and '$(_LaincoAceptadosVigente)' != 'true' and '$(LAINCO_SONAR_TOKEN)' == ''"
+             Text="Lainco: definí la variable de entorno LAINCO_SONAR_TOKEN para ocultar en el IDE los issues aceptados en SonarQube (ver tools/sonar-sync/README.md en Lainco-quality)." />
+
+    <!--
+      El token no va en la línea de comandos: la herramienta lo lee de la variable de
+      entorno, que el proceso hereda. Así no aparece en el log del build.
+
+      IgnoreExitCode y ContinueOnError: la falla de la herramienta nunca rompe el build.
+      IgnoreStandardErrorWarningFormat: un mensaje de la herramienta que parezca
+      'error: ...' no se convierte en un error de MSBuild.
+      La salida va con importancia alta: son una o dos líneas cada N horas, y si algo
+      falla tiene que verse.
+    -->
+    <Exec Condition="'$(LaincoSonarAceptados)' != '' and '$(_LaincoAceptadosVigente)' != 'true' and '$(LAINCO_SONAR_TOKEN)' != ''"
+          Command="&quot;$(_LaincoDotnet)&quot; &quot;$(_LaincoSonarSyncDll)&quot; $(_LaincoArgumentos)"
+          WorkingDirectory="$(LaincoSonarRaiz)"
+          IgnoreExitCode="true"
+          ContinueOnError="true"
+          IgnoreStandardErrorWarningFormat="true"
+          StandardOutputImportance="high"
+          StandardErrorImportance="high">
+      <Output TaskParameter="ExitCode" PropertyName="_LaincoSonarSyncSalida" />
+    </Exec>
+
+    <Message Importance="high"
+             Condition="'$(_LaincoSonarSyncSalida)' != '' and '$(_LaincoSonarSyncSalida)' != '0'"
+             Text="Lainco: no se pudo actualizar los issues aceptados; el build sigue con el archivo anterior." />
+  </Target>
+
+</Project>

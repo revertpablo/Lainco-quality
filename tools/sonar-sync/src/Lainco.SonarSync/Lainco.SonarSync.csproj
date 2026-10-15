@@ -11,6 +11,12 @@
     <AssemblyName>sonar-sync</AssemblyName>
     <RootNamespace>Lainco.SonarSync</RootNamespace>
 
+    <!--
+      La herramienta viaja dentro del paquete Lainco.Analyzers y corre en la máquina de
+      cada programador, que puede tener un runtime más nuevo que .NET 8 y no el 8.
+    -->
+    <RollForward>Major</RollForward>
+
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 

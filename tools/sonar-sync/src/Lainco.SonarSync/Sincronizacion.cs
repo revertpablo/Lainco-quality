@@ -31,6 +31,13 @@ internal static class Sincronizacion
 
     private static readonly TimeSpan Espera = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// Después de una falla, las corridas automáticas (las del build, que pasan
+    /// --vigencia-horas) no reintentan durante este tiempo. Sin la pausa, con Sonar caído
+    /// cada proyecto de la solución volvería a intentar en cada build.
+    /// </summary>
+    public static readonly TimeSpan PausaTrasFalla = TimeSpan.FromMinutes(15);
+
     public static async Task<int> EjecutarAsync(
         IReadOnlyList<string> argumentos,
         string? token,
@@ -57,12 +64,40 @@ internal static class Sincronizacion
             return ErrorDeConfiguracion;
         }
 
+        // El archivo vigente se resuelve antes que el token: quien no tiene token pero
+        // tiene un archivo reciente (copiado, o de otra corrida) no necesita nada más.
+        if (Vigente(opciones, reloj))
+        {
+            log.WriteLine($"sonar-sync: {opciones.Salida} tiene menos de {opciones.VigenciaHoras} horas; no se consulta.");
+            return Exito;
+        }
+
         if (string.IsNullOrWhiteSpace(token))
         {
             log.WriteLine(
                 $"sonar-sync: falta el token. Definí la variable de entorno {VariableDelToken} " +
                 "con un token personal de SonarQube de solo lectura.");
             return ErrorDeConfiguracion;
+        }
+
+        using FileStream? candado = ArchivoDeAceptados.TomarCandado(opciones.Salida);
+        if (candado == null)
+        {
+            log.WriteLine($"sonar-sync: otra corrida está actualizando {opciones.Salida}; se sigue con el archivo actual.");
+            return Exito;
+        }
+
+        // Mientras se esperaba el candado, otra corrida pudo haber terminado.
+        if (Vigente(opciones, reloj))
+        {
+            return Exito;
+        }
+
+        string marcaDeFalla = opciones.Salida + ".falla";
+
+        if (opciones.VigenciaHoras != null && EnPausa(marcaDeFalla, reloj()))
+        {
+            return Exito;
         }
 
         using HttpClient http = new(manejador, disposeHandler: false) { Timeout = Espera };
@@ -75,14 +110,30 @@ internal static class Sincronizacion
         }
         catch (ErrorDeSonar error)
         {
+            File.WriteAllText(marcaDeFalla, error.Message);
+            File.SetLastWriteTimeUtc(marcaDeFalla, reloj().UtcDateTime);
+
             log.WriteLine("sonar-sync: " + error.Message + " No se modificó " + opciones.Salida + ".");
             return ErrorDeSonar;
         }
 
         ArchivoDeAceptados.Escribir(opciones.Salida, ArchivoDeAceptados.Serializar(opciones, issues, reloj()));
+        File.Delete(marcaDeFalla);
 
         log.WriteLine($"sonar-sync: {issues.Count} {(issues.Count == 1 ? "issue aceptado" : "issues aceptados")} " +
                       $"de '{opciones.Proyecto}' en {opciones.Salida}.");
         return Exito;
+    }
+
+    private static bool EnPausa(string marcaDeFalla, DateTimeOffset ahora)
+    {
+        return File.Exists(marcaDeFalla)
+            && ahora.UtcDateTime - File.GetLastWriteTimeUtc(marcaDeFalla) < PausaTrasFalla;
+    }
+
+    private static bool Vigente(Opciones opciones, Func<DateTimeOffset> reloj)
+    {
+        return opciones.VigenciaHoras is int horas
+            && ArchivoDeAceptados.EstaVigente(opciones.Salida, horas, reloj());
     }
 }

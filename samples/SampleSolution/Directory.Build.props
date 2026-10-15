@@ -31,6 +31,13 @@
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <AnalysisLevel>none</AnalysisLevel>
+
+    <!--
+      Fase 4, tarea 2: proyecto de SonarQube del que se bajan los issues aceptados antes
+      de cada build local (lo hace el .targets del paquete Lainco.Analyzers). En CI no
+      corre. Cada programador necesita la variable de entorno LAINCO_SONAR_TOKEN.
+    -->
+    <LaincoSonarProyecto>revertpablo_Lainco-quality</LaincoSonarProyecto>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,6 +4,8 @@
     Proyecto de empaquetado. No tiene código propio: arma el paquete NuGet con
       - los analyzers en analyzers/dotnet/cs
       - el .globalconfig con las severidades, en buildTransitive
+      - sonar-sync en tools/sonar-sync, y el .targets que lo corre antes de compilar
+        (Fase 4, tarea 2), en buildTransitive
 
     A partir de la Fase 6, el .globalconfig lo genera la app de catálogo a partir de las
     decisiones registradas. Por ahora se mantiene a mano.
@@ -43,6 +45,17 @@
     <ProjectReference Include="..\Lainco.Analyzers\Lainco.Analyzers.csproj"
                       PrivateAssets="all"
                       ReferenceOutputAssembly="false" />
+
+    <!--
+      Lo mismo para sonar-sync, que es net8.0. SkipGetTargetFrameworkProperties evita que
+      MSBuild exija compatibilidad de target framework con este proyecto (netstandard2.0):
+      no se consume su assembly, solo se necesita que esté compilado.
+    -->
+    <ProjectReference Include="..\..\..\tools\sonar-sync\src\Lainco.SonarSync\Lainco.SonarSync.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      GlobalPropertiesToRemove="TargetFramework" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +76,22 @@
     <None Include="build\Lainco.Analyzers.globalconfig"
           Pack="true"
           PackagePath="buildTransitive/Lainco.Analyzers.globalconfig"
+          Visible="false" />
+
+    <!--
+      NuGet importa buildTransitive/<PackageId>.targets al final del proyecto consumidor.
+      Ese .targets corre sonar-sync desde tools/sonar-sync antes de compilar.
+    -->
+    <None Include="build\Lainco.Analyzers.targets"
+          Pack="true"
+          PackagePath="buildTransitive/Lainco.Analyzers.targets"
+          Visible="false" />
+
+    <None Include="..\..\..\tools\sonar-sync\src\Lainco.SonarSync\bin\$(Configuration)\net8.0\sonar-sync.dll;
+                   ..\..\..\tools\sonar-sync\src\Lainco.SonarSync\bin\$(Configuration)\net8.0\sonar-sync.runtimeconfig.json;
+                   ..\..\..\tools\sonar-sync\src\Lainco.SonarSync\bin\$(Configuration)\net8.0\sonar-sync.deps.json"
+          Pack="true"
+          PackagePath="tools/sonar-sync"
           Visible="false" />
   </ItemGroup>
 

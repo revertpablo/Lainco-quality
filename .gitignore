@@ -1,5 +1,6 @@
-# Cache local de issues aceptados en Sonar (fase 4). Nunca se commitea.
-sonar-accepted.json
+# Cache local de issues aceptados en Sonar (fase 4). Nunca se commitea. El comodín
+# cubre también el candado, los temporales y la marca de falla de sonar-sync.
+sonar-accepted.json*
 
 # .NET
 bin/

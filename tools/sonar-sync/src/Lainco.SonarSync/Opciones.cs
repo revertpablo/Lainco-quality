@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Lainco.SonarSync;
 
@@ -16,24 +17,27 @@ internal sealed class Opciones
 
     public const string Uso =
         "Uso: sonar-sync --proyecto <clave> [--organizacion <clave>] [--rama <nombre>]\n" +
-        "                [--url <url>] [--salida <ruta>]\n" +
+        "                [--url <url>] [--salida <ruta>] [--vigencia-horas <n>]\n" +
         "\n" +
         "  --proyecto      Clave del proyecto en SonarQube (obligatorio).\n" +
         "  --organizacion  Clave de la organización en SonarQube Cloud.\n" +
         "  --rama          Rama de la que se leen los issues. Por defecto, la principal.\n" +
         "  --url           URL del servidor. Por defecto, " + UrlPorDefecto + ".\n" +
         "  --salida        Archivo a generar. Por defecto, " + SalidaPorDefecto + ".\n" +
+        "  --vigencia-horas  Si el archivo tiene menos de n horas, no se consulta. Sin esta\n" +
+        "                  opción se consulta siempre.\n" +
         "  --ayuda         Muestra esta ayuda.\n" +
         "\n" +
         "El token se lee de la variable de entorno " + Sincronizacion.VariableDelToken + ".";
 
-    private Opciones(string proyecto, string url, string? organizacion, string? rama, string salida)
+    private Opciones(string proyecto, string url, string? organizacion, string? rama, string salida, int? vigenciaHoras)
     {
         Proyecto = proyecto;
         Url = url;
         Organizacion = organizacion;
         Rama = rama;
         Salida = salida;
+        VigenciaHoras = vigenciaHoras;
     }
 
     /// <summary>Clave del proyecto en SonarQube.</summary>
@@ -51,6 +55,12 @@ internal sealed class Opciones
     /// <summary>Ruta del archivo a generar.</summary>
     public string Salida { get; }
 
+    /// <summary>
+    /// Antigüedad máxima, en horas, con la que el archivo existente se considera vigente y
+    /// no se vuelve a consultar. Sin valor, se consulta siempre.
+    /// </summary>
+    public int? VigenciaHoras { get; }
+
     /// <summary>Interpreta los argumentos. Lanza <see cref="ErrorDeOpciones"/> si no son válidos.</summary>
     public static Opciones Leer(IReadOnlyList<string> argumentos)
     {
@@ -60,7 +70,7 @@ internal sealed class Opciones
         {
             string nombre = argumentos[i];
 
-            if (nombre is not ("--proyecto" or "--url" or "--organizacion" or "--rama" or "--salida"))
+            if (nombre is not ("--proyecto" or "--url" or "--organizacion" or "--rama" or "--salida" or "--vigencia-horas"))
             {
                 throw new ErrorDeOpciones($"Opción desconocida: '{nombre}'.");
             }
@@ -80,12 +90,24 @@ internal sealed class Opciones
 
         string url = valores.TryGetValue("--url", out string? indicada) ? indicada : UrlPorDefecto;
 
+        int? vigenciaHoras = null;
+        if (valores.TryGetValue("--vigencia-horas", out string? vigencia))
+        {
+            if (!int.TryParse(vigencia, NumberStyles.None, CultureInfo.InvariantCulture, out int horas))
+            {
+                throw new ErrorDeOpciones($"--vigencia-horas debe ser un número entero de horas, 0 o más: '{vigencia}'.");
+            }
+
+            vigenciaHoras = horas;
+        }
+
         return new Opciones(
             proyecto,
             url.TrimEnd('/'),
             valores.TryGetValue("--organizacion", out string? organizacion) ? organizacion : null,
             valores.TryGetValue("--rama", out string? rama) ? rama : null,
-            valores.TryGetValue("--salida", out string? salida) ? salida : SalidaPorDefecto);
+            valores.TryGetValue("--salida", out string? salida) ? salida : SalidaPorDefecto,
+            vigenciaHoras);
     }
 }
 

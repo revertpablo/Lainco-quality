@@ -1,11 +1,14 @@
 # sonar-sync — issues aceptados en SonarQube, para el IDE
 
-Herramienta de línea de comandos de la **Fase 4, tarea 1**. Consulta la Web API de
+Herramienta de línea de comandos de la **Fase 4, tareas 1 y 2**. Consulta la Web API de
 SonarQube Cloud por los issues de **reglas externas LAIN** que los revisores marcaron como
 **Aceptado** o **Falso positivo**, y genera `sonar-accepted.json`.
 
 Ese archivo lo lee el suppressor (tarea 3) para ocultar en el IDE lo que ya se decidió en
 Sonar. **No se commitea**: es un cache local (está en `.gitignore`).
+
+En el día a día **no se corre a mano**: viaja dentro del paquete `Lainco.Analyzers` y el
+build local la ejecuta solo (ver [Integración con el build](#integración-con-el-build)).
 
 ## Uso
 
@@ -23,6 +26,7 @@ dotnet run --project tools/sonar-sync/src/Lainco.SonarSync -- \
 | `--rama` | No | La principal | Rama de la que se leen los issues. |
 | `--url` | No | `https://sonarcloud.io` | URL del servidor. |
 | `--salida` | No | `sonar-accepted.json` | Archivo a generar. |
+| `--vigencia-horas` | No | — (consulta siempre) | Si el archivo tiene menos de esas horas, no consulta. `0`: consulta siempre. La usa el build; con ella también aplica la pausa tras una falla. |
 | `--ayuda` | No | — | Muestra el uso. |
 
 ### Token
@@ -89,9 +93,75 @@ proyecto lo supera, la herramienta **falla** en vez de generar un archivo incomp
 | `2` | Sonar falló: sin red, token rechazado, proyecto inexistente, timeout (30 s), respuesta inválida. | **Sin cambios.** |
 
 El archivo se escribe de forma **atómica** (temporal y reemplazo): nunca queda a medio
-escribir. Ante cualquier falla se conserva el anterior. Así el target de MSBuild de la
-tarea 2 puede ignorar el código de salida y el build local sigue con el último cache
-bueno.
+escribir. Ante cualquier falla se conserva el anterior, así que el build local sigue con
+el último cache bueno.
+
+### Varias corridas a la vez y fallas repetidas
+
+Un build en paralelo lanza una corrida por proyecto. Para que eso no se convierta en una
+consulta por proyecto:
+
+- **Candado** (`sonar-accepted.json.lock`): una sola corrida a la vez consulta a Sonar.
+  Las demás terminan enseguida con código `0` y siguen con el archivo que haya. El
+  candado se borra solo al terminar.
+- **Pausa tras una falla** (`sonar-accepted.json.falla`): si la consulta falla, las
+  corridas **automáticas** (con `--vigencia-horas`) no reintentan durante **15 minutos**.
+  Sin esto, con Sonar caído cada proyecto esperaría el timeout de 30 s en cada build.
+  Una corrida manual (sin `--vigencia-horas`) ignora la pausa: sirve para reintentar
+  enseguida, por ejemplo después de corregir el token.
+
+## Integración con el build
+
+El paquete `Lainco.Analyzers` trae la herramienta en `tools/sonar-sync/` y un `.targets` en
+`buildTransitive/` que la corre **antes de compilar** (`BeforeTargets="CoreCompile"`).
+
+### Qué hace falta en cada repo
+
+Una propiedad, en el `Directory.Build.props` de la raíz:
+
+```xml
+<PropertyGroup>
+  <LaincoSonarProyecto>clave-del-proyecto-en-sonar</LaincoSonarProyecto>
+</PropertyGroup>
+```
+
+Y en cada máquina, la variable de entorno `LAINCO_SONAR_TOKEN`. Sin token el build
+funciona igual y muestra un aviso (mensaje, no warning).
+
+### Cuándo corre
+
+| Situación | Qué pasa |
+|---|---|
+| Build en CI (`CI`, `GITHUB_ACTIONS`, `TF_BUILD` o `ContinuousIntegrationBuild` en `true`) | No corre. |
+| Build de diseño del IDE (`DesignTimeBuild`) | No corre. |
+| Repo sin `LaincoSonarProyecto` | No corre. |
+| `sonar-accepted.json` con menos de `LaincoSonarVigenciaHoras` horas | No corre: ni siquiera lanza el proceso. |
+| Sin `LAINCO_SONAR_TOKEN` | Aviso de importancia alta, el build sigue. |
+| Sonar caído, token rechazado, timeout | Mensaje con el motivo, el build sigue con el archivo anterior. **Nunca falla el build.** |
+
+### Propiedades
+
+| Propiedad | Por defecto | Qué es |
+|---|---|---|
+| `LaincoSonarProyecto` | — | Clave del proyecto en Sonar. **Sin ella no se sincroniza.** |
+| `LaincoSonarOrganizacion` | — | Organización en SonarQube Cloud. |
+| `LaincoSonarRama` | La principal | Rama de la que se leen los issues. |
+| `LaincoSonarUrl` | `https://sonarcloud.io` | URL del servidor. |
+| `LaincoSonarVigenciaHoras` | `8` | Horas antes de volver a consultar. |
+| `LaincoSonarRaiz` | Raíz del repo git | Raíz del análisis de Sonar: las rutas del archivo son relativas a ella. Se busca hacia arriba la carpeta con `.git/HEAD` (o el archivo `.git`, en worktrees y submódulos). |
+| `LaincoSonarAceptados` | `$(LaincoSonarRaiz)sonar-accepted.json` | Ruta del archivo. |
+| `LaincoSonarSync` | `true` (`false` en CI) | `false` para apagarlo. |
+
+Se pueden definir en el `Directory.Build.props` del repo o, para una sola máquina, como
+variables de entorno (por ejemplo `LaincoSonarVigenciaHoras=1`).
+
+Para forzar una actualización: borrar `sonar-accepted.json` y compilar, o compilar con
+`-p:LaincoSonarVigenciaHoras=0`.
+
+### Requisitos
+
+`dotnet` (el que corre el build, vía `DOTNET_HOST_PATH`, o el del `PATH`) con un runtime
+.NET 8 **o más nuevo**: la herramienta tiene `RollForward=Major`.
 
 ## Estructura
 
@@ -102,14 +172,13 @@ bueno.
 | `Lainco.SonarSync.sln` | Solución con los dos proyectos. |
 
 ```bash
-dotnet test tools/sonar-sync/Lainco.SonarSync.sln     # 26 tests
+dotnet test tools/sonar-sync/Lainco.SonarSync.sln     # 36 tests
 ```
+
+El `.targets` está en `src/dotnet/Lainco.Analyzers.Package/build/Lainco.Analyzers.targets`.
 
 ## Pendiente (resto de la Fase 4)
 
-- **Tarea 2**: target de MSBuild que corre `sonar-sync` antes del build local, con cache
-  de N horas. Ahí se decide cómo se distribuye la herramienta (dentro del paquete
-  `Lainco.Analyzers` o aparte) y de dónde salen `--proyecto` y `--salida`.
 - **Tareas 3 y 4**: el suppressor que lee este archivo y la propiedad
   `LaincoSuppressAccepted`.
 - **Reglas de ESLint** (Fase 5): cuando existan, habrá que sumar `lainco/<regla>` al filtro.

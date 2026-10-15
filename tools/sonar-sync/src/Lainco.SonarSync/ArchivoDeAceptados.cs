@@ -56,6 +56,50 @@ internal static class ArchivoDeAceptados
     /// original. Un corte a mitad de camino nunca deja un archivo a medio escribir, que el
     /// suppressor no podría leer.
     /// </summary>
+    /// <summary>
+    /// Indica si el archivo existe y fue escrito hace menos de <paramref name="horas"/> horas.
+    /// </summary>
+    public static bool EstaVigente(string ruta, int horas, DateTimeOffset ahora)
+    {
+        if (!File.Exists(ruta))
+        {
+            return false;
+        }
+
+        DateTime escrito = File.GetLastWriteTimeUtc(ruta);
+        return ahora.UtcDateTime - escrito < TimeSpan.FromHours(horas);
+    }
+
+    /// <summary>
+    /// Toma el candado de escritura del archivo, para que una sola corrida a la vez
+    /// consulte a Sonar. Devuelve null si otra corrida ya lo tiene. El candado se borra
+    /// solo al liberarse.
+    /// </summary>
+    public static FileStream? TomarCandado(string ruta)
+    {
+        string completa = Path.GetFullPath(ruta);
+        string? carpeta = Path.GetDirectoryName(completa);
+        if (!string.IsNullOrEmpty(carpeta))
+        {
+            Directory.CreateDirectory(carpeta);
+        }
+
+        try
+        {
+            return new FileStream(
+                completa + ".lock",
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.None,
+                bufferSize: 1,
+                FileOptions.DeleteOnClose);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+    }
+
     public static void Escribir(string ruta, string contenido)
     {
         string completa = Path.GetFullPath(ruta);
@@ -65,7 +109,8 @@ internal static class ArchivoDeAceptados
             Directory.CreateDirectory(carpeta);
         }
 
-        string temporal = completa + ".tmp";
+        // Nombre único: si dos procesos llegan a escribir a la vez, no se pisan el temporal.
+        string temporal = completa + "." + Guid.NewGuid().ToString("N") + ".tmp";
         File.WriteAllText(temporal, contenido);
         File.Move(temporal, completa, overwrite: true);
     }

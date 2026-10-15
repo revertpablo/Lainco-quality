@@ -115,4 +115,150 @@ public class SincronizacionTests : IDisposable
 
         Assert.DoesNotContain("token-secreto-123", log.ToString());
     }
+
+    // ------------------------------------------------------------- vigencia del archivo
+
+    [Fact]
+    public async Task Con_el_archivo_vigente_no_consulta_ni_pide_token()
+    {
+        File.WriteAllText(Salida, "vigente");
+        File.SetLastWriteTimeUtc(Salida, Momento.UtcDateTime.AddHours(-7));
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 0));
+        StringWriter log = new();
+
+        int codigo = await Ejecutar(null, servidor, log, "--vigencia-horas", "8");
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Empty(servidor.Pedidos);
+        Assert.Equal("vigente", File.ReadAllText(Salida));
+    }
+
+    [Fact]
+    public async Task Con_el_archivo_vencido_consulta_y_lo_reemplaza()
+    {
+        File.WriteAllText(Salida, "vencido");
+        File.SetLastWriteTimeUtc(Salida, Momento.UtcDateTime.AddHours(-9));
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 0));
+        StringWriter log = new();
+
+        int codigo = await Ejecutar("token", servidor, log, "--vigencia-horas", "8");
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Single(servidor.Pedidos);
+        Assert.Contains("\"version\"", File.ReadAllText(Salida));
+    }
+
+    [Fact]
+    public async Task Sin_archivo_consulta_aunque_haya_vigencia()
+    {
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 0));
+        StringWriter log = new();
+
+        int codigo = await Ejecutar("token", servidor, log, "--vigencia-horas", "8");
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Single(servidor.Pedidos);
+        Assert.True(File.Exists(Salida));
+    }
+
+    [Fact]
+    public async Task Con_vigencia_cero_consulta_siempre()
+    {
+        File.WriteAllText(Salida, "recien generado");
+        File.SetLastWriteTimeUtc(Salida, Momento.UtcDateTime);
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 0));
+        StringWriter log = new();
+
+        int codigo = await Ejecutar("token", servidor, log, "--vigencia-horas", "0");
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Single(servidor.Pedidos);
+    }
+
+    // ------------------------------------------------------- varias corridas a la vez
+
+    [Fact]
+    public async Task Si_otra_corrida_esta_actualizando_no_consulta_y_termina_en_cero()
+    {
+        // Un build en paralelo dispara una corrida por proyecto: solo una consulta a
+        // Sonar, las demás siguen con el archivo que haya.
+        File.WriteAllText(Salida, "anterior");
+        File.SetLastWriteTimeUtc(Salida, Momento.UtcDateTime.AddHours(-9));
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 0));
+        StringWriter log = new();
+
+        using (FileStream candado = new(Salida + ".lock", FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+        {
+            int codigo = await Ejecutar("token", servidor, log, "--vigencia-horas", "8");
+
+            Assert.Equal(Sincronizacion.Exito, codigo);
+        }
+
+        Assert.Empty(servidor.Pedidos);
+        Assert.Equal("anterior", File.ReadAllText(Salida));
+    }
+
+    [Fact]
+    public async Task Al_terminar_no_deja_el_candado()
+    {
+        StringWriter log = new();
+
+        await Ejecutar("token", QueResponde(Pagina(1, 0)), log);
+
+        Assert.Equal(new[] { "sonar-accepted.json" }, Directory.GetFiles(carpeta).Select(Path.GetFileName).ToArray());
+    }
+
+    // ------------------------------------------------------------ pausa tras una falla
+
+    private string Falla => Salida + ".falla";
+
+    [Fact]
+    public async Task Tras_una_falla_las_corridas_automaticas_no_reintentan_por_15_minutos()
+    {
+        // Con Sonar caído, cada proyecto de la solución intentaría de nuevo en cada build.
+        StringWriter log = new();
+        ServidorSonarFalso caido = QueFallaCon(HttpStatusCode.ServiceUnavailable);
+
+        int primera = await Ejecutar("token", caido, log, "--vigencia-horas", "8");
+        int segunda = await Sincronizacion.EjecutarAsync(
+            new[] { "--proyecto", Proyecto, "--salida", Salida, "--vigencia-horas", "8" },
+            "token", caido, log, () => Momento.AddMinutes(14));
+
+        Assert.Equal(Sincronizacion.ErrorDeSonar, primera);
+        Assert.Equal(Sincronizacion.Exito, segunda);
+        Assert.Single(caido.Pedidos);
+        Assert.True(File.Exists(Falla));
+    }
+
+    [Fact]
+    public async Task Pasada_la_pausa_vuelve_a_consultar()
+    {
+        StringWriter log = new();
+        await Ejecutar("token", QueFallaCon(HttpStatusCode.ServiceUnavailable), log, "--vigencia-horas", "8");
+        ServidorSonarFalso repuesto = QueResponde(Pagina(1, 0));
+
+        int codigo = await Sincronizacion.EjecutarAsync(
+            new[] { "--proyecto", Proyecto, "--salida", Salida, "--vigencia-horas", "8" },
+            "token", repuesto, log, () => Momento.AddMinutes(16));
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Single(repuesto.Pedidos);
+        Assert.False(File.Exists(Falla));
+    }
+
+    [Fact]
+    public async Task Una_corrida_manual_ignora_la_pausa()
+    {
+        // Sin --vigencia-horas es una persona la que la corre: quiere el resultado ya,
+        // por ejemplo después de corregir el token.
+        StringWriter log = new();
+        await Ejecutar("token", QueFallaCon(HttpStatusCode.Unauthorized), log, "--vigencia-horas", "8");
+        ServidorSonarFalso repuesto = QueResponde(Pagina(1, 0));
+
+        int codigo = await Ejecutar("token", repuesto, log);
+
+        Assert.Equal(Sincronizacion.Exito, codigo);
+        Assert.Single(repuesto.Pedidos);
+        Assert.False(File.Exists(Falla));
+    }
 }
