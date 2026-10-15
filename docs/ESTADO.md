@@ -16,7 +16,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | ⬜ Sin empezar. Stack decidido, diseño en `FASE-6-APP.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 en curso: paso 1 de 11 (scaffold y conexión a la base). Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 
@@ -104,6 +104,8 @@ el diseño de las fases 4 y 7.
 | D8.1 | `CS1591` se apaga **en todos lados**, vía el `.globalconfig` del paquete |
 | D8.3 | Los analyzers del SDK **entran al inventario** |
 | D5 | LAIN005: se exceptúan en la regla los operators, el `Main` que es **punto de entrada real** y los extension methods sobre tipos **definidos fuera del proyecto** que se compila (incluye otros proyectos de la solución). Además se exceptúan las fuentes de datos de `[MemberData]` de xUnit. Detalle en `rules/LAIN005.md` |
+| D6.1 | Decisores iniciales: **Federico Sánchez** y **Pablo Revert** (seed). El resto entra como analista; los cambios de rol se hacen desde la app |
+| 6-B | La app queda **pública con login** (Google restringido al dominio de Lainco; GitHub solo para usuarios dados de alta) |
 
 ### Abiertas — hacen falta para la Fase 3
 

@@ -373,8 +373,8 @@ La app alerta cuando:
 
 | # | Decisión | Opciones |
 |---|---|---|
-| D8 | Stack de la app | A definir. |
-| D6.1 | Quiénes tienen rol decisor | Lista de personas / equipo de la plataforma de repos. |
+| D8 | Stack de la app | **Resuelta (2026-09-23)**: ver `docs/FASE-6-APP.md`. |
+| D6.1 | Quiénes tienen rol decisor | **Resuelta (2026-10-15)**: Federico Sánchez y Pablo Revert, cargados por seed. Los demás usuarios entran como analistas. |
 | D6.2 | Fuente de las normas de diseño para la pre-clasificación | Documentación existente del equipo (exportada y versionada) / archivo en el repo. |
 | D6.3 | Proveedor y modelo de IA | Compartir la decisión D7.1 de la Fase 7. |
 | D6.4 | Período mínimo de prueba | Ej.: dos semanas o N corridas. |

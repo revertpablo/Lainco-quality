@@ -103,7 +103,7 @@ La sincronización de ~500 reglas entra holgada en el límite de 300 s de una fu
 **Auth.js (NextAuth v5)** con dos proveedores:
 
 - **Google** — restringido al dominio de Google Workspace de Lainco, validando el `hd` del perfil en el callback de `signIn`. Es el camino normal: el equipo ya tiene esa identidad.
-- **GitHub** — para que las cuentas que operan contra GitHub Packages y los PRs de configuración puedan entrar con la misma identidad que usan en los repos.
+- **GitHub** — para que las cuentas que operan contra GitHub Packages y los PRs de configuración puedan entrar con la misma identidad que usan en los repos. **Solo entran usuarios ya dados de alta** en la tabla `usuario` (resuelto el 2026-10-15): un decisor carga el usuario de GitHub; sin eso, el login se rechaza. A diferencia de Google, GitHub no tiene un dominio que acote quién es de Lainco.
 
 **Los roles viven en la tabla `usuario` de la app, no en el proveedor de identidad.** El proveedor solo dice *quién sos*; la app dice *qué podés hacer*. Esto:
 
@@ -111,7 +111,7 @@ La sincronización de ~500 reglas entra holgada en el límite de 300 s de una fu
 - deja el cambio de rol registrado como una decisión más, con autor y fecha;
 - evita que agregar a alguien a un equipo de GitHub le dé, de rebote, permiso para tocar el quality gate.
 
-El primer usuario decisor se carga por seed en la migración inicial.
+Los decisores iniciales (D6.1, resuelta el 2026-10-15) se cargan por seed: Federico Sánchez y Pablo Revert.
 
 **Tokens de servicio** (para el job de prueba de 6.5 y el CI): tabla aparte de tokens con hash, alcance y fecha de expiración. No entran por Auth.js; se validan en el Route Handler.
 
@@ -184,7 +184,7 @@ Al terminar el paso 11 se cumplen los cinco criterios de aceptación de 6.1 en `
 | # | Punto | Por qué importa |
 |---|---|---|
 | A | **Confidencialidad.** El inventario de reglas no tiene código de clientes, pero la entrega 6.5 guarda fragmentos de código en `muestra_prueba`, y la Fase 7 guarda `evidencia` de los hallazgos. Eso sí es código de clientes alojado en un tercero. | Hay que confirmar que es aceptable antes de llegar a 6.5, o decidir ahí que se guardan solo referencias (archivo + línea) sin el fragmento. |
-| B | **¿La app queda expuesta a internet?** | En Vercel lo está por defecto. Si hace falta restringir, se puede con Vercel Firewall o exigiendo VPN, pero conviene decidirlo antes de desplegar. |
+| B | **¿La app queda expuesta a internet?** | **Resuelto (2026-10-15): sí, pública con login.** Cualquiera llega a la pantalla de login; solo entran cuentas del dominio de Lainco (Google) o usuarios dados de alta (GitHub). `/api/salud` es la única ruta sin sesión y no expone datos. |
 | C | D6.6 — frecuencia de sincronización | Se asume diaria hasta que se defina. |
 | D | D6.4 — período mínimo de prueba | Recién hace falta en 6.5. |
 | E | D6.5 — repositorios del job de prueba | Recién hace falta en 6.5. |
