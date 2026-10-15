@@ -14,7 +14,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
-| 4 — Suppressor | 🟡 En curso: tareas 1 (`tools/sonar-sync`), 2 (target de MSBuild) y 3 (suppressor) listas; falta `LaincoSuppressAccepted` |
+| 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
 | 6 — App de catálogo | ⬜ Sin empezar. Stack decidido, diseño en `FASE-6-APP.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
@@ -34,13 +34,22 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
   cada build local (cada 8 horas, nunca en CI, nunca rompe el build). La sample tiene
   `LaincoSonarProyecto`. Probado con un repo consumidor de prueba en 13 escenarios.
 - **`Lainco.Analyzers.Suppressor`** oculta en el IDE y en el build local los issues que
-  figuran en `sonar-accepted.json` (archivo + regla + mensaje). 16 tests. Probado de punta
-  a punta con el compilador real.
+  figuran en `sonar-accepted.json` (archivo + regla + mensaje). 19 tests. Probado de punta
+  a punta con el compilador real. Solo actúa con `LaincoSuppressAccepted` en `true`: el
+  `.targets` la fuerza a `false` en CI.
 - La **sample** consume el paquete y produce advertencias solo de reglas LAIN: LAIN004
   (×2, en `Articulo.cs`) y LAIN005 (en `CalculadorDeTotales.cs`).
 - **GitHub Actions** analiza la sample en cada push a `main` y en cada PR.
 - Los issues **llegan a SonarQube Cloud** como `external_roslyn:LAIN004`.
 - El **quality gate `Lainco`** falla ante un issue nuevo (verificado con el PR #1).
+
+## Fase 4 — criterios de aceptación
+
+| Criterio | Estado |
+|---|---|
+| Aceptar un issue en Sonar y refrescar hace que desaparezca del IDE | ✅ |
+| En CI el issue sigue llegando a Sonar y sigue figurando como aceptado | ✅ |
+| Sin token o sin red, el build local funciona igual | ✅ (probado: sin token, Sonar caído, timeout, token rechazado) |
 
 ## Fase 2 — qué falta
 
@@ -147,7 +156,7 @@ Requisitos: **.NET SDK 8** (o superior), **git**, y `gh` opcional.
 git clone https://github.com/revertpablo/Lainco-quality.git
 cd Lainco-quality
 
-# 1. Tests de los analyzers y el suppressor — deben pasar 58
+# 1. Tests de los analyzers y el suppressor — deben pasar 61
 dotnet test src/dotnet/Lainco.Analyzers.sln
 
 # 2. Empaquetar: la sample consume el paquete desde este feed local,

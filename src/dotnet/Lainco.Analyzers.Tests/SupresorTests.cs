@@ -210,6 +210,43 @@ public class SupresorTests
             Descripcion(suprimido: false));
     }
 
+    // ------------------------------------------------------ activación (tarea 4)
+
+    [Fact]
+    public async Task Con_LaincoSuppressAccepted_en_false_no_suprime_nada()
+    {
+        // En CI la propiedad vale false: los issues aceptados tienen que seguir llegando a
+        // Sonar, que es donde figuran como aceptados.
+        string aceptados = Archivo(("Test0.cs", "LAIN004", MensajeDeDescripcion, "ACCEPTED"));
+
+        await VerificarConActivacionAsync(Articulo, aceptados, Aceptados, raiz: null, activacion: "false",
+            Codigo(suprimido: false),
+            Descripcion(suprimido: false));
+    }
+
+    [Fact]
+    public async Task Sin_LaincoSuppressAccepted_no_suprime_nada()
+    {
+        // Si la propiedad no llega (por ejemplo, el .targets del paquete no se importó),
+        // lo seguro es no ocultar nada.
+        string aceptados = Archivo(("Test0.cs", "LAIN004", MensajeDeDescripcion, "ACCEPTED"));
+
+        await VerificarConActivacionAsync(Articulo, aceptados, Aceptados, raiz: null, activacion: null,
+            Codigo(suprimido: false),
+            Descripcion(suprimido: false));
+    }
+
+    [Fact]
+    public async Task LaincoSuppressAccepted_no_distingue_mayusculas()
+    {
+        // MSBuild compara sin distinguir mayúsculas: 'True' tiene que valer igual que 'true'.
+        string aceptados = Archivo(("Test0.cs", "LAIN004", MensajeDeDescripcion, "ACCEPTED"));
+
+        await VerificarConActivacionAsync(Articulo, aceptados, Aceptados, raiz: null, activacion: "True",
+            Codigo(suprimido: false),
+            Descripcion(suprimido: true));
+    }
+
     // ------------------------------------------------------------------ detalles
 
     [Fact]

@@ -22,6 +22,10 @@ namespace Lainco.Analyzers.Suppressor;
 ///
 /// Si el archivo no está, no se puede leer o es de otra versión del formato, no se suprime
 /// nada: el programador ve todos los issues, que es lo seguro.
+///
+/// Solo actúa con la propiedad <c>LaincoSuppressAccepted</c> en <c>true</c> (Fase 4,
+/// tarea 4). El .targets del paquete la pone en <c>false</c> en CI: ahí los issues
+/// aceptados tienen que seguir llegando a SonarQube, que es donde figuran como aceptados.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SupresorDeAceptados : DiagnosticSuppressor
@@ -35,6 +39,13 @@ public sealed class SupresorDeAceptados : DiagnosticSuppressor
     /// carpeta del archivo de aceptados.
     /// </summary>
     public const string PropiedadRaiz = "build_property.LaincoSonarRaiz";
+
+    /// <summary>
+    /// Activa el suppressor. La pasa el .targets del paquete con
+    /// <c>CompilerVisibleProperty</c>: <c>true</c> en builds locales, <c>false</c> en CI.
+    /// Si no llega, el suppressor no hace nada.
+    /// </summary>
+    public const string PropiedadActivacion = "build_property.LaincoSuppressAccepted";
 
     /// <summary>
     /// Reglas que el suppressor puede ocultar. Roslyn exige declarar de antemano cada ID
@@ -65,6 +76,14 @@ public sealed class SupresorDeAceptados : DiagnosticSuppressor
     /// <summary>Suprime los diagnósticos LAIN que coinciden con un issue aceptado.</summary>
     public override void ReportSuppressions(SuppressionAnalysisContext context)
     {
+        AnalyzerConfigOptions opciones = context.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
+
+        if (!opciones.TryGetValue(PropiedadActivacion, out string? activacion)
+            || !string.Equals(activacion.Trim(), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         AdditionalText? texto = context.Options.AdditionalFiles.FirstOrDefault(archivo =>
             string.Equals(Rutas.NombreDeArchivo(archivo.Path), NombreDelArchivo, StringComparison.OrdinalIgnoreCase));
 
@@ -80,7 +99,7 @@ public sealed class SupresorDeAceptados : DiagnosticSuppressor
         }
 
         string raiz =
-            context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(PropiedadRaiz, out string? indicada)
+            opciones.TryGetValue(PropiedadRaiz, out string? indicada)
             && !string.IsNullOrWhiteSpace(indicada)
                 ? indicada
                 : Rutas.Carpeta(texto.Path);

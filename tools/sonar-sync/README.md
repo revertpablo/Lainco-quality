@@ -151,6 +151,7 @@ funciona igual y muestra un aviso (mensaje, no warning).
 | `LaincoSonarRaiz` | Raíz del repo git | Raíz del análisis de Sonar: las rutas del archivo son relativas a ella. Se busca hacia arriba la carpeta con `.git/HEAD` (o el archivo `.git`, en worktrees y submódulos). |
 | `LaincoSonarAceptados` | `$(LaincoSonarRaiz)sonar-accepted.json` | Ruta del archivo. |
 | `LaincoSonarSync` | `true` (`false` en CI) | `false` para apagarlo. |
+| `LaincoSuppressAccepted` | `true` (**siempre** `false` en CI) | Activa el suppressor. `false` para ver en el IDE también los issues aceptados. |
 
 Se pueden definir en el `Directory.Build.props` del repo o, para una sola máquina, como
 variables de entorno (por ejemplo `LaincoSonarVigenciaHoras=1`).
@@ -202,15 +203,26 @@ mensaje lleva el nombre completamente calificado del símbolo:
 Si el archivo no está, no es JSON válido o tiene otra `version`, **no se suprime nada**
 (y el suppressor nunca lanza excepciones, que en el IDE aparecerían como `AD0001`).
 
+### Activación: `LaincoSuppressAccepted` (tarea 4)
+
+El suppressor solo actúa si le llega `build_property.LaincoSuppressAccepted = true`
+(`CompilerVisibleProperty`). El `.targets` la define así:
+
+| Build | Valor | Por qué |
+|---|---|---|
+| Local | `true`, salvo que el repo o la máquina digan `false` | Ocultar lo que ya decidieron los revisores. |
+| CI (`CI`, `GITHUB_ACTIONS`, `TF_BUILD` o `ContinuousIntegrationBuild`) | `false`, **aunque el repo la defina en `true`** | Si un issue aceptado se suprimiera en CI, dejaría de llegar a Sonar y Sonar lo daría por corregido. |
+
+Si la propiedad no llega (por ejemplo, el `.targets` no se importó), el suppressor **no
+hace nada**: lo seguro es mostrar todo. La única forma de activarlo en CI es pasarla por
+línea de comandos (`-p:LaincoSuppressAccepted=true`), que MSBuild trata como global; no
+debería hacerse nunca.
+
 Cada regla suprimible tiene su `SuppressionDescriptor` (`LAINS004` suprime `LAIN004`, y
 así). Roslyn exige declararlos de antemano: **al crear una regla nueva hay que sumarla a
 la lista de `SupresorDeAceptados`**. Un test (`Cada_regla_LAIN_tiene_su_supresion`) falla
 si falta alguna.
 
-## Pendiente (resto de la Fase 4)
+## Pendiente
 
-- **Tarea 4**: la propiedad `LaincoSuppressAccepted`, que en CI apaga el suppressor. Hoy
-  en CI no suprime porque el archivo no existe ahí (no se commitea y la sincronización no
-  corre), pero no hay un apagado explícito: si alguien commiteara el archivo, Sonar
-  dejaría de recibir esos issues.
 - **Reglas de ESLint** (Fase 5): cuando existan, habrá que sumar `lainco/<regla>` al filtro.

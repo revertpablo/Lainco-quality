@@ -8,6 +8,10 @@
     raíz del análisis (LaincoSonarRaiz), para que el suppressor del paquete oculte esos
     issues en el IDE y en el build.
 
+    Fase 4, tarea 4: el suppressor solo actúa con LaincoSuppressAccepted en true. Vale
+    true en builds locales y false en CI, donde los issues aceptados tienen que seguir
+    llegando a SonarQube.
+
     NuGet importa este archivo en todo proyecto que referencie Lainco.Analyzers, después
     del cuerpo del proyecto: los valores por defecto de abajo solo aplican si el proyecto
     o su Directory.Build.props no definieron la propiedad.
@@ -30,6 +34,8 @@
       LaincoSonarRaiz           Raíz del análisis de Sonar. Por defecto, la raíz del repo git.
       LaincoSonarAceptados      Ruta del archivo. Por defecto, sonar-accepted.json en la raíz.
       LaincoSonarSync           false para apagar la sincronización.
+      LaincoSuppressAccepted    false para ver en el IDE también los issues aceptados.
+                                En CI vale false siempre, aunque se defina en true.
   -->
 
   <PropertyGroup>
@@ -58,6 +64,14 @@
     <LaincoSonarSync Condition="'$(LaincoSonarSync)' == '' and '$(_LaincoEsCI)' == 'true'">false</LaincoSonarSync>
     <LaincoSonarSync Condition="'$(LaincoSonarSync)' == ''">true</LaincoSonarSync>
 
+    <!--
+      En CI se fuerza a false sin mirar lo que haya definido el repo: si un issue aceptado
+      se suprimiera en CI, dejaría de llegar a Sonar y Sonar lo daría por corregido.
+      Localmente, true salvo que el repo o la máquina digan otra cosa.
+    -->
+    <LaincoSuppressAccepted Condition="'$(_LaincoEsCI)' == 'true'">false</LaincoSuppressAccepted>
+    <LaincoSuppressAccepted Condition="'$(LaincoSuppressAccepted)' == ''">true</LaincoSuppressAccepted>
+
     <_LaincoSonarSyncDll>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'tools', 'sonar-sync', 'sonar-sync.dll'))</_LaincoSonarSyncDll>
 
     <!-- DOTNET_HOST_PATH lo define el SDK; si no está, se usa el dotnet del PATH. -->
@@ -73,6 +87,7 @@
   -->
   <ItemGroup>
     <CompilerVisibleProperty Include="LaincoSonarRaiz" />
+    <CompilerVisibleProperty Include="LaincoSuppressAccepted" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(LaincoSonarAceptados)' != '' and Exists('$(LaincoSonarAceptados)')">

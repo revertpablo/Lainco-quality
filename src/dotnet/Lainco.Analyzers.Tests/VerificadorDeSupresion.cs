@@ -30,11 +30,24 @@ internal static class VerificadorDeSupresion
     /// <param name="aceptados">Contenido de sonar-accepted.json, o null si no hay archivo.</param>
     /// <param name="rutaDeAceptados">Ruta del archivo de aceptados.</param>
     /// <param name="raiz">Valor de la propiedad LaincoSonarRaiz, o null si no está definida.</param>
-    public static async Task VerificarAsync(
+    /// <remarks>Con LaincoSuppressAccepted = true, como en un build local.</remarks>
+    public static Task VerificarAsync(
         string codigo,
         string? aceptados,
         string rutaDeAceptados,
         string? raiz,
+        params DiagnosticResult[] esperados)
+    {
+        return VerificarConActivacionAsync(codigo, aceptados, rutaDeAceptados, raiz, "true", esperados);
+    }
+
+    /// <param name="activacion">Valor de la propiedad LaincoSuppressAccepted, o null si no está definida.</param>
+    public static async Task VerificarConActivacionAsync(
+        string codigo,
+        string? aceptados,
+        string rutaDeAceptados,
+        string? raiz,
+        string? activacion,
         params DiagnosticResult[] esperados)
     {
         Prueba test = new()
@@ -48,12 +61,21 @@ internal static class VerificadorDeSupresion
             test.TestState.AdditionalFiles.Add((rutaDeAceptados, aceptados));
         }
 
+        // Las propiedades de MSBuild le llegan al suppressor como build_property.* de un
+        // .globalconfig, que es lo que genera el SDK a partir de CompilerVisibleProperty.
+        string configuracion = "is_global = true\n";
+
         if (raiz != null)
         {
-            test.TestState.AnalyzerConfigFiles.Add((
-                "/.globalconfig",
-                "is_global = true\nbuild_property.LaincoSonarRaiz = " + raiz + "\n"));
+            configuracion += "build_property.LaincoSonarRaiz = " + raiz + "\n";
         }
+
+        if (activacion != null)
+        {
+            configuracion += "build_property.LaincoSuppressAccepted = " + activacion + "\n";
+        }
+
+        test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", configuracion));
 
         test.ExpectedDiagnostics.AddRange(esperados);
 
