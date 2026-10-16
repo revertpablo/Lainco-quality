@@ -2,7 +2,7 @@
 
 Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
-Última actualización: **2026-10-14**.
+Última actualización: **2026-10-16**.
 
 ---
 
@@ -16,7 +16,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | 🟡 Entrega 6.1 en curso: pasos 1 a 3 de 11 (scaffold, esquema y migraciones, máquina de estados). Ver `app/README.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 en curso: pasos 1 a 4 de 11 (scaffold, esquema y migraciones, máquina de estados, ingreso y roles). Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 
@@ -104,7 +104,7 @@ el diseño de las fases 4 y 7.
 | D8.1 | `CS1591` se apaga **en todos lados**, vía el `.globalconfig` del paquete |
 | D8.3 | Los analyzers del SDK **entran al inventario** |
 | D5 | LAIN005: se exceptúan en la regla los operators, el `Main` que es **punto de entrada real** y los extension methods sobre tipos **definidos fuera del proyecto** que se compila (incluye otros proyectos de la solución). Además se exceptúan las fuentes de datos de `[MemberData]` de xUnit. Detalle en `rules/LAIN005.md` |
-| D6.1 | Decisores iniciales: **Federico Sánchez** y **Pablo Revert** (seed). El resto entra como analista; los cambios de rol se hacen desde la app |
+| D6.1 | Decisores iniciales: **Federico Sánchez** y **Pablo Revert** (seed). El resto entra como analista. Los cambios de rol se van a hacer desde la app; hasta que haya pantalla de usuarios, por SQL |
 | 6-B | La app queda **pública con login** (Google restringido al dominio de Lainco; GitHub solo para usuarios dados de alta) |
 
 ### Abiertas — hacen falta para la Fase 3

@@ -7,8 +7,9 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 3** (máquina de estados). La página de inicio es
-provisoria: solo muestra si la base responde. Se reemplaza por el inventario en el paso 8.
+Entrega 6.1, **paso 4** (ingreso con Google y GitHub, y roles). La página de inicio es
+provisoria: muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol.
+Se reemplaza por el inventario en el paso 8.
 
 ## Puesta en marcha
 
@@ -32,13 +33,14 @@ poner `app`: la app no está en la raíz del repo.
 ```bash
 cd app
 vercel link                        # elegir el proyecto existente
-vercel env pull .env.local         # baja DATABASE_URL (no se commitea)
+vercel env pull .env.local         # baja DATABASE_URL y las de AUTH_ (no se commitea)
 npm install
 npm run dev
 ```
 
-Abrir <http://localhost:3000>: tiene que decir **"Base de datos conectada"** con la
-versión de Postgres. Si dice "No hay conexión", el mensaje indica la causa.
+Abrir <http://localhost:3000>: lleva a la pantalla de ingreso. Para que el ingreso
+funcione hacen falta las credenciales de Google y GitHub (ver [Ingreso y roles](#ingreso-y-roles)).
+`GET /api/salud` dice si la base responde, sin sesión.
 
 ## Base de datos
 
@@ -134,7 +136,7 @@ pruebas) se agregan con su propia migración cuando se implementan.
 | `npm start` | Sirve el build de producción. |
 | `npm run typecheck` | Genera los tipos de rutas de Next y corre `tsc`. |
 | `npm run lint` | ESLint. |
-| `npm test` | Tests (Vitest). |
+| `npm test` | Tests (Vitest). Los que usan la base se saltean si no está `DATABASE_URL_PRUEBAS` (ver [Tests](#tests)). |
 | `npm run db:generate` | Genera una migración a partir de los cambios en `src/db/esquema.ts`. |
 | `npm run db:migrate` | Aplica las migraciones pendientes. |
 | `npm run db:studio` | Drizzle Studio. |
@@ -161,6 +163,157 @@ exista y que ninguna transición hacia Incorporada admita operación masiva.
 `validarTransicion` valida una solicitud contra la tabla y devuelve todos los motivos de
 rechazo juntos; `MENSAJES_DE_RECHAZO` tiene el texto para el usuario de cada uno.
 
+## Ingreso y roles
+
+Auth.js (NextAuth v5) con dos proveedores (`docs/FASE-6-APP.md`, sección 5):
+
+- **Google**: solo cuentas del Google Workspace de `laincosoftware.com` con el email
+  verificado. Quien entra por primera vez se da de alta solo, como **analista**.
+- **GitHub**: solo usuarios **ya dados de alta** por su login. Uno que no está, no entra.
+- Un usuario con `activo = false` no entra por ninguno de los dos, y si tenía la sesión
+  abierta la pierde en el pedido siguiente.
+
+Quién entra lo decide `src/dominio/acceso.ts` (sin I/O, con tests). El dominio permitido
+es la constante `DOMINIO_DE_LAINCO` de ese archivo.
+
+**El rol vive en la tabla `usuario`**, no en Google ni en GitHub, y se lee de la base en
+cada pedido: un cambio de rol o una baja rigen enseguida, sin esperar a que venza la
+sesión. La cookie de sesión solo guarda el id del usuario.
+
+**Qué ve cada rol.** Las acciones sobre una regla son sus transiciones.
+`transicionesDisponibles(desde, rol)` (en `src/dominio/transiciones.ts`) da las que se le
+muestran a cada uno, a partir de la misma tabla `TRANSICIONES` que valida el cambio: un
+analista no ve las que requieren decisor, y lo que se muestra no puede discrepar con lo
+que se valida.
+
+### Dónde se verifica
+
+| Capa | Qué hace |
+|---|---|
+| `src/proxy.ts` | Filtro grueso: sin sesión, redirige a `/ingresar` (o `401` en `/api/`). No va a la base. Quedan afuera `/ingresar`, `/api/auth/*` y `/api/salud`. |
+| `src/auth/sesion.ts` | `usuarioActual()` / `exigirUsuario()`: el usuario de la sesión leído de la base, con su rol. **Cada página, Server Action y Route Handler que toca datos lo llama**: `proxy` no alcanza (ver la guía de Next en `node_modules/next/dist/docs/01-app/02-guides/authentication.md`). |
+| `src/auth/index.ts` | Configuración de Auth.js: al entrar, decide con `src/dominio/acceso.ts` y da de alta a los nuevos de Google (`src/auth/usuarios.ts`). |
+
+### Dar de alta un usuario de GitHub
+
+Por ahora, con SQL (la pantalla de usuarios queda para más adelante). El login va en
+minúsculas, como lo exige la base:
+
+```sql
+insert into "usuario" ("nombre", "githubLogin") values ('Nombre Apellido', 'login-de-github');
+```
+
+Si la persona ya entró con Google, se completa su fila en lugar de crear otra:
+
+```sql
+update "usuario" set "githubLogin" = 'login-de-github' where "email" = 'nombre.apellido@laincosoftware.com';
+```
+
+Cambiar el rol o dar de baja, igual:
+
+```sql
+update "usuario" set "rol" = 'decisor' where "email" = 'nombre.apellido@laincosoftware.com';
+update "usuario" set "activo" = false where "email" = 'nombre.apellido@laincosoftware.com';
+```
+
+### Credenciales (una sola vez)
+
+Cinco variables, todas secretas, en el proyecto de Vercel. Después, en cada máquina,
+`vercel env pull .env.local`.
+
+| Variable | De dónde sale |
+|---|---|
+| `AUTH_SECRET` | Texto aleatorio de 32 bytes (abajo). **Uno distinto por entorno.** |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Cliente OAuth de Google (abajo). El mismo en los tres entornos. |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | OAuth App de GitHub (abajo). Una app para Development y otra para Production. |
+
+`<produccion>` es el dominio de producción del proyecto de Vercel: **Settings → Domains**.
+
+**Google.** En <https://console.cloud.google.com>, con la cuenta de `laincosoftware.com`:
+
+1. **Proyecto**: crearlo con **Organización** `laincosoftware.com`. Si queda "Sin
+   organización", después no aparece la opción **Interno**.
+2. **Google Auth Platform** (o **APIs y servicios → Pantalla de consentimiento de
+   OAuth**) **→ Comenzar**. En **Público**, **Interno**: Google solo deja pasar cuentas
+   del Workspace, además del control de la app.
+3. **Clientes → Crear cliente**, tipo **Aplicación web**. En **URIs de redireccionamiento
+   autorizados**:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://<produccion>/api/auth/callback/google`
+
+   Un mismo cliente sirve para local y producción. El secreto se ve una sola vez.
+
+**GitHub.** En la organización de GitHub, **Settings → Developer settings → OAuth Apps →
+New Org OAuth App**. Una OAuth App admite **una sola** URL de callback, así que hacen falta
+dos. Después de registrar cada una, **Generate a new client secret** (se ve una sola vez).
+
+| App | Homepage URL | Authorization callback URL |
+|---|---|---|
+| `Catálogo de reglas (local)` | `http://localhost:3000` | `http://localhost:3000/api/auth/callback/github` |
+| `Catálogo de reglas` | `https://<produccion>` | `https://<produccion>/api/auth/callback/github` |
+
+**Cargarlas en Vercel.** Dentro de `app/`. Cada `vercel env add` pide el valor sin
+mostrarlo en pantalla:
+
+```powershell
+# Google: el mismo cliente en los tres entornos
+vercel env add AUTH_GOOGLE_ID production
+vercel env add AUTH_GOOGLE_ID preview
+vercel env add AUTH_GOOGLE_ID development
+vercel env add AUTH_GOOGLE_SECRET production
+vercel env add AUTH_GOOGLE_SECRET preview
+vercel env add AUTH_GOOGLE_SECRET development
+
+# GitHub: la app de producción en production, la local en development
+vercel env add AUTH_GITHUB_ID production
+vercel env add AUTH_GITHUB_SECRET production
+vercel env add AUTH_GITHUB_ID development
+vercel env add AUTH_GITHUB_SECRET development
+
+# AUTH_SECRET: generar uno nuevo antes de cada entorno y pegarlo
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+vercel env add AUTH_SECRET production
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+vercel env add AUTH_SECRET preview
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+vercel env add AUTH_SECRET development
+
+vercel env pull .env.local
+```
+
+`AUTH_SECRET` no se genera con `npx auth secret`: ese comando lo escribe directo en
+`.env.local`, que después pisa `vercel env pull`. En Preview no se carga GitHub: ver
+"Deploys de Preview" abajo.
+
+**Probar.** `npm run dev` y abrir <http://localhost:3000>. Con Google, un decisor
+cargado por seed entra como **Decisor**. Con GitHub, un login no cargado se rechaza con
+"no está dada de alta"; para que entre, darlo de alta (ver arriba).
+
+**Deploys de Preview.** Cada uno tiene una URL distinta, que no está registrada ni en
+Google ni en GitHub, así que ahí el ingreso no funciona todavía. Se resuelve al configurar
+el despliegue (Auth.js lo resuelve con `AUTH_REDIRECT_PROXY_URL`).
+
+**`next start` en local** (no `next dev`): necesita `AUTH_TRUST_HOST=true`. En Vercel y en
+`next dev` no hace falta.
+
+## Tests
+
+`npm test` corre todos. Los de `tests/dominio/` no necesitan base ni red.
+
+Los de `tests/auth/` prueban el ingreso contra una base real (alta, duplicados, ingresos
+simultáneos, bajas). Necesitan una base **de pruebas** con las migraciones aplicadas, en
+`DATABASE_URL_PRUEBAS`; sin esa variable se saltean. No usan `DATABASE_URL` a propósito,
+para no escribir por error en la base de desarrollo. Crean usuarios con el prefijo
+`prueba-ingreso-` y los borran al terminar.
+
+```powershell
+$env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
+$env:DATABASE_URL_PRUEBAS = $env:DATABASE_URL; npm test
+Remove-Item Env:DATABASE_URL, Env:DATABASE_URL_PRUEBAS
+```
+
+Un branch de Neon descartable sirve como base de pruebas.
+
 ## Chequeo de salud
 
 `GET /api/salud` devuelve `200` si la base responde y `503` si no. No requiere sesión y
@@ -170,9 +323,11 @@ despliegue.
 ## Notas de Next.js 16
 
 - **Cache Components está activo** (`cacheComponents` en `next.config.ts`). Todo lo que
-  lee la base en cada pedido llama a `connection()` y va dentro de un `<Suspense>`: si
-  no, Next intenta prerenderizarlo en el build. Ver `src/app/page.tsx`.
-- `middleware` ahora se llama **`proxy`** (se va a usar en el paso 4, autenticación).
+  lee la sesión o la base en cada pedido va dentro de un `<Suspense>`: si no, Next intenta
+  prerenderizarlo en el build. Leer la sesión ya marca el componente como dinámico; lo que
+  lee la base **sin** leer la sesión llama además a `connection()` (ver
+  `src/app/api/salud/route.ts`).
+- `middleware` ahora se llama **`proxy`**: `src/proxy.ts`. Corre en Node.js, no en Edge.
 - `AGENTS.md` lo escribe `next dev`: apunta a la documentación de esta versión de Next,
   que está en `node_modules/next/dist/docs/`.
 - Fuentes del sistema en lugar de `next/font/google`, para que el build no dependa de
@@ -183,10 +338,12 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). api/salud: chequeo de salud.
+│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud.
+│   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   └── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida).
-├── tests/            # Tests (Vitest). tests/dominio/ no necesita base ni red.
+│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra).
+│   └── proxy.ts      # Sin sesión, a /ingresar.
+├── tests/            # Tests (Vitest). tests/dominio/ no necesita base ni red; tests/auth/ necesita una base de pruebas.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
 └── .env.example

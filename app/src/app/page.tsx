@@ -1,46 +1,78 @@
-import { connection } from "next/server";
+import { asc } from "drizzle-orm";
 import { Suspense } from "react";
 
-import { verificarBase } from "@/db/salud";
+import { signOut } from "@/auth";
+import { exigirUsuario } from "@/auth/sesion";
+import { obtenerDb } from "@/db/cliente";
+import { estado } from "@/db/esquema";
+import { transicionesDisponibles } from "@/dominio/transiciones";
 
 /**
- * Página provisoria del paso 1 de la entrega 6.1: confirma que la app levanta y se
- * conecta a la base. Se reemplaza por el inventario en el paso 8.
+ * Página de inicio provisoria. Muestra quién entró, con qué rol, y qué cambios de estado
+ * puede hacer ese rol: es la verificación del paso 4 de la entrega 6.1 ("un analista no
+ * ve las acciones de decisor"). Se reemplaza por el inventario en el paso 8, donde esas
+ * mismas acciones aparecen sobre cada regla.
  */
 export default function Inicio() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-12">
-      <header>
-        <h1 className="text-2xl font-semibold">Catálogo de reglas</h1>
-        <p className="text-sm opacity-70">Lainco Quality — Fase 6, entrega 6.1</p>
-      </header>
-
-      <Suspense fallback={<p className="text-sm opacity-70">Verificando la base de datos…</p>}>
-        <EstadoDeLaBase />
+      <Suspense fallback={<p className="text-sm opacity-70">Cargando…</p>}>
+        <Contenido />
       </Suspense>
     </main>
   );
 }
 
-async function EstadoDeLaBase() {
-  // Se verifica en cada pedido, no una vez en el build.
-  await connection();
-
-  const base = await verificarBase();
-
-  if (!base.ok) {
-    return (
-      <section className="rounded-md border border-red-500/40 bg-red-500/10 p-4 text-sm">
-        <p className="font-medium">No hay conexión con la base de datos.</p>
-        <p className="mt-1 break-words font-mono text-xs opacity-80">{base.error}</p>
-      </section>
-    );
-  }
+async function Contenido() {
+  const usuario = await exigirUsuario();
+  const estados = await obtenerDb().select().from(estado).orderBy(asc(estado.orden));
+  const descripcion = new Map(estados.map((e) => [e.codigo, e.descripcion]));
 
   return (
-    <section className="rounded-md border border-green-600/40 bg-green-600/10 p-4 text-sm">
-      <p className="font-medium">Base de datos conectada ({base.latenciaMs} ms).</p>
-      <p className="mt-1 break-words font-mono text-xs opacity-80">{base.version}</p>
-    </section>
+    <>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Catálogo de reglas</h1>
+          <p className="text-sm opacity-70">
+            {usuario.nombre} · <span data-rol={usuario.rol}>{usuario.rolDescripcion}</span>
+          </p>
+        </div>
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/ingresar" });
+          }}
+        >
+          <button type="submit" className="text-sm underline opacity-70 hover:opacity-100">
+            Salir
+          </button>
+        </form>
+      </header>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Cambios de estado que podés hacer</h2>
+        <ul className="flex flex-col gap-3 text-sm">
+          {estados.map((e) => {
+            const disponibles = transicionesDisponibles(e.codigo, usuario.rol);
+            return (
+              <li key={e.codigo}>
+                <p className="font-medium">Desde {e.descripcion}</p>
+                {disponibles.length === 0 ? (
+                  <p className="opacity-70">Ninguno.</p>
+                ) : (
+                  <ul className="pl-5">
+                    {disponibles.map((t) => (
+                      <li key={t.hacia} data-transicion={`${t.desde}-${t.hacia}`}>
+                        → {descripcion.get(t.hacia) ?? t.hacia}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </>
   );
 }

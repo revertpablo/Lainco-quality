@@ -192,6 +192,22 @@ export function buscarTransicion(desde: Estado, hacia: Estado): Transicion | und
 }
 
 /**
+ * El rol alcanza para hacer la transición, sin mirar sus demás requisitos. Es la única
+ * regla de permisos sobre transiciones: la usan la validación y la pantalla.
+ */
+export function rolPuedeHacer(transicion: Transicion, rol: Rol): boolean {
+  return !transicion.requiereDecisor || rol === Rol.Decisor;
+}
+
+/**
+ * Las transiciones que alguien con este rol puede hacer desde un estado: las acciones que
+ * se le muestran sobre una regla. Un analista no ve las que requieren decisor.
+ */
+export function transicionesDisponibles(desde: Estado, rol: Rol): Transicion[] {
+  return TRANSICIONES.filter((t) => t.desde === desde && rolPuedeHacer(t, rol));
+}
+
+/**
  * Valida un cambio de estado contra la tabla de transiciones.
  *
  * Si el cambio no existe, devuelve solo `transicionNoPermitida`. Si existe pero no
@@ -207,7 +223,7 @@ export function validarTransicion(solicitud: SolicitudDeTransicion): ResultadoDe
 
   const motivos: MotivoDeRechazo[] = [];
 
-  if (transicion.requiereDecisor && solicitud.rol !== Rol.Decisor) {
+  if (!rolPuedeHacer(transicion, solicitud.rol)) {
     motivos.push("requiereRolDecisor");
   }
 

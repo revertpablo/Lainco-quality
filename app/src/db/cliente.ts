@@ -14,7 +14,7 @@ import { conSslExplicito } from "./ssl";
  * necesita DATABASE_URL, y una variable faltante da un error claro en el momento en que
  * se la necesita.
  */
-export type Db = NodePgDatabase<typeof esquema>;
+export type Db = NodePgDatabase<typeof esquema> & { $client: Pool };
 
 let db: Db | undefined;
 

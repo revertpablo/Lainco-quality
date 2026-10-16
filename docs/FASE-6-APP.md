@@ -107,6 +107,8 @@ La sincronización de ~500 reglas entra holgada en el límite de 300 s de una fu
 - **Google** — restringido al dominio de Google Workspace de Lainco, validando el `hd` del perfil en el callback de `signIn`. Es el camino normal: el equipo ya tiene esa identidad.
 - **GitHub** — para que las cuentas que operan contra GitHub Packages y los PRs de configuración puedan entrar con la misma identidad que usan en los repos. **Solo entran usuarios ya dados de alta** en la tabla `usuario` (resuelto el 2026-10-15): un decisor carga el usuario de GitHub; sin eso, el login se rechaza. A diferencia de Google, GitHub no tiene un dominio que acote quién es de Lainco.
 
+Quien entra con Google por primera vez se da de alta como analista (confirmado el 2026-10-16). Hasta que haya una pantalla de usuarios, el alta de usuarios de GitHub, los cambios de rol y las bajas se hacen por SQL (`app/README.md`, "Ingreso y roles"); el registro de cambios de rol como decisión queda para esa pantalla.
+
 **Los roles viven en la tabla `usuario` de la app, no en el proveedor de identidad.** El proveedor solo dice *quién sos*; la app dice *qué podés hacer*. Esto:
 
 - resuelve **D6.1** sin depender de la estructura de equipos de GitHub ni de grupos de Google;
@@ -168,7 +170,7 @@ En orden. Cada paso es verificable antes de pasar al siguiente.
 | 1 | Scaffold de Next.js, `vercel link`, `vercel integration add neon`, `vercel env pull` | La app levanta en local y se conecta a la base. |
 | 2 | Esquema Drizzle y primera migración | `drizzle-kit migrate` crea las tablas; seed de los decisores. **Hecho (2026-10-15)**: migraciones versionadas con `generate` + `migrate` en lugar de `push`, por la regla de "migraciones versionadas en el repo" de la sección 1; seed y valores de referencia como migraciones escritas a mano. Solo las tablas de 6.1; las demás, con su entrega. Nombres en camelCase y tablas de referencia en lugar de enums. |
 | 3 | Máquina de estados en `src/dominio/`, con tests primero | Tests que recorren toda la tabla de transiciones, permitidas y prohibidas. **Hecho (2026-10-16)**: `src/dominio/transiciones.ts`, 85 tests con Vitest. Masivas: toda transición salvo hacia Incorporada, configurable por fila. En prueba → Incorporada sin chequeo de resultados hasta 6.5. |
-| 4 | Auth.js con Google (dominio restringido) + GitHub, y roles | Un usuario fuera del dominio no entra; un analista no ve las acciones de decisor. |
+| 4 | Auth.js con Google (dominio restringido) + GitHub, y roles | Un usuario fuera del dominio no entra; un analista no ve las acciones de decisor. **Hecho (2026-10-16)**: Auth.js 5 (beta) con sesión JWT; el rol se lee de `usuario` en cada pedido. Quién entra, en `src/dominio/acceso.ts`; qué acciones ve cada rol, con `transicionesDisponibles` sobre la misma tabla de transiciones. Google: dominio y email verificados; los nuevos entran como analistas. GitHub: solo dados de alta. El alta de usuarios de GitHub y los cambios de rol, por SQL hasta que haya pantalla de usuarios. |
 | 5 | Cliente de la Web API de Sonar, con paginación | Test contra respuestas grabadas. |
 | 6 | Job `sincronizar-sonar` + endpoint de cron + botón a demanda | Primera corrida carga todas las reglas de `cs` y `ts` en Pendiente; la segunda no cambia nada. |
 | 7 | API de transiciones (individual y masiva) sobre la función de dominio | Un intento de incorporación masiva se rechaza. |
