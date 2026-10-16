@@ -1,0 +1,23 @@
+{
+  "fecha": "2026-10-16T23:17:42.481Z",
+  "url": "https://sonarcloud.io",
+  "organizacion": "revertpablo",
+  "tamanoDePagina": 100,
+  "parametros": {
+    "organization": "revertpablo",
+    "languages": "<lenguaje>",
+    "statuses": "READY,BETA,DEPRECATED",
+    "include_external": "false",
+    "ps": "100"
+  },
+  "lenguajes": {
+    "cs": {
+      "total": 515,
+      "paginas": 6
+    },
+    "ts": {
+      "total": 608,
+      "paginas": 7
+    }
+  }
+}

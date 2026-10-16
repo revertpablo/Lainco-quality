@@ -50,6 +50,8 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 3. Registra cada corrida en un log de sincronización: fecha, reglas nuevas, modificadas y deprecadas.
 
 > Verificar en la documentación de la Web API de SonarQube Cloud los nombres exactos de parámetros y campos (organización, lenguajes, campos adicionales, tamaño de página) antes de implementar.
+>
+> **Verificado (2026-10-16)** contra el código de la Web API (`SearchAction.java`, `search-example.json`) y contra respuestas reales de SonarQube Cloud: `organization`, `languages`, `statuses`, `include_external`, `ps` (máximo 500) y `p`; no devuelve más de 10.000 resultados. Sin `f` vienen todos los campos. La descripción se toma de `descriptionSections` (SonarQube Cloud manda también `htmlDesc` y `mdDesc`) y se oculta sin token. SonarQube Cloud pagina con `total`/`p`/`ps`, no con `paging`, y no manda `updatedAt`. Las reglas eliminadas no aparecen en la búsqueda: se detectan porque faltan.
 
 ---
 

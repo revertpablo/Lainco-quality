@@ -1,0 +1,10 @@
+{
+  "estado": 404,
+  "cuerpo": {
+    "errors": [
+      {
+        "msg": "No organization with key 'organizacion-que-no-existe-lainco-0000'"
+      }
+    ]
+  }
+}

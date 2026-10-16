@@ -7,7 +7,7 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 4** (ingreso con Google y GitHub, y roles). La página de inicio es
+Entrega 6.1, **paso 5** (cliente de la Web API de Sonar). La página de inicio es
 provisoria: muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol.
 Se reemplaza por el inventario en el paso 8.
 
@@ -140,6 +140,7 @@ pruebas) se agregan con su propia migración cuando se implementan.
 | `npm run db:generate` | Genera una migración a partir de los cambios en `src/db/esquema.ts`. |
 | `npm run db:migrate` | Aplica las migraciones pendientes. |
 | `npm run db:studio` | Drizzle Studio. |
+| `npm run sonar:grabar` | Graba respuestas reales de SonarQube Cloud para los tests (ver [SonarQube](#sonarqube)). |
 
 ## Ciclo de vida de las reglas
 
@@ -296,9 +297,93 @@ el despliegue (Auth.js lo resuelve con `AUTH_REDIRECT_PROXY_URL`).
 **`next start` en local** (no `next dev`): necesita `AUTH_TRUST_HOST=true`. En Vercel y en
 `next dev` no hace falta.
 
+## SonarQube
+
+`src/sonar/cliente.ts` lee el catálogo de reglas de SonarQube Cloud con
+`api/rules/search`. Lo va a usar el job de sincronización (paso 6).
+
+- Pide las reglas de **un lenguaje** (`cs`, `ts`), en estado `READY`, `BETA` o
+  `DEPRECATED`, sin las externas (`external_roslyn:LAIN005` y demás no son reglas de
+  Sonar). Pagina de a 500, el máximo de la API.
+- Devuelve cada regla con los nombres del dominio (`ReglaDeSonar`): clave, nombre,
+  estado, tipo, severidad, tags, atributo de clean code, impactos, parámetros y
+  descripción (las secciones de Sonar unidas, en HTML).
+- **Trae la lista completa o falla.** Si hay más de 10.000 reglas (el límite de la API),
+  si el total cambia entre páginas o si una regla viene repetida, lanza un error en vez de
+  devolver una lista a medias: con una lista incompleta, la sincronización daría por
+  eliminadas reglas que existen.
+- Reintenta hasta 3 veces las fallas de red y los HTTP 429 y 5xx. Los 401, 403, 404 y 400
+  no se reintentan; el error dice qué pasó, con el mensaje de Sonar. **Ningún error
+  incluye el token.**
+
+Variables de entorno (`src/sonar/configuracion.ts`):
+
+| Variable | Valor |
+|---|---|
+| `SONAR_URL` | Opcional. Por defecto, `https://sonarcloud.io`. |
+| `SONAR_ORGANIZACION` | Clave de la organización: hoy `revertpablo`. |
+| `LAINCO_SONAR_TOKEN` | Token de usuario de SonarQube Cloud (**My Account → Security**). Secreto. Es **la misma variable que usa `tools/sonar-sync`**: en una máquina que ya la tiene definida, la app la toma sin más configuración, porque una variable de entorno del sistema tiene prioridad sobre los archivos `.env`. Para leer reglas alcanza cualquier token de un miembro de la organización; sin token, Sonar oculta las descripciones. Desde la entrega 6.2 la app necesita en Vercel un token que pueda administrar Quality Profiles (`docs/setup-sonarcloud.md`, paso 3.1). |
+
+```powershell
+vercel env add SONAR_ORGANIZACION production   # y preview y development
+vercel env add LAINCO_SONAR_TOKEN production   # y preview; en development no hace falta si ya está en la máquina
+vercel env pull .env.local
+```
+
+### Respuestas grabadas
+
+Los tests de `tests/sonar/grabadas.test.ts` prueban el cliente contra respuestas reales de
+SonarQube Cloud, guardadas en `tests/fixtures/sonar/`. Para grabarlas (o volver a
+grabarlas, si Sonar cambia algo):
+
+```powershell
+npm run sonar:grabar
+```
+
+Usa las mismas variables (de la consola o de `.env.local`) y graba, en páginas de 100,
+todas las reglas de `cs` y `ts` (515 y 608 el 2026-10-16), más dos errores: token inválido
+y organización inexistente. Las páginas se guardan tal cual las devuelve Sonar,
+comprimidas (`.json.gz`): sin comprimir pesan unos 12 MB, porque cada regla trae la
+descripción en tres formatos. **El token no queda en ningún archivo.** Si algo falla, la
+grabación anterior queda como estaba.
+
+Sin grabación, esos tests se saltean; los de `tests/sonar/cliente.test.ts` (respuestas
+armadas a mano) corren siempre.
+
+Si en la terminal de VS Code falla con `ETIMEDOUT`, probar desde una terminal de
+PowerShell aparte (pasó el 2026-10-16 en una red sin proxy).
+
+### Proxy
+
+Node no usa el proxy configurado en Windows (el navegador y .NET sí). En una red que sale
+a internet por un proxy, `npm run sonar:grabar` y, en local, todo lo que consulte a Sonar
+fallan con `ETIMEDOUT` o `ENETUNREACH`. En Vercel no pasa.
+
+1. Ver qué proxy usa Windows:
+
+   ```powershell
+   netsh winhttp show proxy
+   Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' |
+     Select-Object ProxyEnable, ProxyServer, AutoConfigURL
+   ```
+
+   `ProxyServer` es `host:puerto`. Si en su lugar hay un `AutoConfigURL` (un archivo
+   `.pac`), el proxy está escrito adentro de ese archivo.
+
+2. Decirle a Node que use ese proxy (Node 22.21 o 24 en adelante):
+
+   ```powershell
+   $env:HTTPS_PROXY = "http://host:puerto"
+   $env:NODE_USE_ENV_PROXY = "1"
+   $env:NODE_USE_SYSTEM_CA = "1"   # si el proxy inspecciona HTTPS con un certificado propio
+   npm run sonar:grabar
+   ```
+
+   Para no repetirlo, se pueden definir como variables de entorno de usuario en Windows.
+
 ## Tests
 
-`npm test` corre todos. Los de `tests/dominio/` no necesitan base ni red.
+`npm test` corre todos. Los de `tests/dominio/` y `tests/sonar/` no necesitan base ni red.
 
 Los de `tests/auth/` prueban el ingreso contra una base real (alta, duplicados, ingresos
 simultáneos, bajas). Necesitan una base **de pruebas** con las migraciones aplicadas, en
@@ -342,12 +427,15 @@ app/
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra).
+│   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
 │   └── proxy.ts      # Sin sesión, a /ingresar.
-├── tests/            # Tests (Vitest). tests/dominio/ no necesita base ni red; tests/auth/ necesita una base de pruebas.
+├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
+├── tests/            # Tests (Vitest). tests/dominio/ y tests/sonar/ no necesitan base ni red; tests/auth/ necesita una base de pruebas.
+│   └── fixtures/sonar/  # Respuestas grabadas de SonarQube Cloud. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
 └── .env.example
 ```
 
-El resto de la estructura (`sonar/`, `ui/`) se agrega
+El resto de la estructura (`ui/`) se agrega
 en los pasos siguientes, según `docs/FASE-6-APP.md`, sección 7.
