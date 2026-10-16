@@ -87,19 +87,24 @@ Detalle de las tres últimas:
 - **`Main`**: se exceptúa solo el método que el compilador elige como punto de entrada.
   Un `Main` estático en una biblioteca, o en un ejecutable que no lo usa como entrada,
   dispara como cualquier otro método.
-- **Extension methods**: el tipo extendido es el del parámetro `this`. Es externo si está
-  definido fuera del proyecto que se compila: .NET, paquetes NuGet **y también otros
-  proyectos de la misma solución**, porque el analyzer ve un proyecto por vez. Se
-  consideran casos particulares:
+- **Extension methods**: un extension method se escribe porque no se puede modificar el
+  tipo. Si el tipo extendido (el del parámetro `this`) es del proyecto, el método va en el
+  tipo, y la regla dispara. Es externo si está definido fuera del proyecto que se compila:
+  .NET, paquetes NuGet **y también otros proyectos de la misma solución**, porque el
+  analyzer ve un proyecto por vez. Casos particulares:
 
-  | Parámetro `this` | Tipo que se evalúa | Resultado |
+  | Parámetro `this` | Qué se evalúa | Resultado |
   |---|---|---|
   | `this string` | `string` | Externo, no dispara. |
-  | `this IEnumerable<Pedido>` | `IEnumerable<T>`, no `Pedido` | Externo, no dispara. |
-  | `this decimal?` | `Nullable<T>` | Externo, no dispara. |
   | `this Pedido` (Pedido en el mismo proyecto) | `Pedido` | Propio, **dispara**. |
-  | `this Pedido[]` | `Pedido`, no el arreglo | Propio, **dispara**. |
-  | `this T` (genérico) | Ninguno concreto: puede ser cualquier tipo, también uno propio | **Dispara**. |
+  | `this decimal?` | `Nullable<T>` | Externo, no dispara. |
+  | `this Pedido[]`, `this T[]` | El arreglo, no sus elementos | No dispara: a un arreglo no se le pueden agregar métodos. |
+  | `this IEnumerable<Pedido>`, `this List<Pedido>` | `IEnumerable<T>`, `List<T>`: de .NET, no `Pedido` | Externo, no dispara. |
+  | `this Pedidos` (`Pedidos : IEnumerable<Pedido>`, del proyecto) | `Pedidos` | Propio, **dispara**: aunque sea una colección, el método se le puede agregar. |
+  | `this T` sin restricciones, o con `class`, `struct`, `new()` | Ninguno concreto | No dispara. |
+  | `this T` con `where T : Pedido` o `where T : IEntidad` (del proyecto) | La restricción | **Dispara**: el método se puede agregar a `Pedido` o a `IEntidad`. |
+  | `this T` con `where T : U` y `where U : Pedido` | Las restricciones, en cadena | **Dispara**. |
+  | `this T` con `where T : IComparable<Pedido>` | `IComparable<T>`, no `Pedido` | No dispara: se mira el tipo de la restricción, no sus argumentos, igual que con `IEnumerable<Pedido>`. |
 
 - **Fuentes de `[MemberData]`**: se exceptúa el método al que apunta algún
   `[MemberData]` del proyecto, resuelto como lo hace xUnit: por nombre (`nameof(...)` o

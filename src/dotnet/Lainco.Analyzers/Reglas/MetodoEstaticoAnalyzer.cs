@@ -125,32 +125,53 @@ public sealed class MetodoEstaticoAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Indica si el tipo que extiende el extension method está definido fuera del proyecto
-    /// que se compila. Los tipos de otros proyectos de la misma solución también cuentan
-    /// como externos: el analyzer ve un proyecto por vez.
+    /// Indica si el extension method extiende un tipo al que se le podría agregar el
+    /// método. Es el criterio de la excepción: un extension method se escribe porque no se
+    /// puede modificar el tipo; si el tipo es del proyecto, el método va en el tipo.
     /// </summary>
     private static bool ExtiendeUnTipoExterno(IMethodSymbol metodo, Compilation compilacion)
     {
-        ITypeSymbol extendido = metodo.Parameters[0].Type;
+        return !EsModificableEnElProyecto(
+            metodo.Parameters[0].Type,
+            compilacion,
+            new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default));
+    }
 
-        // Para 'this Pedido[]' lo que importa es Pedido, no el arreglo.
-        while (extendido is IArrayTypeSymbol arreglo)
-        {
-            extendido = arreglo.ElementType;
-        }
-
-        // 'this T' puede extender cualquier tipo, también los del proyecto: no hay un
-        // tipo externo concreto que justifique la excepción.
-        if (extendido is ITypeParameterSymbol)
+    /// <summary>
+    /// Indica si al tipo se le pueden agregar métodos en el proyecto que se compila. Los
+    /// tipos de otros proyectos de la misma solución cuentan como externos: el analyzer ve
+    /// un proyecto por vez.
+    /// </summary>
+    private static bool EsModificableEnElProyecto(
+        ITypeSymbol tipo,
+        Compilation compilacion,
+        HashSet<ITypeParameterSymbol> visitados)
+    {
+        // Un arreglo (Pedido[], T[]) es un tipo de .NET, aunque sus elementos sean del
+        // proyecto.
+        if (tipo is IArrayTypeSymbol)
         {
             return false;
         }
 
-        // Un tipo genérico construido (IEnumerable<Pedido>) pertenece al ensamblado de su
-        // definición (IEnumerable<T>), no al de sus argumentos de tipo.
-        return !SymbolEqualityComparer.Default.Equals(
-            extendido.ContainingAssembly,
-            compilacion.Assembly);
+        // 'this T': depende de sus restricciones. Sin restricciones, o con restricciones
+        // que no son tipos (class, struct, new()), no apunta a ningún tipo del proyecto.
+        // Con 'where T : Pedido' o 'where T : U' (y U : Pedido), sí.
+        if (tipo is ITypeParameterSymbol parametro)
+        {
+            if (!visitados.Add(parametro))
+            {
+                return false;
+            }
+
+            return parametro.ConstraintTypes.Any(
+                restriccion => EsModificableEnElProyecto(restriccion, compilacion, visitados));
+        }
+
+        // Un tipo genérico construido (IEnumerable<Pedido>, IComparable<Pedido>) pertenece
+        // al ensamblado de su definición, no al de sus argumentos de tipo. Una colección
+        // propia (Pedidos : IEnumerable<Pedido>) es del proyecto y dispara.
+        return SymbolEqualityComparer.Default.Equals(tipo.ContainingAssembly, compilacion.Assembly);
     }
 
     /// <summary>

@@ -254,8 +254,10 @@ public class LAIN005Tests
     }
 
     [Fact]
-    public async Task Extension_method_sobre_un_arreglo_de_un_tipo_del_proyecto_dispara()
+    public async Task Extension_method_sobre_un_arreglo_de_un_tipo_del_proyecto_no_dispara()
     {
+        // Un arreglo es un tipo de .NET: no se le pueden agregar métodos de instancia,
+        // aunque sus elementos sean del proyecto. Mismo criterio que IEnumerable<Pedido>.
         const string codigo = """
             namespace Dominio
             {
@@ -274,19 +276,76 @@ public class LAIN005Tests
             }
             """;
 
-        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
-            codigo,
-            Esperado(10, 27, "Dominio.ExtensionesDePedido.Cantidad"));
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
     }
 
     [Fact]
-    public async Task Extension_method_generico_sobre_el_parametro_de_tipo_dispara()
+    public async Task Extension_method_sobre_un_arreglo_de_arreglos_de_un_tipo_del_proyecto_no_dispara()
     {
-        // 'this T' extiende cualquier tipo, también los del proyecto: no hay un tipo
-        // externo concreto que justifique la excepción.
         const string codigo = """
             namespace Dominio
             {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public static class ExtensionesDePedido
+                {
+                    public static int Cantidad(this Pedido[][] lotes)
+                    {
+                        return lotes.Length;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
+    }
+
+    [Fact]
+    public async Task Metodo_estatico_comun_con_un_arreglo_de_un_tipo_del_proyecto_dispara()
+    {
+        // La excepción es solo para extension methods: sin 'this', el arreglo no cambia nada.
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public static class Calculos
+                {
+                    public static int Cantidad(Pedido[] pedidos)
+                    {
+                        return pedidos.Length;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
+            codigo,
+            Esperado(10, 27, "Dominio.Calculos.Cantidad"));
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_sin_restricciones_no_dispara()
+    {
+        // 'this T' sin restricciones no extiende ningún tipo del proyecto en particular.
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
                 public static class Extensiones
                 {
                     public static T Validado<T>(this T valor)
@@ -297,9 +356,264 @@ public class LAIN005Tests
             }
             """;
 
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_con_restricciones_que_no_son_tipos_no_dispara()
+    {
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T>(this T valor) where T : class, new()
+                    {
+                        return valor;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_restringido_a_una_clase_del_proyecto_dispara()
+    {
+        // 'where T : Pedido': el método se podría agregar a Pedido.
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T>(this T valor) where T : Pedido
+                    {
+                        return valor;
+                    }
+                }
+            }
+            """;
+
         await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
             codigo,
-            Esperado(5, 25, "Dominio.Extensiones.Validado"));
+            Esperado(14, 25, "Dominio.Extensiones.Validado"));
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_restringido_a_una_interfaz_del_proyecto_dispara()
+    {
+        // 'where T : IEntidad': el método se podría agregar a IEntidad (o a quienes la implementan).
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T>(this T valor) where T : System.IComparable, IEntidad
+                    {
+                        return valor;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
+            codigo,
+            Esperado(14, 25, "Dominio.Extensiones.Validado"));
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_restringido_por_otro_parametro_de_tipo_del_proyecto_dispara()
+    {
+        // 'where T : U' y 'where U : Pedido': T termina restringido a Pedido.
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T, U>(this T valor) where T : U where U : Pedido
+                    {
+                        return valor;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
+            codigo,
+            Esperado(14, 25, "Dominio.Extensiones.Validado"));
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_restringido_a_un_tipo_externo_con_argumento_del_proyecto_no_dispara()
+    {
+        // Se mira el tipo de la restricción (IComparable<T>, de .NET), no sus argumentos:
+        // mismo criterio que 'this IEnumerable<Pedido>'.
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T>(this T valor) where T : System.IComparable<Pedido>
+                    {
+                        return valor;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
+    }
+
+    [Fact]
+    public async Task Extension_method_sobre_un_arreglo_generico_no_dispara()
+    {
+        const string codigo = """
+            namespace Dominio
+            {
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public interface IEntidad
+                {
+                }
+
+                public static class Extensiones
+                {
+                    public static int Cantidad<T>(this T[] valores) where T : Pedido
+                    {
+                        return valores.Length;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(codigo);
+    }
+
+    [Fact]
+    public async Task Extension_method_sobre_una_coleccion_del_proyecto_dispara()
+    {
+        // Pedidos es del proyecto: el método se le puede agregar, aunque sea una colección.
+        // Las colecciones de .NET (IEnumerable<Pedido>, List<Pedido>) no disparan.
+        const string codigo = """
+            namespace Dominio
+            {
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public class Pedidos : IEnumerable<Pedido>
+                {
+                    private readonly List<Pedido> pedidos = new List<Pedido>();
+
+                    public IEnumerator<Pedido> GetEnumerator() => pedidos.GetEnumerator();
+
+                    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+                }
+
+                public static class Extensiones
+                {
+                    public static int Cantidad(this Pedidos pedidos)
+                    {
+                        return 0;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
+            codigo,
+            Esperado(22, 27, "Dominio.Extensiones.Cantidad"));
+    }
+
+    [Fact]
+    public async Task Extension_method_generico_restringido_a_una_coleccion_del_proyecto_dispara()
+    {
+        const string codigo = """
+            namespace Dominio
+            {
+                using System.Collections;
+                using System.Collections.Generic;
+
+                public class Pedido
+                {
+                    public decimal Total { get; set; }
+                }
+
+                public class Pedidos : IEnumerable<Pedido>
+                {
+                    private readonly List<Pedido> pedidos = new List<Pedido>();
+
+                    public IEnumerator<Pedido> GetEnumerator() => pedidos.GetEnumerator();
+
+                    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+                }
+
+                public static class Extensiones
+                {
+                    public static T Validado<T>(this T pedidos) where T : Pedidos
+                    {
+                        return pedidos;
+                    }
+                }
+            }
+            """;
+
+        await Verificador<MetodoEstaticoAnalyzer>.VerificarAsync(
+            codigo,
+            Esperado(22, 25, "Dominio.Extensiones.Validado"));
     }
 
     [Fact]
