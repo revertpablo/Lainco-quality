@@ -7,12 +7,13 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 2** (esquema y primera migración). La página de inicio es
+Entrega 6.1, **paso 3** (máquina de estados). La página de inicio es
 provisoria: solo muestra si la base responde. Se reemplaza por el inventario en el paso 8.
 
 ## Puesta en marcha
 
-Requisitos: **Node.js 20.9 o más nuevo** y la CLI de Vercel (`npm i -g vercel`).
+Requisitos: **Node.js 22.12 o más nuevo** (lo pide Vitest; Next pide 20.9) y la CLI de
+Vercel (`npm i -g vercel`).
 Todos los comandos se corren **dentro de `app/`**.
 
 ### Una sola vez por proyecto (ya hecho si el proyecto de Vercel existe)
@@ -133,9 +134,32 @@ pruebas) se agregan con su propia migración cuando se implementan.
 | `npm start` | Sirve el build de producción. |
 | `npm run typecheck` | Genera los tipos de rutas de Next y corre `tsc`. |
 | `npm run lint` | ESLint. |
+| `npm test` | Tests (Vitest). |
 | `npm run db:generate` | Genera una migración a partir de los cambios en `src/db/esquema.ts`. |
 | `npm run db:migrate` | Aplica las migraciones pendientes. |
 | `npm run db:studio` | Drizzle Studio. |
+
+## Ciclo de vida de las reglas
+
+`src/dominio/transiciones.ts` define la máquina de estados de `docs/FASE-6.md`
+(sección 4). La tabla `TRANSICIONES` es **la única definición** de qué cambios de estado
+existen y qué exige cada uno:
+
+| Campo | Qué significa |
+|---|---|
+| `requiereJustificacion` | Hace falta una justificación escrita (no vale solo espacios). |
+| `requiereSeveridad` | Hace falta elegir la severidad con la que se incorpora. |
+| `requiereDecisor` | Solo la puede hacer alguien con rol decisor. |
+| `requiereResultadosDePrueba` | Hacen falta resultados de prueba. Hoy en `false` en todas: se activa en En prueba → Incorporada con la entrega 6.5. |
+| `admiteMasiva` | Se puede aplicar a varias reglas a la vez. Hoy en `true` en toda transición que no va a Incorporada. |
+
+Para cambiar una regla del ciclo de vida se toca **solo su fila**. Los tests
+(`tests/dominio/transiciones.test.ts`) comparan la tabla contra el diseño de
+`FASE-6.md` y garantizan, entre otras cosas, que Pendiente de analizar → Incorporada no
+exista y que ninguna transición hacia Incorporada admita operación masiva.
+
+`validarTransicion` valida una solicitud contra la tabla y devuelve todos los motivos de
+rechazo juntos; `MENSAJES_DE_RECHAZO` tiene el texto para el usuario de cada uno.
 
 ## Chequeo de salud
 
@@ -161,11 +185,12 @@ app/
 ├── src/
 │   ├── app/          # Rutas (App Router). api/salud: chequeo de salud.
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   └── dominio/      # Reglas del negocio, sin I/O. valores.ts: códigos de los valores cerrados.
+│   └── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida).
+├── tests/            # Tests (Vitest). tests/dominio/ no necesita base ni red.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
 └── .env.example
 ```
 
-El resto de la estructura (`sonar/`, `ui/`, `tests/`) se agrega
+El resto de la estructura (`sonar/`, `ui/`) se agrega
 en los pasos siguientes, según `docs/FASE-6-APP.md`, sección 7.

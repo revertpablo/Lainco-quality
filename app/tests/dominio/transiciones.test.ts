@@ -1,0 +1,246 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  MENSAJES_DE_RECHAZO,
+  TRANSICIONES,
+  validarTransicion,
+  type MotivoDeRechazo,
+  type SolicitudDeTransicion,
+} from "@/dominio/transiciones";
+import { Estado, Rol } from "@/dominio/valores";
+
+/**
+ * Máquina de estados del ciclo de vida de una regla (entrega 6.1, paso 3).
+ *
+ * La especificación de abajo es una copia de la tabla "Transiciones permitidas" de
+ * docs/FASE-6.md (sección 4): los tests comparan el código contra el diseño, no contra
+ * sí mismo. Si el diseño cambia, se cambia acá y en src/dominio/transiciones.ts.
+ *
+ * La excepción son las operaciones masivas: cuáles las admiten se decide en un único
+ * lugar, el campo `admiteMasiva` de cada fila de TRANSICIONES (pedido del 2026-10-16).
+ * Los tests no repiten esa lista: verifican que la validación respete el campo y que
+ * ninguna transición hacia Incorporada lo tenga (FASE-6.md, sección 5).
+ */
+
+const { PendienteDeAnalizar, ARevisar, EnPrueba, Incorporada, Descartada } = Estado;
+
+interface Especificacion {
+  desde: Estado;
+  hacia: Estado;
+  justificacion: boolean;
+  severidad: boolean;
+  decisor: boolean;
+}
+
+const ESPECIFICACION: Especificacion[] = [
+  { desde: PendienteDeAnalizar, hacia: ARevisar, justificacion: false, severidad: false, decisor: false },
+  { desde: PendienteDeAnalizar, hacia: Descartada, justificacion: true, severidad: false, decisor: false },
+  { desde: PendienteDeAnalizar, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
+  { desde: ARevisar, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
+  { desde: ARevisar, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
+  { desde: ARevisar, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
+  { desde: EnPrueba, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
+  { desde: EnPrueba, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
+  { desde: EnPrueba, hacia: ARevisar, justificacion: false, severidad: false, decisor: false },
+  { desde: Incorporada, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
+  { desde: Incorporada, hacia: EnPrueba, justificacion: true, severidad: false, decisor: true },
+  { desde: Descartada, hacia: ARevisar, justificacion: true, severidad: false, decisor: false },
+];
+
+const ESTADOS = Object.values(Estado);
+
+const nombre = (desde: Estado, hacia: Estado) => `${desde} → ${hacia}`;
+
+const especificada = (desde: Estado, hacia: Estado) =>
+  ESPECIFICACION.find((e) => e.desde === desde && e.hacia === hacia);
+
+/** Una solicitud que cumple todos los requisitos posibles. */
+function completa(desde: Estado, hacia: Estado, cambios: Partial<SolicitudDeTransicion> = {}) {
+  return validarTransicion({
+    desde,
+    hacia,
+    rol: Rol.Decisor,
+    justificacion: "Justificación de prueba",
+    severidad: "MAJOR",
+    masiva: false,
+    resultadosDePruebaDisponibles: true,
+    ...cambios,
+  });
+}
+
+function motivos(resultado: ReturnType<typeof validarTransicion>): MotivoDeRechazo[] {
+  return resultado.valida ? [] : resultado.motivos;
+}
+
+// ---------------------------------------------------------------------------------
+
+describe("la tabla de transiciones", () => {
+  it("tiene exactamente las transiciones de FASE-6.md, sin repetidas", () => {
+    const enCodigo = TRANSICIONES.map((t) => nombre(t.desde, t.hacia)).sort();
+    const enDiseno = ESPECIFICACION.map((e) => nombre(e.desde, e.hacia)).sort();
+
+    expect(enCodigo).toEqual(enDiseno);
+    expect(new Set(enCodigo).size).toBe(enCodigo.length);
+  });
+
+  it("no tiene ninguna transición hacia Incorporada que admita operación masiva", () => {
+    // FASE-6.md, sección 5: cada regla que entra al gate se decide individualmente.
+    const masivasHaciaIncorporada = TRANSICIONES.filter(
+      (t) => t.hacia === Incorporada && t.admiteMasiva,
+    ).map((t) => nombre(t.desde, t.hacia));
+
+    expect(masivasHaciaIncorporada).toEqual([]);
+  });
+});
+
+describe("todas las combinaciones de estados", () => {
+  // El resultado esperado sale de la especificación y va en el título del test.
+  const combinaciones = ESTADOS.flatMap((desde) =>
+    ESTADOS.map((hacia) => {
+      const permitida = especificada(desde, hacia) !== undefined;
+      return { desde, hacia, permitida, esperado: permitida ? "está permitida" : "no está permitida" };
+    }),
+  );
+
+  it.each(combinaciones)("$desde → $hacia $esperado", ({ desde, hacia, permitida }) => {
+    // Con todos los requisitos cumplidos, solo pasan las transiciones del diseño.
+    const resultado = completa(desde, hacia);
+
+    if (permitida) {
+      expect(resultado.valida).toBe(true);
+    } else {
+      expect(motivos(resultado)).toEqual(["transicionNoPermitida"]);
+    }
+  });
+});
+
+describe("Pendiente de analizar → Incorporada", () => {
+  const casos = [Rol.Analista, Rol.Decisor].flatMap((rol) =>
+    [false, true].map((masiva) => ({ rol, masiva })),
+  );
+
+  it.each(casos)("se rechaza siempre (rol $rol, masiva $masiva)", ({ rol, masiva }) => {
+    // FASE-6.md, sección 4: toda regla que entra al gate pasa antes por revisión o prueba.
+    const resultado = completa(PendienteDeAnalizar, Incorporada, { rol, masiva });
+
+    expect(motivos(resultado)).toEqual(["transicionNoPermitida"]);
+  });
+});
+
+describe.each(ESPECIFICACION)("$desde → $hacia", (e) => {
+  if (e.justificacion) {
+    it("exige justificación", () => {
+      expect(motivos(completa(e.desde, e.hacia, { justificacion: undefined }))).toContain("faltaJustificacion");
+      expect(motivos(completa(e.desde, e.hacia, { justificacion: "" }))).toContain("faltaJustificacion");
+      expect(motivos(completa(e.desde, e.hacia, { justificacion: "   \n\t " }))).toContain("faltaJustificacion");
+    });
+  } else {
+    it("no exige justificación", () => {
+      expect(completa(e.desde, e.hacia, { justificacion: undefined }).valida).toBe(true);
+    });
+  }
+
+  if (e.severidad) {
+    it("exige severidad", () => {
+      expect(motivos(completa(e.desde, e.hacia, { severidad: undefined }))).toContain("faltaSeveridad");
+      expect(motivos(completa(e.desde, e.hacia, { severidad: "  " }))).toContain("faltaSeveridad");
+    });
+  } else {
+    it("no exige severidad", () => {
+      expect(completa(e.desde, e.hacia, { severidad: undefined }).valida).toBe(true);
+    });
+  }
+
+  if (e.decisor) {
+    it("exige rol decisor", () => {
+      expect(motivos(completa(e.desde, e.hacia, { rol: Rol.Analista }))).toContain("requiereRolDecisor");
+      expect(completa(e.desde, e.hacia, { rol: Rol.Decisor }).valida).toBe(true);
+    });
+  } else {
+    it("la puede hacer un analista", () => {
+      expect(completa(e.desde, e.hacia, { rol: Rol.Analista }).valida).toBe(true);
+    });
+  }
+
+  const fila = TRANSICIONES.find((t) => t.desde === e.desde && t.hacia === e.hacia);
+
+  if (fila?.admiteMasiva) {
+    it("se puede hacer en operación masiva, con los mismos requisitos", () => {
+      expect(completa(e.desde, e.hacia, { masiva: true }).valida).toBe(true);
+
+      if (e.justificacion) {
+        expect(motivos(completa(e.desde, e.hacia, { masiva: true, justificacion: undefined }))).toContain(
+          "faltaJustificacion",
+        );
+      }
+      if (e.decisor) {
+        expect(motivos(completa(e.desde, e.hacia, { masiva: true, rol: Rol.Analista }))).toContain(
+          "requiereRolDecisor",
+        );
+      }
+    });
+  } else {
+    it("no se puede hacer en operación masiva", () => {
+      expect(motivos(completa(e.desde, e.hacia, { masiva: true }))).toContain("noAdmiteOperacionMasiva");
+    });
+  }
+});
+
+describe("operaciones masivas", () => {
+  it("descartar en masa desde Pendiente lo puede hacer un analista", () => {
+    // FASE-6.md, sección 4: el analista puede "descartar masivamente desde Pendiente".
+    const resultado = completa(PendienteDeAnalizar, Descartada, { rol: Rol.Analista, masiva: true });
+
+    expect(resultado.valida).toBe(true);
+  });
+
+  it("nunca llevan a Incorporada", () => {
+    for (const desde of [ARevisar, EnPrueba]) {
+      expect(motivos(completa(desde, Incorporada, { masiva: true }))).toContain("noAdmiteOperacionMasiva");
+    }
+  });
+});
+
+describe("En prueba → Incorporada", () => {
+  it("por ahora no exige resultados de prueba (se activa en la entrega 6.5)", () => {
+    const resultado = completa(EnPrueba, Incorporada, { resultadosDePruebaDisponibles: false });
+
+    expect(resultado.valida).toBe(true);
+  });
+});
+
+describe("rechazos", () => {
+  it("informan todos los motivos juntos, no solo el primero", () => {
+    const resultado = validarTransicion({
+      desde: ARevisar,
+      hacia: Incorporada,
+      rol: Rol.Analista,
+      masiva: true,
+    });
+
+    expect(motivos(resultado).sort()).toEqual(
+      ["faltaJustificacion", "faltaSeveridad", "noAdmiteOperacionMasiva", "requiereRolDecisor"].sort(),
+    );
+  });
+
+  it("una transición que no existe no informa otros motivos", () => {
+    const resultado = validarTransicion({ desde: PendienteDeAnalizar, hacia: Incorporada, rol: Rol.Analista });
+
+    expect(motivos(resultado)).toEqual(["transicionNoPermitida"]);
+  });
+
+  it("cada motivo tiene un mensaje para el usuario", () => {
+    const todos: MotivoDeRechazo[] = [
+      "transicionNoPermitida",
+      "requiereRolDecisor",
+      "faltaJustificacion",
+      "faltaSeveridad",
+      "faltanResultadosDePrueba",
+      "noAdmiteOperacionMasiva",
+    ];
+
+    for (const motivo of todos) {
+      expect(MENSAJES_DE_RECHAZO[motivo]).toMatch(/\S/);
+    }
+  });
+});

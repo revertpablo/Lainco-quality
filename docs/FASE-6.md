@@ -84,6 +84,11 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 
 **No se puede pasar de "Pendiente de analizar" directo a "Incorporada":** toda regla que entra al quality gate pasa antes por revisión o por prueba.
 
+**Precisiones (2026-10-16), implementadas en `app/src/dominio/transiciones.ts`:**
+
+- **Operaciones masivas:** se admiten en toda transición permitida que no va hacia Incorporada (sección 5), con los mismos requisitos de rol y justificación que de a una. No solo en Pendiente → Descartada. Cuáles las admiten se configura en un único lugar: el campo `admiteMasiva` de cada transición.
+- **En prueba → Incorporada:** el requisito de resultados de prueba no se verifica hasta la entrega 6.5, que es la que produce esos resultados.
+
 ### Roles
 
 - **Analista:** cualquier miembro del equipo. Puede mover reglas entre Pendiente, A revisar y En prueba, y descartar masivamente desde Pendiente.
