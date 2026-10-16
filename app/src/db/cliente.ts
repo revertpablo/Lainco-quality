@@ -4,6 +4,7 @@ import { attachDatabasePool } from "@vercel/functions";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+import * as esquema from "./esquema";
 import { conSslExplicito } from "./ssl";
 
 /**
@@ -13,9 +14,11 @@ import { conSslExplicito } from "./ssl";
  * necesita DATABASE_URL, y una variable faltante da un error claro en el momento en que
  * se la necesita.
  */
-let db: NodePgDatabase | undefined;
+export type Db = NodePgDatabase<typeof esquema>;
 
-export function obtenerDb(): NodePgDatabase {
+let db: Db | undefined;
+
+export function obtenerDb(): Db {
   if (db) {
     return db;
   }
@@ -33,6 +36,6 @@ export function obtenerDb(): NodePgDatabase {
   // se suspenda. Fuera de Vercel no hace nada.
   attachDatabasePool(pool);
 
-  db = drizzle(pool);
+  db = drizzle(pool, { schema: esquema });
   return db;
 }

@@ -57,28 +57,30 @@ Fecha: 2026-09-23.
          decisiones)         profiles)               configuración)    entrega 6.3)
 ```
 
-**Regla de diseño:** todo cambio de estado pasa por una única función de dominio (`aplicarTransicion`) que valida la transición, el rol y la justificación, y escribe `estado_regla` + `decision` en la misma transacción. Ni la UI ni la API escriben el estado por su cuenta.
+**Regla de diseño:** todo cambio de estado pasa por una única función de dominio (`aplicarTransicion`) que valida la transición, el rol y la justificación, y escribe `estadoRegla` + `decision` en la misma transacción. Ni la UI ni la API escriben el estado por su cuenta.
 
 ---
 
 ## 3. Modelo de datos
 
-Traducción del modelo de la sección 11 de `FASE-6.md` a tablas de Postgres. Nombres en español, `snake_case`.
+Traducción del modelo de la sección 11 de `FASE-6.md` a tablas de Postgres. Nombres en español y en **camelCase** (tablas, columnas, claves, índices y restricciones), igual que en TypeScript.
+
+**Conjuntos cerrados de valores** (estado, origen, lenguaje, rol, estado de sincronización): **tablas de referencia** con `codigo` fijo (el que usa el programa, definido en `src/dominio/valores.ts`), `descripcion` (el texto para el usuario) y `orden`. Las columnas que los usan son claves foráneas a `codigo`. Se prefirieron a los enums de Postgres porque permiten un texto para mostrar distinto del código y cambiarlo sin tocar el esquema. (Resuelto el 2026-10-15.)
 
 | Tabla | Notas de implementación |
 |---|---|
-| `regla` | Clave natural `(origen, clave)` con índice único. `tags` y `parametros` como `jsonb`. `hash_descripcion` en `text`. |
-| `estado_regla` | Fila por regla (relación 1:1). Estado actual, severidad asignada, valores de parámetros. Es la tabla que consulta el generador de configuración. |
+| `regla` | Clave natural `(origen, clave)` con índice único. `tags` como `text[]` (con índice GIN, para filtrar con `@>`) y `parametros` como `jsonb`. `hash_descripcion` en `text`. |
+| `estadoRegla` | Fila por regla (relación 1:1). Estado actual, severidad asignada, valores de parámetros. Es la tabla que consulta el generador de configuración. |
 | `decision` | **Append-only.** Nunca se actualiza ni se borra: es el historial. `lote_id` agrupa las operaciones masivas. |
-| `sugerencia_ia` | Clave de cache `(regla_id, hash_descripcion, version_normas, version_evaluador)`. |
+| `sugerenciaIa` | Clave de cache `(regla_id, hash_descripcion, version_normas, version_evaluador)`. |
 | `relacion` | Bidireccional. Se guarda una fila y se consulta en ambos sentidos; `check (regla_a_id <> regla_b_id)` y único sobre el par normalizado. |
-| `corrida_prueba`, `resultado_prueba`, `muestra_prueba` | Entrega 6.5. |
+| `corridaPrueba`, `resultadoPrueba`, `muestraPrueba` | Entrega 6.5. |
 | `sincronizacion` | Log de cada corrida del job: fecha, origen, contadores. |
 | `publicacion` | Outbox: destino, payload, estado, intentos, último error. |
 | `usuario` | Identidad + rol (`analista` / `decisor`). Ver sección 5. |
-| `vista_guardada` | Nombre, usuario, filtros como `jsonb`, indicador de compartida. |
+| `vistaGuardada` | Nombre, usuario, filtros como `jsonb`, indicador de compartida. |
 
-**Índices que importan para el triage:** `estado_regla(estado)`, `regla(lenguaje, tipo)`, y un índice GIN sobre `regla.tags` para el descarte masivo por tag, que es la primera operación del triage inicial.
+**Índices que importan para el triage:** `estadoRegla(estado)`, `regla(lenguaje, tipo)`, y un índice GIN sobre `regla.tags` para el descarte masivo por tag, que es la primera operación del triage inicial.
 
 **Máquina de estados:** la tabla de transiciones permitidas de la sección 4 de `FASE-6.md` se codifica como una constante en TypeScript, no en la base. Cada entrada declara si exige justificación, si exige rol decisor y si admite operación masiva. Los tests recorren la tabla entera, incluyendo las transiciones prohibidas (en particular `Pendiente de analizar → Incorporada`, que debe fallar siempre).
 
@@ -90,7 +92,7 @@ Traducción del modelo de la sección 11 de `FASE-6.md` a tablas de Postgres. No
 |---|---|---|
 | `sincronizar-sonar` | Cron diario (D6.6) + botón en la app | Pagina `api/rules/search` por lenguaje, compara con lo almacenado, crea / actualiza / marca deprecadas, escribe una fila en `sincronizacion`. |
 | `procesar-publicaciones` | Cron cada 5 min | Toma filas pendientes de `publicacion` y llama a `activate_rule` / `deactivate_rule`. Reintentos con retroceso exponencial; tras N fallos queda en `fallida` y aparece como alerta en la app. |
-| `reconciliar-perfil` | Cron diario | Compara el Quality Profile real contra `estado_regla` y genera alertas de desvío (sección 10 de `FASE-6.md`). |
+| `reconciliar-perfil` | Cron diario | Compara el Quality Profile real contra `estadoRegla` y genera alertas de desvío (sección 10 de `FASE-6.md`). |
 
 La sincronización de ~500 reglas entra holgada en el límite de 300 s de una función de Vercel. Si al implementarla resultara ajustada, se parte por lenguaje en dos invocaciones.
 
@@ -164,7 +166,7 @@ En orden. Cada paso es verificable antes de pasar al siguiente.
 | # | Paso | Se verifica con |
 |---|---|---|
 | 1 | Scaffold de Next.js, `vercel link`, `vercel integration add neon`, `vercel env pull` | La app levanta en local y se conecta a la base. |
-| 2 | Esquema Drizzle y primera migración | `drizzle-kit push` crea las tablas; seed del usuario decisor. |
+| 2 | Esquema Drizzle y primera migración | `drizzle-kit migrate` crea las tablas; seed de los decisores. **Hecho (2026-10-15)**: migraciones versionadas con `generate` + `migrate` en lugar de `push`, por la regla de "migraciones versionadas en el repo" de la sección 1; seed y valores de referencia como migraciones escritas a mano. Solo las tablas de 6.1; las demás, con su entrega. Nombres en camelCase y tablas de referencia en lugar de enums. |
 | 3 | Máquina de estados en `src/dominio/`, con tests primero | Tests que recorren toda la tabla de transiciones, permitidas y prohibidas. |
 | 4 | Auth.js con Google (dominio restringido) + GitHub, y roles | Un usuario fuera del dominio no entra; un analista no ve las acciones de decisor. |
 | 5 | Cliente de la Web API de Sonar, con paginación | Test contra respuestas grabadas. |

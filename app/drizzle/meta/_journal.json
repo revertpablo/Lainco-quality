@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792101280142,
+      "tag": "0000_esquema_inicial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792101280975,
+      "tag": "0001_valores_de_referencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792101281735,
+      "tag": "0002_decisores_iniciales",
+      "breakpoints": true
+    }
+  ]
+}
