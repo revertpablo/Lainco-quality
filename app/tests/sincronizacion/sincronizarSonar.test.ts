@@ -1,4 +1,4 @@
-import { asc, count, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { Estado, Origen } from "@/dominio/valores";
@@ -41,7 +41,10 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
 
   async function limpiar() {
     await db().delete(aviso);
-    await db().delete(decision);
+    // Solo las decisiones de reglas de Sonar: otros tests usan la misma base en paralelo.
+    await db()
+      .delete(decision)
+      .where(inArray(decision.reglaId, db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Sonar))));
     await db().delete(regla).where(eq(regla.origen, Origen.Sonar));
     await db().delete(sincronizacion);
   }
@@ -49,8 +52,13 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
   /** Todo lo que la sincronización escribe, para comparar antes y después. */
   async function foto() {
     return {
-      reglas: await db().select().from(regla).orderBy(asc(regla.clave)),
-      estados: await db().select().from(estadoRegla).orderBy(asc(estadoRegla.reglaId)),
+      reglas: await db().select().from(regla).where(eq(regla.origen, Origen.Sonar)).orderBy(asc(regla.clave)),
+      estados: await db()
+        .select({ estado: estadoRegla })
+        .from(estadoRegla)
+        .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
+        .where(eq(regla.origen, Origen.Sonar))
+        .orderBy(asc(estadoRegla.reglaId)),
       avisos: await db().select().from(aviso).orderBy(asc(aviso.id)),
     };
   }
@@ -93,6 +101,8 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
     const estados = await db()
       .select({ estado: estadoRegla.estado, cantidad: count() })
       .from(estadoRegla)
+      .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
+      .where(eq(regla.origen, Origen.Sonar))
       .groupBy(estadoRegla.estado);
     expect(estados).toEqual([{ estado: Estado.PendienteDeAnalizar, cantidad: total }]);
 
@@ -101,7 +111,7 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
     const [{ marcadas }] = await db()
       .select({ marcadas: count() })
       .from(regla)
-      .where(isNotNull(regla.deprecadaEn));
+      .where(and(eq(regla.origen, Origen.Sonar), isNotNull(regla.deprecadaEn)));
     expect(marcadas).toBe(deprecadasEnSonar);
 
     // Todas quedan asociadas a la corrida que las trajo (filtro "nuevas").

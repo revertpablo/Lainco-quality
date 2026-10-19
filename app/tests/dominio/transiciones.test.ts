@@ -209,6 +209,32 @@ describe("En prueba → Incorporada", () => {
   });
 });
 
+describe("parámetros", () => {
+  // Al incorporar se pueden elegir valores para los parámetros de la regla. Solo los que
+  // la regla tiene.
+  it("los parámetros que la regla tiene se aceptan", () => {
+    const resultado = completa(ARevisar, Incorporada, { parametros: { max: "5" }, parametrosDeLaRegla: ["max", "min"] });
+
+    expect(resultado.valida).toBe(true);
+  });
+
+  it("un parámetro que la regla no tiene se rechaza", () => {
+    const resultado = completa(ARevisar, Incorporada, { parametros: { maximo: "5" }, parametrosDeLaRegla: ["max"] });
+
+    expect(motivos(resultado)).toEqual(["parametroDesconocido"]);
+  });
+
+  it("una regla sin parámetros no acepta ninguno", () => {
+    const resultado = completa(ARevisar, Incorporada, { parametros: { max: "5" } });
+
+    expect(motivos(resultado)).toEqual(["parametroDesconocido"]);
+  });
+
+  it("sin parámetros elegidos no hay nada que validar", () => {
+    expect(completa(ARevisar, Incorporada, { parametros: {} }).valida).toBe(true);
+  });
+});
+
 describe("rechazos", () => {
   it("informan todos los motivos juntos, no solo el primero", () => {
     const resultado = validarTransicion({
@@ -237,6 +263,7 @@ describe("rechazos", () => {
       "faltaSeveridad",
       "faltanResultadosDePrueba",
       "noAdmiteOperacionMasiva",
+      "parametroDesconocido",
     ];
 
     for (const motivo of todos) {

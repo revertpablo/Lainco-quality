@@ -7,7 +7,7 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 6** (sincronización con Sonar). La página de inicio es provisoria:
+Entrega 6.1, **paso 7** (API de transiciones). La página de inicio es provisoria:
 muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol, y la última
 sincronización con el botón para sincronizar. Se reemplaza por el inventario en el paso 8.
 
@@ -164,6 +164,61 @@ exista y que ninguna transición hacia Incorporada admita operación masiva.
 
 `validarTransicion` valida una solicitud contra la tabla y devuelve todos los motivos de
 rechazo juntos; `MENSAJES_DE_RECHAZO` tiene el texto para el usuario de cada uno.
+
+### Cambiar el estado de una regla
+
+**Todo cambio de estado pasa por `aplicarTransicion`** (`src/transiciones/aplicarTransicion.ts`).
+Es la única función que escribe `estadoRegla`, y en la misma transacción escribe la
+`decision`. En orden:
+
+1. Bloquea las reglas pedidas (`SELECT ... FOR UPDATE`): dos cambios a la vez sobre la
+   misma regla se hacen uno después del otro.
+2. Verifica que cada regla siga en el estado que vio el usuario (`desde`). Si alguien la
+   cambió mientras tanto, no se aplica.
+3. Valida cada regla con `validarTransicion`, con el rol leído de la base.
+4. Escribe el estado nuevo y una decisión por regla, con autor, justificación y, al
+   incorporar, severidad y parámetros. Al salir de Incorporada se borran la severidad y los
+   parámetros asignados; el historial los conserva.
+
+**Todo o nada**: en una operación masiva, si una regla no puede, no cambia ninguna, y la
+respuesta dice cuál y por qué. Las decisiones de una masiva comparten `loteId` y
+justificación.
+
+### API
+
+Las dos rutas piden sesión y JSON, y rechazan pedidos de otro origen.
+
+**`POST /api/reglas/{id}/transicion`**: una regla.
+
+```json
+{ "desde": "aRevisar", "hacia": "incorporada", "justificacion": "Bugs reales en el código",
+  "severidad": "CRITICAL", "parametros": { "max": "5" } }
+```
+
+`severidad` (`BLOCKER`, `CRITICAL`, `MAJOR`, `MINOR`, `INFO`) y `parametros` solo se mandan
+al incorporar. Los parámetros tienen que ser de la regla.
+
+**`POST /api/reglas/transiciones`**: operación masiva, con una justificación común. Hasta
+2.000 reglas. Siempre es masiva, aunque tenga una sola regla: hacia Incorporada se rechaza.
+
+```json
+{ "reglas": [{ "id": "…", "desde": "pendienteDeAnalizar" }, { "id": "…", "desde": "aRevisar" }],
+  "hacia": "descartada", "justificacion": "Reglas de React: no usamos React" }
+```
+
+| HTTP | `error` | Cuándo |
+|---|---|---|
+| 200 | — | Se aplicó. Devuelve `loteId` (`null` si es individual) y las decisiones. |
+| 400 | `pedidoInvalido` | El cuerpo no tiene la forma esperada. `detalles` dice qué campo. |
+| 401 | `sinSesion` | No hay sesión. |
+| 403 | `otroOrigen` | El pedido viene de otro sitio. |
+| 404 | `noEncontradas` | Alguna regla no existe. |
+| 409 | `estadoCambio` | Alguna regla ya no está en el estado `desde`. |
+| 415 | `noEsJson` | El cuerpo no es JSON. |
+| 422 | `rechazada` | El ciclo de vida no lo permite. `rechazos` dice, regla por regla, cada motivo con su mensaje. |
+
+Las pantallas de los pasos 8 y 10 van a llamar a `aplicarTransicion` desde Server Actions,
+con estas mismas reglas.
 
 ## Ingreso y roles
 
@@ -435,16 +490,22 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 
 ## Tests
 
-`npm test` corre todos. Los de `tests/dominio/` y `tests/sonar/` no necesitan base ni red.
+`npm test` corre todos.
 
-Los de `tests/auth/` prueban el ingreso contra una base real (alta, duplicados, ingresos
-simultáneos, bajas). Los de `tests/sincronizacion/` corren la sincronización completa contra
-una base real, con la grabación de Sonar: la primera corrida carga las 1.123 reglas, la
-segunda no cambia nada, se aplican cambios y avisos, y dos corridas a la vez no duplican.
-**Borran todas las reglas de Sonar, los avisos y las sincronizaciones de esa base.** Necesitan una base **de pruebas** con las migraciones aplicadas, en
-`DATABASE_URL_PRUEBAS`; sin esa variable se saltean. No usan `DATABASE_URL` a propósito,
-para no escribir por error en la base de desarrollo. Crean usuarios con el prefijo
-`prueba-ingreso-` y los borran al terminar.
+| Carpeta | Qué prueba | Necesita |
+|---|---|---|
+| `tests/dominio/` | Ciclo de vida, permisos, ingreso, comparación del catálogo. | Nada. |
+| `tests/sonar/` | Cliente de Sonar, con respuestas armadas y con la grabación real. | Nada. |
+| `tests/transiciones/api.test.ts` | Forma de los pedidos y respuestas de la API. | Nada. |
+| `tests/auth/` | Ingreso: alta, duplicados, ingresos simultáneos, bajas. | Base de pruebas. |
+| `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. | Base de pruebas. |
+| `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
+
+La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
+variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
+error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
+los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -478,16 +539,17 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs.
+│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar).
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
+│   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
 │   ├── ui/           # Componentes de cliente.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
 ├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
-├── tests/            # Tests (Vitest). tests/dominio/ y tests/sonar/ no necesitan base ni red; tests/auth/ necesita una base de pruebas.
+├── tests/            # Tests (Vitest). Ver "Tests".
 │   └── fixtures/sonar/  # Respuestas grabadas de SonarQube Cloud. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts

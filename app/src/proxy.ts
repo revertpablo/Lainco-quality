@@ -21,7 +21,7 @@ export const proxy = auth((pedido) => {
   }
 
   if (pedido.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Hace falta iniciar sesión." }, { status: 401 });
+    return NextResponse.json({ error: "sinSesion", mensaje: "Hace falta iniciar sesión." }, { status: 401 });
   }
 
   const ingresar = new URL("/ingresar", pedido.nextUrl);

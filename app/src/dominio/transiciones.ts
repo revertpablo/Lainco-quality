@@ -8,7 +8,7 @@ import { Estado, Rol } from "./valores";
  * o no operación masiva) se toca **solo su fila**.
  *
  * Este módulo no hace I/O: valida. La función que escribe el estado y la decisión en la
- * base (`aplicarTransicion`, paso 7) se apoya en `validarTransicion`.
+ * base (src/transiciones/aplicarTransicion.ts) se apoya en `validarTransicion`.
  */
 
 export interface Transicion {
@@ -159,7 +159,8 @@ export type MotivoDeRechazo =
   | "faltaJustificacion"
   | "faltaSeveridad"
   | "faltanResultadosDePrueba"
-  | "noAdmiteOperacionMasiva";
+  | "noAdmiteOperacionMasiva"
+  | "parametroDesconocido";
 
 /** Texto para el usuario de cada motivo de rechazo. */
 export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
@@ -169,6 +170,7 @@ export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
   faltaSeveridad: "Falta elegir la severidad con la que se incorpora la regla.",
   faltanResultadosDePrueba: "La regla todavía no tiene resultados de prueba.",
   noAdmiteOperacionMasiva: "Este cambio de estado se hace de a una regla, no en una operación masiva.",
+  parametroDesconocido: "Se eligió un valor para un parámetro que la regla no tiene.",
 };
 
 export interface SolicitudDeTransicion {
@@ -181,6 +183,10 @@ export interface SolicitudDeTransicion {
   /** Es parte de una operación masiva. */
   masiva?: boolean;
   resultadosDePruebaDisponibles?: boolean;
+  /** Valores elegidos para los parámetros de la regla (al incorporar). */
+  parametros?: Readonly<Record<string, string>> | null;
+  /** Claves de los parámetros que tiene la regla. */
+  parametrosDeLaRegla?: readonly string[];
 }
 
 export type ResultadoDeValidacion =
@@ -241,6 +247,11 @@ export function validarTransicion(solicitud: SolicitudDeTransicion): ResultadoDe
 
   if (solicitud.masiva && !transicion.admiteMasiva) {
     motivos.push("noAdmiteOperacionMasiva");
+  }
+
+  const definidos = solicitud.parametrosDeLaRegla ?? [];
+  if (Object.keys(solicitud.parametros ?? {}).some((clave) => !definidos.includes(clave))) {
+    motivos.push("parametroDesconocido");
   }
 
   return motivos.length === 0 ? { valida: true, transicion } : { valida: false, motivos };
