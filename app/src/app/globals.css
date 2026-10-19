@@ -1,20 +1,64 @@
 @import "tailwindcss";
 
+/*
+  Tokens de la app de catálogo. Una herramienta de trabajo: papel neutro, tinta oscura,
+  un solo acento (verde pino) para lo seleccionado y la acción principal, y un color por
+  estado del ciclo de vida.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --papel: #f5f6f4;
+  --superficie: #ffffff;
+  --tinta: #1e2422;
+  --tenue: #66706b;
+  --linea: #d8ddd9;
+  --pino: #2e5e4e;
+  --pino-claro: #e4eee9;
+  --sobre-pino: #ffffff;
+  --error: #a3322a;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --estado-pendiente: #8a918d;
+  --estado-revisar: #a8730f;
+  --estado-prueba: #2d5f8a;
+  --estado-incorporada: #2f7a4d;
+  --estado-descartada: #b9bebb;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --papel: #141917;
+    --superficie: #1b2120;
+    --tinta: #e3e8e5;
+    --tenue: #98a39e;
+    --linea: #2f3835;
+    --pino: #8cc4ad;
+    --pino-claro: #22322c;
+    --sobre-pino: #10201a;
+    --error: #ec8a80;
+
+    --estado-pendiente: #8d9692;
+    --estado-revisar: #e0aa45;
+    --estado-prueba: #78aedb;
+    --estado-incorporada: #6cc28f;
+    --estado-descartada: #56605b;
   }
+}
+
+@theme inline {
+  --color-papel: var(--papel);
+  --color-superficie: var(--superficie);
+  --color-tinta: var(--tinta);
+  --color-tenue: var(--tenue);
+  --color-linea: var(--linea);
+  --color-pino: var(--pino);
+  --color-pino-claro: var(--pino-claro);
+  --color-sobre-pino: var(--sobre-pino);
+  --color-error: var(--error);
+
+  /* Compatibilidad con las páginas de los pasos anteriores. */
+  --color-background: var(--papel);
+  --color-foreground: var(--tinta);
+
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
 }
 
 /*
@@ -22,7 +66,20 @@
   depender el build de la red.
 */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--papel);
+  color: var(--tinta);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pino);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -213,6 +213,32 @@ export function transicionesDisponibles(desde: Estado, rol: Rol): Transicion[] {
   return TRANSICIONES.filter((t) => t.desde === desde && rolPuedeHacer(t, rol));
 }
 
+export interface DestinoMasivo {
+  hacia: Estado;
+  /** Alguna de las reglas exige justificación para ir ahí. */
+  requiereJustificacion: boolean;
+}
+
+/**
+ * Los estados a los que se puede mandar, en una operación masiva, un grupo de reglas que
+ * están en `estados`, con el rol dado: los destinos válidos para **todas**. Es lo que
+ * ofrece la barra de selección del inventario. Nunca incluye Incorporada.
+ */
+export function destinosMasivos(estados: readonly Estado[], rol: Rol): DestinoMasivo[] {
+  const desde = [...new Set(estados)];
+  if (desde.length === 0) {
+    return [];
+  }
+
+  return Object.values(Estado).flatMap((hacia) => {
+    const transiciones = desde.map((d) => buscarTransicion(d, hacia));
+    const todasValen = transiciones.every((t) => t !== undefined && t.admiteMasiva && rolPuedeHacer(t, rol));
+    return todasValen
+      ? [{ hacia, requiereJustificacion: transiciones.some((t) => t!.requiereJustificacion) }]
+      : [];
+  });
+}
+
 /**
  * Valida un cambio de estado contra la tabla de transiciones.
  *

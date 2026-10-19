@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 
 import { configuracionBase } from "@/auth/config";
+import { aParametros, leerFiltros } from "@/dominio/filtros";
 
 /**
  * Antes de cada pedido: sin sesión, a la pantalla de ingreso (o 401 en la API).
@@ -17,7 +18,7 @@ const { auth } = NextAuth(configuracionBase);
 
 export const proxy = auth((pedido) => {
   if (pedido.auth) {
-    return NextResponse.next();
+    return urlCanonicaDelInventario(pedido.nextUrl) ?? NextResponse.next();
   }
 
   if (pedido.nextUrl.pathname.startsWith("/api/")) {
@@ -31,6 +32,24 @@ export const proxy = auth((pedido) => {
   }
   return NextResponse.redirect(ingresar);
 });
+
+/**
+ * El inventario tiene una sola URL por búsqueda: sin campos vacíos, sin valores inválidos
+ * y siempre en el mismo orden (src/dominio/filtros.ts). Así un link compartido o una
+ * vista guardada se ven iguales. Se corrige acá, antes de renderizar, con un 307.
+ */
+function urlCanonicaDelInventario(url: URL): NextResponse | undefined {
+  if (url.pathname !== "/reglas" || url.search === "") {
+    return undefined;
+  }
+  const canonica = aParametros(leerFiltros(url.searchParams));
+  if (canonica === url.searchParams.toString()) {
+    return undefined;
+  }
+  const destino = new URL(url);
+  destino.search = canonica;
+  return NextResponse.redirect(destino, 307);
+}
 
 export const config = {
   matcher: ["/((?!ingresar|api/auth|api/salud|api/cron|_next/static|_next/image|favicon\\.ico).*)"],

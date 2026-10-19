@@ -7,9 +7,8 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 7** (API de transiciones). La página de inicio es provisoria:
-muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol, y la última
-sincronización con el botón para sincronizar. Se reemplaza por el inventario en el paso 8.
+Entrega 6.1, **paso 8** (inventario). La pantalla principal es el inventario de reglas,
+en `/reglas` (`/` lleva ahí).
 
 ## Puesta en marcha
 
@@ -217,8 +216,36 @@ al incorporar. Los parámetros tienen que ser de la regla.
 | 415 | `noEsJson` | El cuerpo no es JSON. |
 | 422 | `rechazada` | El ciclo de vida no lo permite. `rechazos` dice, regla por regla, cada motivo con su mensaje. |
 
-Las pantallas de los pasos 8 y 10 van a llamar a `aplicarTransicion` desde Server Actions,
-con estas mismas reglas.
+Las pantallas llaman a `aplicarTransicion` desde Server Actions, con estas mismas reglas:
+la operación masiva del inventario (`src/inventario/acciones.ts`) valida el pedido con el
+mismo esquema que `POST /api/reglas/transiciones`.
+
+## Inventario
+
+`/reglas` (FASE-6.md, sección 5). Muestra todas las reglas que cumplen los filtros, sin
+paginar: el catálogo entero son unas 1.100 filas livianas, y así "seleccionar todas"
+selecciona de verdad todas las filtradas.
+
+**Filtros**: texto (clave o nombre), estado, tags, lenguaje, tipo, severidad por defecto,
+atributo de clean code, origen, nuevas o modificadas en la última sincronización, y
+deprecadas en Sonar (incluirlas, ocultarlas o solo esas). Con varios valores del mismo
+filtro, alcanza con que coincida uno (por ejemplo, reglas con el tag `react` **o** `vue`).
+Las columnas Clave, Nombre, Lenguaje, Tipo, Severidad y Estado ordenan al tocarlas.
+
+**Los filtros viven en la URL** (`src/dominio/filtros.ts`): una búsqueda se comparte con un
+link y el botón "atrás" funciona. `proxy.ts` deja cada búsqueda en una sola URL canónica
+(sin campos vacíos ni valores inválidos, siempre en el mismo orden), así una vista guardada
+(paso 9) es solo la URL con un nombre. El formulario de filtros funciona sin JavaScript.
+
+**Operación masiva**: al seleccionar reglas aparece abajo una barra que ofrece solo los
+cambios de estado que valen para **todas** las seleccionadas, en una operación masiva y con
+el rol de quien mira (`destinosMasivos`, en `src/dominio/transiciones.ts`). Nunca ofrece
+Incorporada. Si el cambio exige justificación, el botón no se habilita hasta escribirla; la
+justificación queda en cada decisión. Si el servidor rechaza el cambio (por ejemplo, porque
+otra persona cambió una regla mientras tanto), no se aplica nada y la barra dice por qué.
+
+Ejemplo, el primer paso del triage: filtrar por estado **Pendiente de analizar** y tag
+`react`, seleccionar todas, **Descartada**, escribir "No usamos React" y aplicar.
 
 ## Ingreso y roles
 
@@ -441,7 +468,7 @@ fallan con `ETIMEDOUT` o `ENETUNREACH`. En Vercel no pasa.
 
 Trae de Sonar todas las reglas de C# y TypeScript y las compara con las guardadas
 (FASE-6.md, sección 3). Corre todos los días con Vercel Cron y cuando alguien toca
-**Sincronizar ahora** en la página de inicio (cualquier usuario con sesión: no cambia el
+**Sincronizar ahora** en el encabezado (cualquier usuario con sesión: no cambia el
 estado de ninguna regla).
 
 | Caso | Qué hace |
@@ -500,12 +527,13 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/auth/` | Ingreso: alta, duplicados, ingresos simultáneos, bajas. | Base de pruebas. |
 | `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. | Base de pruebas. |
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
+| `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -539,14 +567,15 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar).
+│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL).
+│   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
-│   ├── ui/           # Componentes de cliente.
+│   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
 ├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
 ├── tests/            # Tests (Vitest). Ver "Tests".
