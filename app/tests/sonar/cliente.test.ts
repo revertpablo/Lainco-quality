@@ -277,6 +277,23 @@ describe("cada regla", () => {
     expect(regla.descripcion).toBe("<p>Causa</p>\n<h3>ASP.NET</h3>\n<p>Con ASP.NET</p>\n<p>Recursos</p>");
   });
 
+  it("ordena las secciones como las muestra Sonar, venga en el orden que venga", async () => {
+    // Sonar Cloud las manda en distinto orden según la regla (2026-10-19: en 152 de 1.123
+    // venían primero los recursos). Con un orden fijo, la descripción y su huella no
+    // cambian si solo cambia el orden.
+    const secciones = [
+      { key: "resources", content: "<p>R</p>" },
+      { key: "how_to_fix", content: "<p>Con B</p>", context: { displayName: "B", key: "b" } },
+      { key: "root_cause", content: "<p>C</p>" },
+      { key: "how_to_fix", content: "<p>Con A</p>", context: { displayName: "A", key: "a" } },
+      { key: "introduction", content: "<p>I</p>" },
+    ];
+    const esperado = "<p>I</p>\n<p>C</p>\n<h3>A</h3>\n<p>Con A</p>\n<h3>B</h3>\n<p>Con B</p>\n<p>R</p>";
+
+    expect((await unaRegla({ descriptionSections: secciones })).descripcion).toBe(esperado);
+    expect((await unaRegla({ descriptionSections: [...secciones].reverse() })).descripcion).toBe(esperado);
+  });
+
   it("sin secciones, usa htmlDesc (versiones viejas de la API)", async () => {
     const regla = await unaRegla({ descriptionSections: undefined, htmlDesc: "<p>Vieja</p>" });
 

@@ -1,0 +1,159 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { z } from "zod";
+
+import { exigirUsuario } from "@/auth/sesion";
+import { obtenerDb } from "@/db/cliente";
+import { aParametros, leerFiltros } from "@/dominio/filtros";
+import { transicionesDisponibles } from "@/dominio/transiciones";
+import { opcionesDeFiltro } from "@/inventario/consulta";
+import { historialDeRegla, obtenerRegla } from "@/reglas/detalle";
+import { CambiarEstado } from "@/ui/CambiarEstado";
+import { Encabezado } from "@/ui/Encabezado";
+import { COLOR_DE_ESTADO, textoDeSeveridad, textoDeTipo } from "@/ui/etiquetas";
+import { Historial } from "@/ui/Historial";
+
+/**
+ * Detalle de una regla (entrega 6.1, paso 10): qué es, en qué estado está, cambiarle el
+ * estado (la única forma de incorporar) y su historial completo.
+ */
+
+// El botón de sincronizar del encabezado corre en esta página: hasta 5 minutos.
+export const maxDuration = 300;
+
+export default function Regla(props: PageProps<"/reglas/[id]">) {
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-tenue">Cargando la regla…</p>}>
+      <Detalle {...props} />
+    </Suspense>
+  );
+}
+
+async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
+  const usuario = await exigirUsuario();
+  const { id } = await params;
+  if (!z.uuid().safeParse(id).success) {
+    notFound();
+  }
+
+  const db = obtenerDb();
+  const [regla, historial, opciones] = await Promise.all([obtenerRegla(db, id), historialDeRegla(db, id), opcionesDeFiltro(db)]);
+  if (!regla) {
+    notFound();
+  }
+
+  // Volver al inventario con los filtros que tenía, saneados como cualquier búsqueda.
+  const volver = (await searchParams).volver;
+  const filtrosDeVuelta = aParametros(leerFiltros(new URLSearchParams(typeof volver === "string" ? volver : "")));
+  const estados = Object.fromEntries(opciones.estados.map((e) => [e.codigo, e.descripcion]));
+  const disponibles = transicionesDisponibles(regla.estado, usuario.rol);
+
+  return (
+    <>
+      <Encabezado usuario={usuario} />
+      <main className="flex flex-1 flex-col gap-6 px-4 py-5 lg:px-6">
+        <div className="flex flex-col gap-2">
+          <Link
+            href={filtrosDeVuelta ? `/reglas?${filtrosDeVuelta}` : "/reglas"}
+            className="self-start text-sm text-tenue underline underline-offset-2 hover:text-tinta"
+          >
+            Volver al inventario
+          </Link>
+          <p className="font-mono text-sm">{regla.clave}</p>
+          <h1 className="max-w-4xl text-xl font-semibold text-balance">{regla.nombre}</h1>
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tenue">
+            <span className="inline-flex items-center gap-1.5 text-tinta" data-estado={regla.estado}>
+              <span aria-hidden className="inline-block size-2 rounded-full" style={{ background: COLOR_DE_ESTADO[regla.estado] }} />
+              {regla.estadoDescripcion}
+              {regla.severidadAsignada && <> con severidad {textoDeSeveridad(regla.severidadAsignada)}</>}
+            </span>
+            <span>{regla.lenguajeDescripcion}</span>
+            <span>{regla.origenDescripcion}</span>
+            {regla.tipo && <span>{textoDeTipo(regla.tipo)}</span>}
+            {regla.severidadDefault && <span>Severidad por defecto {textoDeSeveridad(regla.severidadDefault)}</span>}
+            {regla.deprecadaEn && <span className="text-error">Deprecada en el origen</span>}
+            {regla.avisosPendientes > 0 && (
+              <span className="text-error">
+                {regla.avisosPendientes === 1 ? "1 aviso sin resolver" : `${regla.avisosPendientes} avisos sin resolver`}
+              </span>
+            )}
+          </p>
+          {regla.tags.length > 0 && <p className="text-sm text-tenue">Tags: {regla.tags.join(", ")}</p>}
+        </div>
+
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="flex min-w-0 max-w-4xl flex-1 flex-col gap-6">
+            <section aria-labelledby="titulo-descripcion" className="rounded-lg border border-linea bg-superficie">
+              <h2 id="titulo-descripcion" className="border-b border-linea px-5 py-3 font-medium lg:px-7">
+                Documentación de la regla
+              </h2>
+              {regla.descripcion ? (
+                <div
+                  className="descripcion-de-regla px-5 py-5 lg:px-7 lg:py-6"
+                  dangerouslySetInnerHTML={{ __html: regla.descripcion }}
+                />
+              ) : (
+                <p className="px-5 py-5 text-sm text-tenue lg:px-7">El origen no trae descripción para esta regla.</p>
+              )}
+            </section>
+
+            {regla.parametros.length > 0 && (
+              <section aria-labelledby="titulo-parametros" className="rounded-lg border border-linea bg-superficie">
+                <h2 id="titulo-parametros" className="border-b border-linea px-5 py-3 font-medium lg:px-7">
+                  Parámetros
+                </h2>
+                <div className="overflow-x-auto px-5 pb-3 lg:px-7">
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="text-left text-tenue">
+                      <tr className="border-b border-linea">
+                        <th className="py-2 pr-4 font-normal">Clave</th>
+                        <th className="py-2 pr-4 font-normal">Qué es</th>
+                        <th className="py-2 pr-4 font-normal">Por defecto</th>
+                        <th className="py-2 font-normal">Elegido</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {regla.parametros.map((p) => (
+                        <tr key={p.clave} className="border-b border-linea align-top last:border-b-0">
+                          <td className="py-2 pr-4 font-mono text-xs">{p.clave}</td>
+                          <td className="py-2 pr-4">{p.descripcion}</td>
+                          <td className="py-2 pr-4">{p.valorDefault}</td>
+                          <td className="py-2">{regla.parametrosAsignados?.[p.clave] ?? ""}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* En pantallas angostas va antes de la descripción, que puede ser muy larga. */}
+          <aside className="order-first flex flex-col gap-8 lg:order-none lg:w-96 lg:shrink-0">
+            <section aria-labelledby="titulo-cambiar" className="flex flex-col gap-3 rounded-lg border border-linea bg-superficie p-4">
+              <h2 id="titulo-cambiar" className="font-medium">
+                Cambiar el estado
+              </h2>
+              <CambiarEstado
+                reglaId={regla.id}
+                estado={regla.estado}
+                disponibles={disponibles}
+                estados={estados}
+                severidadDefault={regla.severidadDefault}
+                parametros={regla.parametros}
+              />
+            </section>
+
+            <section aria-labelledby="titulo-historial" className="flex flex-col gap-3">
+              <h2 id="titulo-historial" className="font-medium">
+                Historial
+              </h2>
+              <Historial eventos={historial} />
+            </section>
+          </aside>
+        </div>
+      </main>
+    </>
+  );
+}

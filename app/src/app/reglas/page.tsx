@@ -81,6 +81,7 @@ async function Inventario({ searchParams }: Pick<PageProps<"/reglas">, "searchPa
               estado: columna("Estado", "estado"),
             }}
             aplicar={aplicarOperacionMasiva}
+            volver={aParametros(filtros)}
           />
         </main>
       </div>

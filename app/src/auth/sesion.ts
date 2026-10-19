@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { obtenerDb } from "@/db/cliente";
@@ -27,6 +28,9 @@ export interface UsuarioActual {
  * dentro de un mismo pedido.
  */
 export const usuarioActual = cache(async (): Promise<UsuarioActual | null> => {
+  // Auth.js usa crypto.getRandomValues al leer la sesión; sin esto, Next lo marca como un
+  // valor inestable al prerenderizar ("Issue" en el overlay de `npm run dev`).
+  await connection();
   const sesion = await auth();
   const id = sesion?.usuarioId;
   if (!id) {

@@ -332,10 +332,27 @@ function leerRegla(dato: unknown): ReglaDeSonar {
  * contexto (por ejemplo, cómo arreglarlo en ASP.NET) lleva el nombre del contexto como
  * título, para que no se confundan dos secciones del mismo tipo.
  */
+/**
+ * Orden en que Sonar muestra las secciones. La API las devuelve en cualquier orden (en la
+ * grabación del 2026-10-16, 152 reglas empezaban por los recursos); con un orden fijo, la
+ * descripción y su huella solo cambian si cambia el contenido.
+ */
+const ORDEN_DE_SECCIONES = ["introduction", "root_cause", "assess_the_problem", "how_to_fix", "resources"];
+
+function posicion(seccion: Record<string, unknown>): number {
+  const i = ORDEN_DE_SECCIONES.indexOf(texto(seccion.key) ?? "");
+  return i === -1 ? ORDEN_DE_SECCIONES.length : i;
+}
+
+function contextoDe(seccion: Record<string, unknown>): string {
+  return esObjeto(seccion.context) ? (texto(seccion.context.key) ?? texto(seccion.context.displayName) ?? "") : "";
+}
+
 function descripcionDe(dato: Record<string, unknown>, clave: string): string {
   const secciones = lista(dato.descriptionSections, `el campo 'descriptionSections' de ${clave}`);
   if (secciones.length > 0) {
-    return secciones
+    return [...secciones]
+      .sort((a, b) => posicion(a) - posicion(b) || contextoDe(a).localeCompare(contextoDe(b)))
       .flatMap((s) => {
         const contenido = texto(s.content) ?? "";
         const contexto = esObjeto(s.context) ? texto(s.context.displayName) : undefined;

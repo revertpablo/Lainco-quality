@@ -24,6 +24,8 @@ interface Props {
   lenguajes: Record<string, string>;
   columnas: Record<"clave" | "nombre" | "lenguaje" | "tipo" | "severidad" | "estado", Columna>;
   aplicar: (pedido: unknown) => Promise<ResultadoDeOperacion>;
+  /** La búsqueda actual, para que el detalle de una regla vuelva a ella. */
+  volver: string;
 }
 
 /**
@@ -32,7 +34,7 @@ interface Props {
  * una operación masiva y con el rol de quien mira (`destinosMasivos`), y pide la
  * justificación común cuando hace falta. La validación de verdad la hace el servidor.
  */
-export function TablaDeReglas({ filas, rol, estados, lenguajes, columnas, aplicar }: Props) {
+export function TablaDeReglas({ filas, rol, estados, lenguajes, columnas, aplicar, volver }: Props) {
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [hacia, setHacia] = useState<Estado | null>(null);
   const [justificacion, setJustificacion] = useState("");
@@ -128,7 +130,12 @@ export function TablaDeReglas({ filas, rol, estados, lenguajes, columnas, aplica
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{f.clave}</td>
                   <td className="min-w-64 px-3 py-2">
-                    <span>{f.nombre}</span>
+                    <Link
+                      href={volver ? `/reglas/${f.id}?volver=${encodeURIComponent(volver)}` : `/reglas/${f.id}`}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {f.nombre}
+                    </Link>
                     <Marcas fila={f} />
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">{lenguajes[f.lenguaje] ?? f.lenguaje}</td>

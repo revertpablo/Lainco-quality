@@ -55,7 +55,7 @@ export async function Encabezado({ usuario }: { usuario: UsuarioActual }) {
                 Sonar sincronizado el {fecha.format(ultima.iniciadaEn)}
                 {ultima.disparadaPor ? ` por ${ultima.disparadaPor}` : ""}:{" "}
                 <span className={ultima.estado === "error" ? "text-error" : undefined}>
-                  {ultima.estado === "ok" ? describirResumen(ultima).toLowerCase() : describirResumen(ultima)}
+                  {ultima.estado === "ok" ? conMinuscula(describirResumen(ultima)) : describirResumen(ultima)}
                 </span>
               </>
             ) : (
@@ -85,4 +85,9 @@ export async function Encabezado({ usuario }: { usuario: UsuarioActual }) {
       </div>
     </header>
   );
+}
+
+/** "Sin cambios en Sonar." → "sin cambios en Sonar.": solo la primera letra. */
+function conMinuscula(texto: string): string {
+  return texto.charAt(0).toLowerCase() + texto.slice(1);
 }

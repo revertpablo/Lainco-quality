@@ -7,7 +7,7 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 9** (vistas guardadas). La pantalla principal es el inventario de reglas,
+Entrega 6.1, **paso 10** (detalle de regla e historial). La pantalla principal es el inventario de reglas,
 en `/reglas` (`/` lleva ahí).
 
 ## Puesta en marcha
@@ -246,6 +246,27 @@ otra persona cambió una regla mientras tanto), no se aplica nada y la barra dic
 
 Ejemplo, el primer paso del triage: filtrar por estado **Pendiente de analizar** y tag
 `react`, seleccionar todas, **Descartada**, escribir "No usamos React" y aplicar.
+
+### Detalle de una regla
+
+`/reglas/{id}`, al tocar el nombre de una regla en el inventario. "Volver al inventario"
+vuelve a la búsqueda de la que se vino.
+
+- **Qué es**: clave, nombre, estado, lenguaje, origen, tipo, severidad por defecto, tags, la
+  descripción de Sonar y sus parámetros (con el valor elegido, si está incorporada). La
+  descripción es HTML de Sonar: se muestra después de sanearla con una lista cerrada de
+  etiquetas (`src/reglas/descripcion.ts`, con `sanitize-html`); nada de scripts, estilos ni
+  imágenes. Los ejemplos de código se colorean en el servidor con `highlight.js`, con la
+  gramática del lenguaje de la regla, y se rotulan "No cumple" / "Cumple" según la marca de
+  Sonar.
+- **Cambiar el estado**: los cambios que el rol permite desde el estado actual. Es **la
+  única forma de incorporar** una regla: pide la severidad (propone la de Sonar), los
+  valores de los parámetros (vacío: el de Sonar) y la justificación. Pasa por
+  `aplicarTransicion`, como todo cambio.
+- **Historial**, de lo más nuevo a lo más viejo: cada decisión con el cambio de estado,
+  autor, fecha y justificación, la severidad y los parámetros elegidos, y si fue parte de una
+  operación masiva (de cuántas reglas). También cuándo llegó al inventario, si el origen la
+  deprecó y los avisos de la sincronización.
 
 ### Vistas guardadas
 
@@ -543,12 +564,14 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
 | `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
 | `tests/vistas/` | Vistas guardadas: guardar y recuperar, actualizar, compartir, borrar. | Base de pruebas. |
+| `tests/reglas/descripcion.test.ts` | Saneado de la descripción de Sonar. | Nada. |
+| `tests/reglas/detalle.test.ts` | Detalle e historial de una regla. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -582,12 +605,13 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
+│   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.

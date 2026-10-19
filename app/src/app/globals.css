@@ -21,6 +21,16 @@
   --estado-prueba: #2d5f8a;
   --estado-incorporada: #2f7a4d;
   --estado-descartada: #b9bebb;
+
+  /* Código en las descripciones de reglas. */
+  --codigo-fondo: #f3f5f3;
+  --codigo-en-linea: #e9eeeb;
+  --codigo-comentario: #6e7872;
+  --codigo-clave: #8a3b8f;
+  --codigo-texto: #2f7a4d;
+  --codigo-numero: #a1561a;
+  --codigo-tipo: #2d5f8a;
+  --codigo-funcion: #6a4fb3;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +50,15 @@
     --estado-prueba: #78aedb;
     --estado-incorporada: #6cc28f;
     --estado-descartada: #56605b;
+
+    --codigo-fondo: #151a19;
+    --codigo-en-linea: #29322f;
+    --codigo-comentario: #7f8a85;
+    --codigo-clave: #d39be0;
+    --codigo-texto: #8fd1a6;
+    --codigo-numero: #e6a46e;
+    --codigo-tipo: #8cbfe8;
+    --codigo-funcion: #b9a6f0;
   }
 }
 
@@ -83,3 +102,100 @@ body {
     animation: none !important;
   }
 }
+
+/*
+  Descripción de una regla: HTML de Sonar ya saneado (src/reglas/descripcion.ts). Estilos
+  propios porque el HTML viene sin clases.
+*/
+.descripcion-de-regla {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.descripcion-de-regla > :first-child { margin-top: 0; }
+.descripcion-de-regla > :last-child { margin-bottom: 0; }
+.descripcion-de-regla :where(h2, h3, h4, h5) {
+  margin: 1.75em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+/* Cada sección de Sonar ("Why is this an issue?", "How to fix it"…) arranca separada. */
+.descripcion-de-regla :where(h2) {
+  padding-top: 1.25em;
+  border-top: 1px solid var(--linea);
+  font-size: 1.125rem;
+}
+.descripcion-de-regla > h2:first-child { padding-top: 0; border-top: 0; }
+.descripcion-de-regla :where(h3) { font-size: 1.0625rem; }
+.descripcion-de-regla :where(h4, h5) { font-size: 1rem; color: var(--tenue); }
+.descripcion-de-regla :where(p, ul, ol, dl, pre, table, blockquote) { margin: 0.75em 0; }
+.descripcion-de-regla :where(ul) { list-style: disc; padding-left: 1.5em; }
+.descripcion-de-regla :where(ol) { list-style: decimal; padding-left: 1.5em; }
+.descripcion-de-regla :where(li + li) { margin-top: 0.25em; }
+.descripcion-de-regla :where(a) { color: var(--pino); text-decoration: underline; text-underline-offset: 2px; }
+.descripcion-de-regla :where(strong) { font-weight: 600; }
+
+/* Código en línea: una "pastilla" que se distingue del texto. */
+.descripcion-de-regla :where(code) {
+  border-radius: 4px;
+  background: var(--codigo-en-linea);
+  padding: 0.1em 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Bloques de código: caja propia, monoespaciada y coloreada. */
+.descripcion-de-regla :where(pre) {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--linea);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: var(--codigo-fondo);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  tab-size: 4;
+}
+.descripcion-de-regla :where(pre > code) {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  border-radius: 0;
+  background: none;
+  padding: 0.85em 1em;
+  font-size: inherit;
+  overflow-wrap: normal;
+}
+/* Sonar marca los ejemplos: el que no cumple y el que cumple. */
+.descripcion-de-regla :where(pre[data-diff-type="noncompliant"]) { border-left-color: var(--error); }
+.descripcion-de-regla :where(pre[data-diff-type="compliant"]) { border-left-color: var(--estado-incorporada); }
+.descripcion-de-regla :where(pre[data-diff-type])::before {
+  position: sticky;
+  left: 0;
+  display: block;
+  border-bottom: 1px solid var(--linea);
+  padding: 0.35em 1em;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.descripcion-de-regla :where(pre[data-diff-type="noncompliant"])::before { content: "✗  No cumple"; color: var(--error); }
+.descripcion-de-regla :where(pre[data-diff-type="compliant"])::before { content: "✓  Cumple"; color: var(--estado-incorporada); }
+
+.descripcion-de-regla :where(table) { border-collapse: collapse; font-size: 0.875rem; }
+.descripcion-de-regla :where(th, td) { border: 1px solid var(--linea); padding: 0.3em 0.6em; text-align: left; vertical-align: top; }
+.descripcion-de-regla :where(th) { background: var(--codigo-fondo); font-weight: 600; }
+.descripcion-de-regla :where(blockquote) { border-left: 3px solid var(--linea); padding-left: 1em; color: var(--tenue); }
+
+/* Colores de highlight.js (solo las clases que usan C# y TypeScript). */
+.descripcion-de-regla :where(.hljs-comment, .hljs-quote, .hljs-meta) { color: var(--codigo-comentario); font-style: italic; }
+.descripcion-de-regla :where(.hljs-keyword, .hljs-built_in, .hljs-literal, .hljs-doctag) { color: var(--codigo-clave); }
+.descripcion-de-regla :where(.hljs-string, .hljs-regexp, .hljs-template-variable, .hljs-subst) { color: var(--codigo-texto); }
+.descripcion-de-regla :where(.hljs-number) { color: var(--codigo-numero); }
+.descripcion-de-regla :where(.hljs-type, .hljs-class .hljs-title, .hljs-title.class_) { color: var(--codigo-tipo); }
+.descripcion-de-regla :where(.hljs-title.function_, .hljs-function .hljs-title) { color: var(--codigo-funcion); }
+.descripcion-de-regla :where(.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-params) { color: inherit; }
