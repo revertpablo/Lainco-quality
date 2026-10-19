@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SEVERIDADES } from "@/dominio/severidad";
 import { Estado } from "@/dominio/valores";
 
 /**
@@ -10,8 +11,8 @@ import { Estado } from "@/dominio/valores";
 
 z.config(z.locales.es());
 
-/** Severidades de Sonar con las que se puede incorporar una regla. */
-export const SEVERIDADES = ["BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO"] as const;
+/** Severidades de Sonar con las que se puede incorporar una regla (src/dominio/severidad.ts). */
+export { SEVERIDADES };
 
 /** Máximo de reglas en una operación masiva. Alcanza para todo el catálogo de un lenguaje. */
 export const MAXIMO_DE_REGLAS_POR_LOTE = 2_000;

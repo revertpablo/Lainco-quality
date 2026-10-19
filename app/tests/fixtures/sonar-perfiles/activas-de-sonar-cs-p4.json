@@ -1,0 +1,2194 @@
+{
+  "total": 376,
+  "p": 4,
+  "ps": 100,
+  "rules": [
+    {
+      "key": "csharpsquid:S6609",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6607",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4428",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3218",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3217",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6967",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6962",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6961",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4663",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3451",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2365",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2123",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6965",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6964",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4545",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4210",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3458",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3363",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3247",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3244",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3241",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3005",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2368",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S1185",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6930",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4201",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4200",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3598",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3597",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3427",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3246",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3237",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3236",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S1006",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6934",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6931",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4635",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3415",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2699",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2681",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2328",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S1121",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S1117",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6800",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3897",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3776",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3655",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3449",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3447",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3445",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3444",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3443",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3442",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3440",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2688",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2583",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2479",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2445",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2234",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2222",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3431",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2342",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S5856",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S4524",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3433",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2589",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2346",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2345",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2344",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S6932",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3981",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S3168",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S2325",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S1751",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S7133",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "csharpsquid:S7131",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    }
+  ],
+  "actives": {
+    "csharpsquid:S6609": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-05-31T14:50:11+0000",
+        "updatedAt": "2023-05-31T14:50:11+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6607": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-05-31T14:49:02+0000",
+        "updatedAt": "2023-05-31T14:49:02+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4428": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2018-03-12T11:56:15+0000",
+        "updatedAt": "2018-03-12T11:56:15+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3218": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2015-10-05T06:07:35+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3217": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2015-10-05T06:07:36+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6967": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2024-05-14T06:49:35+0000",
+        "updatedAt": "2024-11-20T09:52:25+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6962": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-05-14T06:50:53+0000",
+        "updatedAt": "2024-05-14T06:50:53+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6961": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-04-30T08:51:00+0000",
+        "updatedAt": "2024-04-30T08:51:00+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4663": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-02-22T15:25:24+0000",
+        "updatedAt": "2023-02-22T15:25:24+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3451": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:51+0000",
+        "updatedAt": "2017-05-05T10:33:19+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2365": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2017-05-05T10:33:18+0000",
+        "updatedAt": "2017-05-05T10:33:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2123": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-08-03T04:05:26+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6965": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-05-14T06:46:44+0000",
+        "updatedAt": "2024-05-14T06:46:44+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6964": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-05-14T06:48:54+0000",
+        "updatedAt": "2024-05-14T06:48:54+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4545": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2023-03-09T14:53:51+0000",
+        "updatedAt": "2023-03-09T14:53:51+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4210": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2018-02-14T06:15:56+0000",
+        "updatedAt": "2018-02-14T06:15:56+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3458": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2017-02-03T12:59:32+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3363": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-07-10T13:23:10+0000",
+        "updatedAt": "2023-07-10T13:23:10+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3247": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2017-04-14T10:34:00+0000",
+        "updatedAt": "2017-04-14T10:34:00+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3244": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-10-05T06:07:36+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3241": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2016-04-29T14:36:33+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3005": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-08-03T04:05:24+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2368": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:15+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S1185": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:50+0000",
+        "updatedAt": "2016-03-21T09:39:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6930": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-03-21T15:03:44+0000",
+        "updatedAt": "2024-03-21T15:03:44+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4201": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2019-10-09T06:14:57+0000",
+        "updatedAt": "2019-10-09T06:14:57+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4200": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2018-02-14T06:15:56+0000",
+        "updatedAt": "2018-02-14T06:15:56+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3598": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-05-30T06:00:19+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3597": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-05-30T06:00:19+0000",
+        "updatedAt": "2016-05-30T06:00:19+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3427": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:15+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3246": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-11-03T18:42:52+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3237": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2015-10-05T06:07:36+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3236": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2015-11-03T18:42:52+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S1006": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:50+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6934": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-03-27T09:19:39+0000",
+        "updatedAt": "2024-03-27T09:19:39+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6931": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-03-27T09:18:01+0000",
+        "updatedAt": "2024-03-27T09:18:01+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4635": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2019-10-29T08:27:25+0000",
+        "updatedAt": "2019-10-29T08:27:25+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3415": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-09-08T10:36:20+0000",
+        "updatedAt": "2017-09-08T10:36:20+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2699": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2019-05-07T15:01:40+0000",
+        "updatedAt": "2019-05-07T15:01:40+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2681": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-05-27T12:08:44+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2328": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2015-08-03T04:05:26+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S1121": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-04-29T14:36:32+0000",
+        "updatedAt": "2016-04-29T14:36:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S1117": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-08-03T04:05:26+0000",
+        "updatedAt": "2015-08-03T04:05:26+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6800": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2023-11-28T13:35:04+0000",
+        "updatedAt": "2023-11-28T13:35:04+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3897": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2017-04-14T10:34:00+0000",
+        "updatedAt": "2017-07-07T10:23:59+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3776": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [
+          {
+            "key": "threshold",
+            "value": "15"
+          },
+          {
+            "key": "propertyThreshold",
+            "value": "3"
+          }
+        ],
+        "createdAt": "2017-03-05T08:40:16+0000",
+        "updatedAt": "2017-03-05T08:40:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3655": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-11-14T07:00:14+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3449": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:51+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3447": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:51+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3445": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-04-29T14:36:32+0000",
+        "updatedAt": "2016-04-29T14:36:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3444": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:50+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3443": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2016-03-21T09:39:51+0000",
+        "updatedAt": "2017-05-05T10:33:19+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3442": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-03-05T08:40:16+0000",
+        "updatedAt": "2017-03-05T08:40:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3440": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2016-05-30T06:00:18+0000",
+        "updatedAt": "2016-05-30T06:00:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2688": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-02-03T12:59:32+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2583": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2016-11-14T07:00:14+0000",
+        "updatedAt": "2017-05-05T10:33:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2479": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2019-10-29T08:27:21+0000",
+        "updatedAt": "2019-10-29T08:27:21+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2445": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2023-03-09T14:54:45+0000",
+        "updatedAt": "2023-03-09T14:54:45+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2234": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-08-03T04:05:27+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2222": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2022-03-31T10:15:41+0000",
+        "updatedAt": "2022-03-31T10:15:41+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3431": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-08-15T07:38:13+0000",
+        "updatedAt": "2024-08-15T07:38:13+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2342": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [
+          {
+            "key": "format",
+            "value": "^([A-Z]{1,3}[a-z0-9]+)*([A-Z]{2})?$"
+          },
+          {
+            "key": "flagsAttributeFormat",
+            "value": "^([A-Z]{1,3}[a-z0-9]+)*([A-Z]{2})?s$"
+          }
+        ],
+        "createdAt": "2017-04-14T10:34:00+0000",
+        "updatedAt": "2017-04-14T10:34:00+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S5856": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2023-04-20T10:52:15+0000",
+        "updatedAt": "2023-04-20T10:52:15+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S4524": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2018-09-06T09:06:45+0000",
+        "updatedAt": "2018-09-06T09:06:45+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3433": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2017-09-08T10:36:36+0000",
+        "updatedAt": "2017-09-08T10:36:36+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2589": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-05-05T10:33:18+0000",
+        "updatedAt": "2017-05-05T10:33:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2346": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:14+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2345": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:14+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2344": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:14+0000",
+        "updatedAt": "2015-12-14T07:00:14+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S6932": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2024-06-05T13:53:55+0000",
+        "updatedAt": "2024-06-05T13:53:55+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3981": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-06-02T11:38:02+0000",
+        "updatedAt": "2017-06-02T11:38:02+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S3168": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2015-12-14T07:00:14+0000",
+        "updatedAt": "2017-02-03T12:59:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S2325": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2024-08-15T07:42:45+0000",
+        "updatedAt": "2024-08-15T07:42:45+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S1751": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-05-05T10:33:19+0000",
+        "updatedAt": "2017-05-05T10:33:19+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S7133": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2024-11-20T09:53:19+0000",
+        "updatedAt": "2025-02-28T16:16:39+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "csharpsquid:S7131": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10Puz",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2024-11-20T09:54:18+0000",
+        "updatedAt": "2025-02-28T16:18:41+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ]
+  },
+  "qProfiles": {
+    "AaECM3aFNH6l0Cs10Puz": {
+      "name": "Sonar way comprehensive",
+      "lang": "cs",
+      "langName": "C#"
+    }
+  }
+}

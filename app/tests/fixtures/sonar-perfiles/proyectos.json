@@ -1,0 +1,16 @@
+{
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 500,
+    "total": 1
+  },
+  "components": [
+    {
+      "organization": "revertpablo",
+      "key": "revertpablo_Lainco-quality",
+      "name": "Lainco-quality",
+      "qualifier": "TRK",
+      "project": "revertpablo_Lainco-quality"
+    }
+  ]
+}

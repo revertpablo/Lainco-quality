@@ -1,0 +1,2919 @@
+{
+  "total": 472,
+  "p": 1,
+  "ps": 100,
+  "rules": [
+    {
+      "key": "typescript:S1101",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1077",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1874",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1128",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4156",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1854",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2685",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6547",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6549",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S4684",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5696",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5335",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6105",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5334",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5131",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5496",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S2631",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5146",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5145",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S2076",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5147",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S3649",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S7044",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5144",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S8378",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        },
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6350",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6641",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S8348",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S8349",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S2083",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6287",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S5883",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6776",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S2091",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S6096",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5734",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5736",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5739",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4502",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4507",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5725",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5728",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5659",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5547",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5542",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5876",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4423",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4426",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2245",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2486",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S3330",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5527",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4790",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2755",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9382",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9380",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9383",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9145",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2612",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1523",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1313",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9150",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4830",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6268",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6275",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6249",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2819",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5332",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2068",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6303",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S7639",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6308",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S8961",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5693",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6437",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2077",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6319",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S7739",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S7503",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5689",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5443",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6418",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S7790",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5148",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6327",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6321",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S4036",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5247",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6330",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6332",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S5122",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2092",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9379",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S1848",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9011",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S9162",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S2187",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "BLOCKER"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S8951",
+      "type": "BUG",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "tssecurity:S8678",
+      "type": "VULNERABILITY",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    },
+    {
+      "key": "typescript:S6957",
+      "type": "CODE_SMELL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "securityStandards": [],
+      "requiredEntitlements": []
+    }
+  ],
+  "actives": {
+    "typescript:S1101": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-10-14T16:47:36+0000",
+        "updatedAt": "2026-10-14T16:47:36+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S1077": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-11-28T13:47:50+0000",
+        "updatedAt": "2023-11-28T13:47:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S1874": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2021-02-15T09:36:37+0000",
+        "updatedAt": "2021-02-15T09:36:37+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S1128": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-01-29T09:03:46+0000",
+        "updatedAt": "2020-01-29T09:03:46+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S4156": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2021-02-15T09:36:30+0000",
+        "updatedAt": "2021-02-15T09:36:30+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S1854": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2017-08-25T10:41:33+0000",
+        "updatedAt": "2017-08-25T10:41:33+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S2685": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2021-02-15T09:36:40+0000",
+        "updatedAt": "2021-02-15T09:36:40+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6547": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-03-09T11:27:31+0000",
+        "updatedAt": "2026-03-09T11:27:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6549": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-03-09T11:31:31+0000",
+        "updatedAt": "2026-03-09T11:31:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S4684": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2026-03-09T11:38:00+0000",
+        "updatedAt": "2026-03-09T11:38:00+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5696": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-02-15T09:36:34+0000",
+        "updatedAt": "2021-02-15T09:36:34+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5335": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2026-03-09T11:29:31+0000",
+        "updatedAt": "2026-03-09T11:29:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6105": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-02-15T09:36:43+0000",
+        "updatedAt": "2021-02-15T09:36:43+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5334": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-01-15T09:55:01+0000",
+        "updatedAt": "2021-01-15T09:55:01+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5131": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-01-15T09:55:04+0000",
+        "updatedAt": "2021-01-15T09:55:04+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5496": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2026-03-09T11:35:35+0000",
+        "updatedAt": "2026-03-09T11:35:35+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S2631": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2021-01-15T09:55:02+0000",
+        "updatedAt": "2021-01-15T09:55:02+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5146": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-04-08T15:22:45+0000",
+        "updatedAt": "2021-04-08T15:22:45+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5145": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-02-23T10:41:25+0000",
+        "updatedAt": "2026-02-23T10:41:25+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S2076": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-04-08T15:22:47+0000",
+        "updatedAt": "2021-04-08T15:22:47+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5147": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-01-15T09:54:57+0000",
+        "updatedAt": "2021-01-15T09:54:57+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S3649": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2020-09-30T08:01:28+0000",
+        "updatedAt": "2020-09-30T08:01:28+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S7044": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2025-10-21T06:23:44+0000",
+        "updatedAt": "2025-10-21T06:23:44+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5144": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2021-04-08T15:22:40+0000",
+        "updatedAt": "2021-04-08T15:22:40+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S8378": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-02-23T10:35:22+0000",
+        "updatedAt": "2026-02-23T10:35:22+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6350": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2021-11-22T10:45:20+0000",
+        "updatedAt": "2021-11-22T10:45:20+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6641": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-03-09T11:23:16+0000",
+        "updatedAt": "2026-03-09T11:23:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S8348": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-01-08T11:50:37+0000",
+        "updatedAt": "2026-01-08T11:50:37+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S8349": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-01-08T11:46:16+0000",
+        "updatedAt": "2026-01-08T11:46:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S2083": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2020-12-15T08:53:56+0000",
+        "updatedAt": "2020-12-15T08:53:56+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6287": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2021-10-27T09:09:05+0000",
+        "updatedAt": "2023-03-30T08:47:48+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S5883": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2021-04-08T15:22:49+0000",
+        "updatedAt": "2021-04-08T15:22:49+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6776": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-02-23T10:43:48+0000",
+        "updatedAt": "2026-02-23T10:43:48+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S2091": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2026-02-23T10:48:18+0000",
+        "updatedAt": "2026-02-23T10:48:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S6096": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2020-12-15T08:53:55+0000",
+        "updatedAt": "2020-12-15T08:53:55+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S5734": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:53+0000",
+        "updatedAt": "2020-11-16T08:33:53+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5736": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:54+0000",
+        "updatedAt": "2020-11-16T08:33:54+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5739": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:53+0000",
+        "updatedAt": "2020-11-16T08:33:53+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S4502": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-09-30T08:01:30+0000",
+        "updatedAt": "2020-09-30T08:01:30+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S4507": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-09-30T08:01:29+0000",
+        "updatedAt": "2020-09-30T08:01:29+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5725": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:51+0000",
+        "updatedAt": "2020-11-16T08:33:51+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5728": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:51+0000",
+        "updatedAt": "2020-11-16T08:33:51+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5659": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:39+0000",
+        "updatedAt": "2020-10-23T12:05:39+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S5547": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:39+0000",
+        "updatedAt": "2020-10-23T12:05:39+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S5542": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:40+0000",
+        "updatedAt": "2021-05-04T09:40:05+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S5876": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-12-28T10:06:50+0000",
+        "updatedAt": "2020-12-28T10:06:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S4423": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:35+0000",
+        "updatedAt": "2021-05-04T09:40:02+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S4426": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:35+0000",
+        "updatedAt": "2021-05-04T09:40:01+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S2245": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2019-10-09T06:15:08+0000",
+        "updatedAt": "2026-06-22T12:30:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S2486": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2023-03-28T08:43:04+0000",
+        "updatedAt": "2023-03-28T08:43:04+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S3330": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:36+0000",
+        "updatedAt": "2020-10-23T12:05:36+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5527": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:37+0000",
+        "updatedAt": "2020-10-23T12:05:37+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S4790": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2019-10-09T06:15:08+0000",
+        "updatedAt": "2019-10-09T06:15:08+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S2755": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2020-09-30T08:01:27+0000",
+        "updatedAt": "2020-09-30T08:01:27+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S9382": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-09-29T16:14:46+0000",
+        "updatedAt": "2026-09-29T16:14:46+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S9380": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-09-29T16:14:56+0000",
+        "updatedAt": "2026-09-29T16:14:56+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S9383": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-09-29T16:13:34+0000",
+        "updatedAt": "2026-09-29T16:13:34+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S9145": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-08-14T09:05:24+0000",
+        "updatedAt": "2026-08-14T09:05:24+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S2612": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2020-12-28T10:06:51+0000",
+        "updatedAt": "2020-12-28T10:06:51+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S1523": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2017-08-25T10:41:33+0000",
+        "updatedAt": "2017-08-25T10:41:33+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S1313": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-12-28T10:06:46+0000",
+        "updatedAt": "2020-12-28T10:06:46+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S9150": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-08-14T09:07:18+0000",
+        "updatedAt": "2026-08-14T09:07:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S4830": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:38+0000",
+        "updatedAt": "2020-10-23T12:05:38+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S6268": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2021-06-08T09:17:32+0000",
+        "updatedAt": "2021-06-08T09:17:32+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S6275": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:02:15+0000",
+        "updatedAt": "2022-11-08T15:02:15+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6249": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2022-08-11T13:48:09+0000",
+        "updatedAt": "2026-06-22T12:46:33+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S2819": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:37+0000",
+        "updatedAt": "2020-10-23T12:05:37+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S5332": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-12-28T10:06:53+0000",
+        "updatedAt": "2026-06-22T13:13:54+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S2068": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [
+          {
+            "key": "passwordWords",
+            "value": "password,pwd,passwd,passphrase"
+          }
+        ],
+        "createdAt": "2018-02-27T11:08:41+0000",
+        "updatedAt": "2026-03-17T11:42:30+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6303": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:05:31+0000",
+        "updatedAt": "2022-11-08T15:05:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S7639": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2025-12-08T14:04:55+0000",
+        "updatedAt": "2025-12-08T14:04:55+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S6308": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:05:05+0000",
+        "updatedAt": "2022-11-08T15:05:05+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S8961": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-07-06T09:09:26+0000",
+        "updatedAt": "2026-07-06T09:09:26+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S5693": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [
+          {
+            "key": "standardSizeLimit",
+            "value": "2000000"
+          },
+          {
+            "key": "fileUploadSizeLimit",
+            "value": "8000000"
+          }
+        ],
+        "createdAt": "2020-09-30T08:01:33+0000",
+        "updatedAt": "2020-09-30T08:01:33+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6437": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2025-12-08T14:00:22+0000",
+        "updatedAt": "2025-12-08T14:00:22+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S2077": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2019-10-09T06:15:07+0000",
+        "updatedAt": "2021-05-04T09:39:55+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6319": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:03:16+0000",
+        "updatedAt": "2022-11-08T15:03:16+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S7739": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2025-09-26T20:54:51+0000",
+        "updatedAt": "2025-09-26T20:54:51+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S7503": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2026-09-29T16:15:03+0000",
+        "updatedAt": "2026-09-29T16:15:03+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5689": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-09-30T08:01:31+0000",
+        "updatedAt": "2020-09-30T08:01:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5443": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2020-12-28T10:06:52+0000",
+        "updatedAt": "2020-12-28T10:06:52+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S6418": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [
+          {
+            "key": "secretWords",
+            "value": "api[_.-]?key,auth,credential,secret,token"
+          },
+          {
+            "key": "randomnessSensibility",
+            "value": "5.0"
+          }
+        ],
+        "createdAt": "2024-12-02T15:18:21+0000",
+        "updatedAt": "2024-12-02T15:18:21+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S7790": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2025-12-08T14:03:18+0000",
+        "updatedAt": "2025-12-08T14:03:18+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S5148": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2022-06-28T09:34:31+0000",
+        "updatedAt": "2022-06-28T09:34:31+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S6327": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:03:30+0000",
+        "updatedAt": "2026-06-22T13:06:53+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S6321": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:04:09+0000",
+        "updatedAt": "2022-11-08T15:04:09+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S4036": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2022-06-02T14:11:50+0000",
+        "updatedAt": "2022-06-02T14:11:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S5247": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2020-11-16T08:33:50+0000",
+        "updatedAt": "2020-11-16T08:33:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6330": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:04:23+0000",
+        "updatedAt": "2022-11-08T15:04:23+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S6332": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2022-11-08T15:04:50+0000",
+        "updatedAt": "2022-11-08T15:04:50+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S5122": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2019-10-09T06:15:08+0000",
+        "updatedAt": "2026-05-08T09:52:48+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S2092": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2020-10-23T12:05:38+0000",
+        "updatedAt": "2020-10-23T12:05:38+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ],
+    "typescript:S9379": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-09-09T09:41:03+0000",
+        "updatedAt": "2026-09-09T09:41:03+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S1848": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2021-05-04T09:40:03+0000",
+        "updatedAt": "2021-05-04T09:40:03+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S9011": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-07-17T12:40:43+0000",
+        "updatedAt": "2026-07-17T12:40:43+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S9162": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-08-28T15:24:09+0000",
+        "updatedAt": "2026-08-28T15:24:09+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "typescript:S2187": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "BLOCKER",
+        "params": [],
+        "createdAt": "2024-01-29T09:04:41+0000",
+        "updatedAt": "2024-01-29T09:04:41+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "BLOCKER"
+          }
+        ]
+      }
+    ],
+    "typescript:S8951": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MAJOR",
+        "params": [],
+        "createdAt": "2026-07-06T09:09:23+0000",
+        "updatedAt": "2026-07-06T09:09:23+0000",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ]
+      }
+    ],
+    "tssecurity:S8678": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "CRITICAL",
+        "params": [],
+        "createdAt": "2026-06-16T17:45:21+0000",
+        "updatedAt": "2026-06-16T17:45:21+0000",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ]
+      }
+    ],
+    "typescript:S6957": [
+      {
+        "qProfile": "AaECM3aFNH6l0Cs10PvG",
+        "inherit": "NONE",
+        "severity": "MINOR",
+        "params": [],
+        "createdAt": "2024-04-02T12:04:28+0000",
+        "updatedAt": "2024-04-02T12:04:28+0000",
+        "impacts": [
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ]
+      }
+    ]
+  },
+  "qProfiles": {
+    "AaECM3aFNH6l0Cs10PvG": {
+      "name": "Sonar way comprehensive",
+      "lang": "ts",
+      "langName": "TypeScript"
+    }
+  }
+}

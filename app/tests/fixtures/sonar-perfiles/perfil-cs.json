@@ -1,0 +1,30 @@
+{
+  "profiles": [
+    {
+      "key": "AaECPyk5AVbnBgebTRc4",
+      "name": "Lainco C#",
+      "language": "cs",
+      "languageName": "C#",
+      "isInherited": false,
+      "isDefault": true,
+      "activeRuleCount": 0,
+      "activeDeprecatedRuleCount": 0,
+      "rulesUpdatedAt": "2026-10-03T14:50:56+0000",
+      "lastUsed": "2026-10-16T23:24:50+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": false,
+      "actions": {
+        "edit": true,
+        "setAsDefault": false,
+        "copy": true,
+        "associateProjects": false,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    }
+  ],
+  "actions": {
+    "create": true
+  }
+}

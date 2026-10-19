@@ -36,6 +36,13 @@
       "when": 1792438623323,
       "tag": "0004_publicacion_y_desvios",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792441413790,
+      "tag": "0005_perfil_no_es_default",
+      "breakpoints": true
     }
   ]
 }

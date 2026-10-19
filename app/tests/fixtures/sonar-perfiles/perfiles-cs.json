@@ -1,0 +1,100 @@
+{
+  "profiles": [
+    {
+      "key": "AaECPyk5AVbnBgebTRc4",
+      "name": "Lainco C#",
+      "language": "cs",
+      "languageName": "C#",
+      "isInherited": false,
+      "isDefault": true,
+      "activeRuleCount": 0,
+      "activeDeprecatedRuleCount": 0,
+      "rulesUpdatedAt": "2026-10-03T14:50:56+0000",
+      "lastUsed": "2026-10-16T23:24:50+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": false,
+      "actions": {
+        "edit": true,
+        "setAsDefault": false,
+        "copy": true,
+        "associateProjects": false,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10Puz",
+      "name": "Sonar way comprehensive",
+      "language": "cs",
+      "languageName": "C#",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 379,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-09-09T10:30:55+0000",
+      "lastUsed": "2026-10-19T19:48:04+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10Pu3",
+      "name": "Sonar way extended",
+      "language": "cs",
+      "languageName": "C#",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 226,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-09-09T10:33:45+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10Pu2",
+      "name": "Sonar way core",
+      "language": "cs",
+      "languageName": "C#",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 166,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-09-09T10:33:42+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    }
+  ],
+  "actions": {
+    "create": true
+  }
+}

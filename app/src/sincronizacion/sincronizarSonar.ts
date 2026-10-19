@@ -46,7 +46,8 @@ export interface ResumenDeSincronizacion {
 
 export interface OpcionesDeSincronizacion {
   db: Db;
-  sonar: ClienteSonar;
+  /** Solo hace falta leer el catálogo. */
+  sonar: Pick<ClienteSonar, "buscarReglas">;
   /** Quién la disparó desde la app. Sin valor: el cron. */
   disparadaPorId?: string;
 }

@@ -16,7 +16,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 (publicación a Sonar): plan en 7 pasos y decisiones P1–P3 en `FASE-6-APP.md`, sección 8 bis; paso 1 de 7 hecho (tablas `publicacion` y `desvio`, perfiles por variable de entorno). Ver `app/README.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 (publicación a Sonar): plan en 7 pasos y decisiones P1–P3 en `FASE-6-APP.md`, sección 8 bis; paso 1 hecho (tablas `publicacion` y `desvio`, perfiles por variable de entorno); paso 2 de 7 hecho (cliente de perfiles, verificado contra SonarQube Cloud). Decisiones P4 (severidad traducida a impactos) y P5 (perfil no default es desvío). Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 
@@ -136,7 +136,7 @@ Las demás (D6.x, D7.x, D8.2) recién hacen falta en sus fases.
 | Repositorio | `https://github.com/revertpablo/Lainco-quality` (público) |
 | Organización de Sonar | `revertpablo` |
 | Project key | `revertpablo_Lainco-quality` |
-| Quality Profiles | `Lainco C#` y `Lainco Typescript`, vacíos y Default |
+| Quality Profiles | `Lainco C#` y `Lainco Typescript`, vacíos y Default. Hasta el 2026-10-19 el default era "Sonar way comprehensive" (el proyecto usaba los nuestros por asociación explícita); desde la 6.2 la app avisa si dejan de ser default |
 | Quality Gate | `Lainco` — una condición: `new_violations > 0` |
 | Plan de Sonar | Trial de Team plan con downgrade automático a Free el 17/10/2026. Nada de lo que usamos es premium. |
 

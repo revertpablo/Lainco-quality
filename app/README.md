@@ -122,6 +122,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0002_decisores_iniciales` | Seed de los decisores de D6.1: Federico Sánchez y Pablo A. Revert. |
 | `0003_avisos` | Tabla `aviso` y su tabla de referencia `motivoAviso` (paso 6). |
 | `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
+| `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
 
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
 agregan con su propia migración cuando se implementan.
@@ -492,6 +493,57 @@ armadas a mano) corren siempre.
 Si en la terminal de VS Code falla con `ETIMEDOUT`, probar desde una terminal de
 PowerShell aparte (pasó el 2026-10-16 en una red sin proxy).
 
+### Quality Profiles
+
+Para publicar (entrega 6.2) el cliente también maneja los perfiles
+(`src/sonar/perfiles.ts`; los reintentos y los errores son los mismos, en
+`src/sonar/http.ts`):
+
+| Operación | Endpoint |
+|---|---|
+| Buscar el perfil gestionado por nombre exacto (clave, si es default, de quién hereda). Si no existe, falla: publicar en otro perfil cambiaría lo que analiza Sonar. | `GET api/qualityprofiles/search` |
+| Reglas activas de un perfil, con la severidad, los impactos y los parámetros que les da el perfil. Completa o falla, como el catálogo. | `GET api/rules/search` con `qprofile`, `activation=true`, `f=actives` |
+| Proyectos de la organización, y el perfil de cada lenguaje que usa cada uno. | `GET api/components/search`, `GET api/qualityprofiles/search` con `project` |
+| Activar una regla (o cambiarle impactos y parámetros) y desactivarla. Los parámetros van como `clave=valor;clave=valor`: un valor con `;` se rechaza antes de mandarlo, porque Sonar no tiene forma de escaparlo. | `POST api/qualityprofiles/activate_rule`, `deactivate_rule` |
+
+**Severidad.** SonarQube Cloud deprecó `severity` en `activate_rule` el 21/08/2026 y lo
+reemplazó por `impacts`: una severidad por calidad del software
+(`MAINTAINABILITY=HIGH;SECURITY=MEDIUM`); los dos no se pueden mandar juntos. El decisor
+sigue eligiendo la severidad clásica (BLOCKER … INFO) y al publicar se traduce a cada
+impacto de la regla con la equivalencia de Sonar (`src/dominio/severidad.ts`):
+
+| Elegida | Impacto |
+|---|---|
+| BLOCKER | BLOCKER |
+| CRITICAL | HIGH |
+| MAJOR | MEDIUM |
+| MINOR | LOW |
+| INFO | INFO |
+
+Una regla sin impactos (algunos security hotspots) se activa sin pedir ninguno, con los de
+Sonar.
+
+Para administrar el perfil, el usuario dueño de `LAINCO_SONAR_TOKEN` necesita el permiso
+**Administer Quality Profiles** en la organización. Sin él, Sonar responde 403 y el error
+lo dice.
+
+Las respuestas reales se graban con:
+
+```powershell
+npm run sonar:grabar-perfiles
+```
+
+Necesita además `SONAR_PERFIL_CS` y `SONAR_PERFIL_TS`. Graba en
+`tests/fixtures/sonar-perfiles/` la definición de la Web API de lo que usa la app (qué
+parámetros acepta `activate_rule`), los perfiles de cada lenguaje, las reglas activas del
+perfil gestionado y del perfil de Sonar por defecto ("Sonar way comprehensive", que tiene
+reglas activas aunque el nuestro esté vacío), los proyectos y su perfil. Un test controla
+que todo lo que manda la app exista en la API grabada y no esté deprecado: si Sonar depreca
+algo más, ese test es el que avisa. **No cambia nada en
+Sonar**: lo único que no es lectura es activar una regla que no existe, para saber si el
+token tiene permiso (sin permiso, Sonar responde 403 antes de buscar la regla). La consola
+dice el resultado. Las prueban los tests de `tests/sonar/perfiles-grabados.test.ts`.
+
 ### Proxy
 
 Node no usa el proxy configurado en Windows (el navegador y .NET sí). En una red que sale
@@ -590,6 +642,9 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/dominio/progreso.test.ts` | Cuentas del tablero: porcentaje triageado, agrupación por lenguaje, tipo y origen, el N de las estancadas. | Nada. |
 | `tests/tablero/` | Consultas del tablero: conteos y reglas estancadas. | Base de pruebas. |
 | `tests/sonar/configuracion.test.ts` | Perfiles de Sonar por variable de entorno. | Nada. |
+| `tests/sonar/perfiles.test.ts` | Quality Profiles: buscar, reglas activas, proyectos, activar y desactivar. | Nada. |
+| `tests/dominio/severidad.test.ts` | Severidad elegida traducida a los impactos que pide Sonar. | Nada. |
+| `tests/sonar/perfiles-grabados.test.ts` | Lo mismo contra respuestas reales (`npm run sonar:grabar-perfiles`), y que lo que manda la app exista en la API sin deprecar. | La grabación. |
 | `tests/publicacion/` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
@@ -639,13 +694,13 @@ app/
 │   ├── tablero/      # Consultas del tablero de progreso.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
-│   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
+│   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
 │   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva, barra de estados del tablero.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
-├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
+├── scripts/          # grabar-respuestas-sonar.mts y grabar-perfiles-sonar.mts: graban respuestas reales para los tests.
 ├── tests/            # Tests (Vitest). Ver "Tests".
-│   └── fixtures/sonar/  # Respuestas grabadas de SonarQube Cloud. Se commitean.
+│   └── fixtures/     # sonar/ y sonar-perfiles/: respuestas grabadas de SonarQube Cloud. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
 ├── vercel.json       # Cron de la sincronización.

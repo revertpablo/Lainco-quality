@@ -1,0 +1,1741 @@
+{
+  "id": "ac7bc645-a098-4433-bf60-4dc1a7c63137",
+  "prevId": "cb7590f3-951f-4518-b281-ec3d2f5f0707",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.accionPublicacion": {
+      "name": "accionPublicacion",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "accionPublicacionPk": {
+          "name": "accionPublicacionPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.aviso": {
+      "name": "aviso",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reglaId": {
+          "name": "reglaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sincronizacionId": {
+          "name": "sincronizacionId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "creadoEn": {
+          "name": "creadoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resueltoEn": {
+          "name": "resueltoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resueltoPorId": {
+          "name": "resueltoPorId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "avisoPorRegla": {
+          "name": "avisoPorRegla",
+          "columns": [
+            {
+              "expression": "reglaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "avisoRegla": {
+          "name": "avisoRegla",
+          "tableFrom": "aviso",
+          "columnsFrom": [
+            "reglaId"
+          ],
+          "tableTo": "regla",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "avisoMotivo": {
+          "name": "avisoMotivo",
+          "tableFrom": "aviso",
+          "columnsFrom": [
+            "motivo"
+          ],
+          "tableTo": "motivoAviso",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "avisoSincronizacion": {
+          "name": "avisoSincronizacion",
+          "tableFrom": "aviso",
+          "columnsFrom": [
+            "sincronizacionId"
+          ],
+          "tableTo": "sincronizacion",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "avisoResueltoPor": {
+          "name": "avisoResueltoPor",
+          "tableFrom": "aviso",
+          "columnsFrom": [
+            "resueltoPorId"
+          ],
+          "tableTo": "usuario",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "avisoPk": {
+          "name": "avisoPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "avisoResueltoConAutor": {
+          "name": "avisoResueltoConAutor",
+          "value": "(\"aviso\".\"resueltoEn\" is null) = (\"aviso\".\"resueltoPorId\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.decision": {
+      "name": "decision",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reglaId": {
+          "name": "reglaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estadoAnterior": {
+          "name": "estadoAnterior",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estadoNuevo": {
+          "name": "estadoNuevo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "autorId": {
+          "name": "autorId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha": {
+          "name": "fecha",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "justificacion": {
+          "name": "justificacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "severidad": {
+          "name": "severidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parametros": {
+          "name": "parametros",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "basadaEnSugerencia": {
+          "name": "basadaEnSugerencia",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "loteId": {
+          "name": "loteId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "decisionReglaFecha": {
+          "name": "decisionReglaFecha",
+          "columns": [
+            {
+              "expression": "reglaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fecha",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "decisionLote": {
+          "name": "decisionLote",
+          "columns": [
+            {
+              "expression": "loteId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "decisionRegla": {
+          "name": "decisionRegla",
+          "tableFrom": "decision",
+          "columnsFrom": [
+            "reglaId"
+          ],
+          "tableTo": "regla",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "decisionEstadoAnterior": {
+          "name": "decisionEstadoAnterior",
+          "tableFrom": "decision",
+          "columnsFrom": [
+            "estadoAnterior"
+          ],
+          "tableTo": "estado",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "decisionEstadoNuevo": {
+          "name": "decisionEstadoNuevo",
+          "tableFrom": "decision",
+          "columnsFrom": [
+            "estadoNuevo"
+          ],
+          "tableTo": "estado",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "decisionAutor": {
+          "name": "decisionAutor",
+          "tableFrom": "decision",
+          "columnsFrom": [
+            "autorId"
+          ],
+          "tableTo": "usuario",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "decisionPk": {
+          "name": "decisionPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "decisionCambiaDeEstado": {
+          "name": "decisionCambiaDeEstado",
+          "value": "\"decision\".\"estadoAnterior\" <> \"decision\".\"estadoNuevo\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.desvio": {
+      "name": "desvio",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lenguaje": {
+          "name": "lenguaje",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reglaId": {
+          "name": "reglaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detalle": {
+          "name": "detalle",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detectadoEn": {
+          "name": "detectadoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "vistoEn": {
+          "name": "vistoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resueltoEn": {
+          "name": "resueltoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "desvioAbiertoUnico": {
+          "name": "desvioAbiertoUnico",
+          "columns": [
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lenguaje",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "clave",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"desvio\".\"resueltoEn\" is null",
+          "concurrently": false
+        },
+        "desvioPorRegla": {
+          "name": "desvioPorRegla",
+          "columns": [
+            {
+              "expression": "reglaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "desvioTipo": {
+          "name": "desvioTipo",
+          "tableFrom": "desvio",
+          "columnsFrom": [
+            "tipo"
+          ],
+          "tableTo": "tipoDesvio",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "desvioLenguaje": {
+          "name": "desvioLenguaje",
+          "tableFrom": "desvio",
+          "columnsFrom": [
+            "lenguaje"
+          ],
+          "tableTo": "lenguaje",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "desvioRegla": {
+          "name": "desvioRegla",
+          "tableFrom": "desvio",
+          "columnsFrom": [
+            "reglaId"
+          ],
+          "tableTo": "regla",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "desvioPk": {
+          "name": "desvioPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "desvioVistoDespuesDeDetectado": {
+          "name": "desvioVistoDespuesDeDetectado",
+          "value": "\"desvio\".\"vistoEn\" >= \"desvio\".\"detectadoEn\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.estado": {
+      "name": "estado",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "estadoPk": {
+          "name": "estadoPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.estadoPublicacion": {
+      "name": "estadoPublicacion",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "estadoPublicacionPk": {
+          "name": "estadoPublicacionPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.estadoRegla": {
+      "name": "estadoRegla",
+      "schema": "",
+      "columns": {
+        "reglaId": {
+          "name": "reglaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendienteDeAnalizar'"
+        },
+        "severidadAsignada": {
+          "name": "severidadAsignada",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parametros": {
+          "name": "parametros",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actualizadoEn": {
+          "name": "actualizadoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "estadoReglaPorEstado": {
+          "name": "estadoReglaPorEstado",
+          "columns": [
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "estadoReglaRegla": {
+          "name": "estadoReglaRegla",
+          "tableFrom": "estadoRegla",
+          "columnsFrom": [
+            "reglaId"
+          ],
+          "tableTo": "regla",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "estadoReglaEstado": {
+          "name": "estadoReglaEstado",
+          "tableFrom": "estadoRegla",
+          "columnsFrom": [
+            "estado"
+          ],
+          "tableTo": "estado",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "estadoReglaPk": {
+          "name": "estadoReglaPk",
+          "columns": [
+            "reglaId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.estadoSincronizacion": {
+      "name": "estadoSincronizacion",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "estadoSincronizacionPk": {
+          "name": "estadoSincronizacionPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lenguaje": {
+      "name": "lenguaje",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "lenguajePk": {
+          "name": "lenguajePk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.motivoAviso": {
+      "name": "motivoAviso",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "motivoAvisoPk": {
+          "name": "motivoAvisoPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.origen": {
+      "name": "origen",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "origenPk": {
+          "name": "origenPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.publicacion": {
+      "name": "publicacion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reglaId": {
+          "name": "reglaId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendiente'"
+        },
+        "decisionId": {
+          "name": "decisionId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "desvioId": {
+          "name": "desvioId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pedidaPorId": {
+          "name": "pedidaPorId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "creadaEn": {
+          "name": "creadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "intentos": {
+          "name": "intentos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "proximoIntentoEn": {
+          "name": "proximoIntentoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ultimoError": {
+          "name": "ultimoError",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accion": {
+          "name": "accion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "severidad": {
+          "name": "severidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parametros": {
+          "name": "parametros",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "publicadaEn": {
+          "name": "publicadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "publicacionPendienteUnica": {
+          "name": "publicacionPendienteUnica",
+          "columns": [
+            {
+              "expression": "reglaId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"publicacion\".\"estado\" = 'pendiente'",
+          "concurrently": false
+        },
+        "publicacionPorEstado": {
+          "name": "publicacionPorEstado",
+          "columns": [
+            {
+              "expression": "estado",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "proximoIntentoEn",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "publicacionRegla": {
+          "name": "publicacionRegla",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "reglaId"
+          ],
+          "tableTo": "regla",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "publicacionEstado": {
+          "name": "publicacionEstado",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "estado"
+          ],
+          "tableTo": "estadoPublicacion",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "publicacionDecision": {
+          "name": "publicacionDecision",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "decisionId"
+          ],
+          "tableTo": "decision",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "publicacionDesvio": {
+          "name": "publicacionDesvio",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "desvioId"
+          ],
+          "tableTo": "desvio",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "publicacionPedidaPor": {
+          "name": "publicacionPedidaPor",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "pedidaPorId"
+          ],
+          "tableTo": "usuario",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "publicacionAccion": {
+          "name": "publicacionAccion",
+          "tableFrom": "publicacion",
+          "columnsFrom": [
+            "accion"
+          ],
+          "tableTo": "accionPublicacion",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "publicacionPk": {
+          "name": "publicacionPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "publicacionPorDecisionODesvio": {
+          "name": "publicacionPorDecisionODesvio",
+          "value": "(\"publicacion\".\"decisionId\" is null) <> (\"publicacion\".\"desvioId\" is null)"
+        },
+        "publicacionPublicadaConFecha": {
+          "name": "publicacionPublicadaConFecha",
+          "value": "(\"publicacion\".\"estado\" = 'publicada') = (\"publicacion\".\"publicadaEn\" is not null)"
+        },
+        "publicacionPublicadaConAccion": {
+          "name": "publicacionPublicadaConAccion",
+          "value": "\"publicacion\".\"estado\" <> 'publicada' or \"publicacion\".\"accion\" is not null"
+        },
+        "publicacionIntentosNoNegativos": {
+          "name": "publicacionIntentosNoNegativos",
+          "value": "\"publicacion\".\"intentos\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.regla": {
+      "name": "regla",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "origen": {
+          "name": "origen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lenguaje": {
+          "name": "lenguaje",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "severidadDefault": {
+          "name": "severidadDefault",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "atributoCleanCode": {
+          "name": "atributoCleanCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "impactos": {
+          "name": "impactos",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parametros": {
+          "name": "parametros",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hashDescripcion": {
+          "name": "hashDescripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deprecadaEn": {
+          "name": "deprecadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "probableLocalmente": {
+          "name": "probableLocalmente",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primeraSincronizacion": {
+          "name": "primeraSincronizacion",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ultimaModificacion": {
+          "name": "ultimaModificacion",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "altaEnSincronizacionId": {
+          "name": "altaEnSincronizacionId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modificadaEnSincronizacionId": {
+          "name": "modificadaEnSincronizacionId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "reglaLenguajeTipo": {
+          "name": "reglaLenguajeTipo",
+          "columns": [
+            {
+              "expression": "lenguaje",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tipo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "reglaTags": {
+          "name": "reglaTags",
+          "columns": [
+            {
+              "expression": "tags",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "gin",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "reglaOrigen": {
+          "name": "reglaOrigen",
+          "tableFrom": "regla",
+          "columnsFrom": [
+            "origen"
+          ],
+          "tableTo": "origen",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reglaLenguaje": {
+          "name": "reglaLenguaje",
+          "tableFrom": "regla",
+          "columnsFrom": [
+            "lenguaje"
+          ],
+          "tableTo": "lenguaje",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reglaAltaEnSincronizacion": {
+          "name": "reglaAltaEnSincronizacion",
+          "tableFrom": "regla",
+          "columnsFrom": [
+            "altaEnSincronizacionId"
+          ],
+          "tableTo": "sincronizacion",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reglaModificadaEnSincronizacion": {
+          "name": "reglaModificadaEnSincronizacion",
+          "tableFrom": "regla",
+          "columnsFrom": [
+            "modificadaEnSincronizacionId"
+          ],
+          "tableTo": "sincronizacion",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "reglaPk": {
+          "name": "reglaPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "reglaOrigenClave": {
+          "name": "reglaOrigenClave",
+          "columns": [
+            "origen",
+            "clave"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rol": {
+      "name": "rol",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "rolPk": {
+          "name": "rolPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sincronizacion": {
+      "name": "sincronizacion",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "origen": {
+          "name": "origen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "iniciadaEn": {
+          "name": "iniciadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "terminadaEn": {
+          "name": "terminadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'enCurso'"
+        },
+        "nuevas": {
+          "name": "nuevas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "modificadas": {
+          "name": "modificadas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "deprecadas": {
+          "name": "deprecadas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disparadaPorId": {
+          "name": "disparadaPorId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sincronizacionOrigen": {
+          "name": "sincronizacionOrigen",
+          "tableFrom": "sincronizacion",
+          "columnsFrom": [
+            "origen"
+          ],
+          "tableTo": "origen",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "sincronizacionEstado": {
+          "name": "sincronizacionEstado",
+          "tableFrom": "sincronizacion",
+          "columnsFrom": [
+            "estado"
+          ],
+          "tableTo": "estadoSincronizacion",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "sincronizacionDisparadaPor": {
+          "name": "sincronizacionDisparadaPor",
+          "tableFrom": "sincronizacion",
+          "columnsFrom": [
+            "disparadaPorId"
+          ],
+          "tableTo": "usuario",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "sincronizacionPk": {
+          "name": "sincronizacionPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tipoDesvio": {
+      "name": "tipoDesvio",
+      "schema": "",
+      "columns": {
+        "codigo": {
+          "name": "codigo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "tipoDesvioPk": {
+          "name": "tipoDesvioPk",
+          "columns": [
+            "codigo"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuario": {
+      "name": "usuario",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "githubLogin": {
+          "name": "githubLogin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rol": {
+          "name": "rol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'analista'"
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "creadoEn": {
+          "name": "creadoEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "usuarioRol": {
+          "name": "usuarioRol",
+          "tableFrom": "usuario",
+          "columnsFrom": [
+            "rol"
+          ],
+          "tableTo": "rol",
+          "columnsTo": [
+            "codigo"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "usuarioPk": {
+          "name": "usuarioPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "usuarioEmail": {
+          "name": "usuarioEmail",
+          "columns": [
+            "email"
+          ],
+          "nullsNotDistinct": false
+        },
+        "usuarioGithubLogin": {
+          "name": "usuarioGithubLogin",
+          "columns": [
+            "githubLogin"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "usuarioConIdentidad": {
+          "name": "usuarioConIdentidad",
+          "value": "\"usuario\".\"email\" is not null or \"usuario\".\"githubLogin\" is not null"
+        },
+        "usuarioEmailEnMinusculas": {
+          "name": "usuarioEmailEnMinusculas",
+          "value": "\"usuario\".\"email\" = lower(\"usuario\".\"email\")"
+        },
+        "usuarioGithubLoginEnMinusculas": {
+          "name": "usuarioGithubLoginEnMinusculas",
+          "value": "\"usuario\".\"githubLogin\" = lower(\"usuario\".\"githubLogin\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.vistaGuardada": {
+      "name": "vistaGuardada",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usuarioId": {
+          "name": "usuarioId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "filtros": {
+          "name": "filtros",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "compartida": {
+          "name": "compartida",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "creadaEn": {
+          "name": "creadaEn",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "vistaGuardadaUsuario": {
+          "name": "vistaGuardadaUsuario",
+          "tableFrom": "vistaGuardada",
+          "columnsFrom": [
+            "usuarioId"
+          ],
+          "tableTo": "usuario",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "vistaGuardadaPk": {
+          "name": "vistaGuardadaPk",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "vistaGuardadaUsuarioNombre": {
+          "name": "vistaGuardadaUsuarioNombre",
+          "columns": [
+            "usuarioId",
+            "nombre"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "profiles": [
+    {
+      "key": "AaECQJiUzLKi2V2eNXsH",
+      "name": "Lainco Typescript",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": true,
+      "activeRuleCount": 0,
+      "activeDeprecatedRuleCount": 0,
+      "rulesUpdatedAt": "2026-10-03T14:52:30+0000",
+      "lastUsed": "2026-10-16T23:24:50+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": false,
+      "actions": {
+        "edit": true,
+        "setAsDefault": false,
+        "copy": true,
+        "associateProjects": false,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    }
+  ],
+  "actions": {
+    "create": true
+  }
+}

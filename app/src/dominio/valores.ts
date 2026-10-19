@@ -93,5 +93,10 @@ export const TipoDesvio = {
   PerfilConHerencia: "perfilConHerencia",
   /** Un proyecto de la organización usa otro perfil para el lenguaje. */
   ProyectoConOtroPerfil: "proyectoConOtroPerfil",
+  /**
+   * El perfil gestionado no es el default del lenguaje: un proyecto nuevo que no se asocie
+   * a mano analizaría con otro (decisión del 2026-10-19).
+   */
+  PerfilNoEsDefault: "perfilNoEsDefault",
 } as const;
 export type TipoDesvio = (typeof TipoDesvio)[keyof typeof TipoDesvio];

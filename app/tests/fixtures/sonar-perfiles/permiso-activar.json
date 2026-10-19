@@ -1,0 +1,11 @@
+{
+  "regla": "csharpsquid:LAINCO_REGLA_QUE_NO_EXISTE",
+  "estado": 404,
+  "cuerpo": {
+    "errors": [
+      {
+        "msg": "Rule with key 'csharpsquid:LAINCO_REGLA_QUE_NO_EXISTE' not found"
+      }
+    ]
+  }
+}

@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
-    "sonar:grabar": "node --experimental-strip-types scripts/grabar-respuestas-sonar.mts"
+    "sonar:grabar": "node --experimental-strip-types scripts/grabar-respuestas-sonar.mts",
+    "sonar:grabar-perfiles": "node --experimental-strip-types scripts/grabar-perfiles-sonar.mts"
   },
   "dependencies": {
     "@vercel/functions": "^3.10.1",

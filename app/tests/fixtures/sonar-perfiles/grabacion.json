@@ -1,0 +1,45 @@
+{
+  "fecha": "2026-10-19T20:27:52.193Z",
+  "url": "https://sonarcloud.io",
+  "organizacion": "revertpablo",
+  "tamanoDePagina": 100,
+  "lenguajes": {
+    "cs": {
+      "perfil": {
+        "clave": "AaECPyk5AVbnBgebTRc4",
+        "nombre": "Lainco C#"
+      },
+      "activas": {
+        "total": 0,
+        "paginas": 1
+      },
+      "deSonar": {
+        "clave": "AaECM3aFNH6l0Cs10Puz",
+        "nombre": "Sonar way comprehensive",
+        "activas": {
+          "total": 376,
+          "paginas": 4
+        }
+      }
+    },
+    "ts": {
+      "perfil": {
+        "clave": "AaECQJiUzLKi2V2eNXsH",
+        "nombre": "Lainco Typescript"
+      },
+      "activas": {
+        "total": 0,
+        "paginas": 1
+      },
+      "deSonar": {
+        "clave": "AaECM3aFNH6l0Cs10PvG",
+        "nombre": "Sonar way comprehensive",
+        "activas": {
+          "total": 472,
+          "paginas": 5
+        }
+      }
+    }
+  },
+  "proyectos": 1
+}

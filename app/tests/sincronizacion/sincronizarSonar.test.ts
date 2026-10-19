@@ -35,7 +35,7 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
   let total: number;
 
   /** Un Sonar falso que devuelve la grabación; `cambiar` la modifica antes de devolverla. */
-  function sonar(cambiar: (reglas: ReglaDeSonar[]) => ReglaDeSonar[] = (r) => r): ClienteSonar {
+  function sonar(cambiar: (reglas: ReglaDeSonar[]) => ReglaDeSonar[] = (r) => r): Pick<ClienteSonar, "buscarReglas"> {
     return { buscarReglas: async (lenguaje) => cambiar(structuredClone(grabadas[lenguaje])) };
   }
 

@@ -1,0 +1,123 @@
+{
+  "profiles": [
+    {
+      "key": "AaECQJiUzLKi2V2eNXsH",
+      "name": "Lainco Typescript",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": true,
+      "activeRuleCount": 0,
+      "activeDeprecatedRuleCount": 0,
+      "rulesUpdatedAt": "2026-10-03T14:52:30+0000",
+      "lastUsed": "2026-10-16T23:24:50+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": false,
+      "actions": {
+        "edit": true,
+        "setAsDefault": false,
+        "copy": true,
+        "associateProjects": false,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10PuP",
+      "name": "Sonar agentic AI",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 432,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-09-29T16:13:18+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10PvG",
+      "name": "Sonar way comprehensive",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 496,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-10-14T16:47:23+0000",
+      "lastUsed": "2026-10-19T19:48:04+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10PvB",
+      "name": "Sonar way extended",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 308,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-10-14T16:48:56+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    },
+    {
+      "key": "AaECM3aFNH6l0Cs10PvA",
+      "name": "Sonar way core",
+      "language": "ts",
+      "languageName": "TypeScript",
+      "isInherited": false,
+      "isDefault": false,
+      "activeRuleCount": 248,
+      "activeDeprecatedRuleCount": 0,
+      "projectCount": 0,
+      "rulesUpdatedAt": "2026-10-14T16:48:53+0000",
+      "organization": "revertpablo",
+      "isBuiltIn": true,
+      "actions": {
+        "edit": false,
+        "setAsDefault": true,
+        "copy": true,
+        "associateProjects": true,
+        "delete": false,
+        "grantPermissions": false
+      },
+      "requiredEntitlements": []
+    }
+  ],
+  "actions": {
+    "create": true
+  }
+}

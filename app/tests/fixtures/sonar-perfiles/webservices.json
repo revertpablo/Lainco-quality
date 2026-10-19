@@ -1,0 +1,3027 @@
+{
+  "webServices": [
+    {
+      "path": "api/components",
+      "description": "Get information about a component (file, directory, project, ...) and its ancestors or descendants. Update a project or module key.",
+      "actions": [
+        {
+          "key": "search",
+          "description": "Search for projects. Used to provide the ability to search for any component but this option has been removed and webservice 'api/components/tree' should be used instead for this purpose",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [],
+          "params": [
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "100",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "q",
+              "description": "Limit search to: <ul><li>component names that contain the supplied string</li><li>component keys that are exactly the same as the supplied string</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sonar"
+            }
+          ]
+        },
+        {
+          "key": "show",
+          "description": "Returns a component (file, directory, project) and its ancestors. The ancestors are ordered from the parent to the root project. Requires the following permission: 'Browse' on the project of the specified component.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [
+            {
+              "description": "Added isCctIndexed to the response. It is a temporary field that will be removed soon",
+              "version": "01 Sep, 2023"
+            },
+            {
+              "description": "Removed isCctIndexed from the response.",
+              "version": "19 Dec, 2024"
+            }
+          ],
+          "params": [
+            {
+              "key": "branch",
+              "description": "Branch key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "feature/my_branch"
+            },
+            {
+              "key": "component",
+              "description": "Component key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_project"
+            },
+            {
+              "key": "pullRequest",
+              "description": "Pull request id",
+              "required": false,
+              "internal": false,
+              "exampleValue": "5461"
+            }
+          ]
+        },
+        {
+          "key": "tree",
+          "description": "Navigate through components based on the chosen strategy.<br>Requires the following permission: 'Browse' on the specified project.<br>When limiting search with the q parameter, directories are not returned.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [
+            {
+              "description": "The use of 'BRC' as value for parameter 'qualifiers' is deprecated",
+              "version": "7.6"
+            },
+            {
+              "description": "The use of module keys in parameter 'component' is deprecated",
+              "version": "7.6"
+            }
+          ],
+          "params": [
+            {
+              "key": "asc",
+              "description": "Ascending sort",
+              "required": false,
+              "internal": false,
+              "defaultValue": "true",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "branch",
+              "description": "Branch key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "feature/my_branch"
+            },
+            {
+              "key": "component",
+              "description": "Base component key. The search is based on this component.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_project"
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "100",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "pullRequest",
+              "description": "Pull request id",
+              "required": false,
+              "internal": false,
+              "exampleValue": "5461"
+            },
+            {
+              "key": "q",
+              "description": "Limit search to: <ul><li>component names that contain the supplied string</li><li>component keys that are exactly the same as the supplied string</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "FILE_NAM",
+              "minimumLength": 3
+            },
+            {
+              "key": "qualifiers",
+              "description": "Comma-separated list of component qualifiers. Filter the results with the specified qualifiers. Possible values are:<ul><li>BRC - Sub-projects</li><li>DIR - Directories</li><li>FIL - Files</li><li>TRK - Projects</li><li>UTS - Test Files</li></ul>",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "BRC",
+                "DIR",
+                "FIL",
+                "TRK",
+                "UTS"
+              ]
+            },
+            {
+              "key": "s",
+              "description": "Comma-separated list of sort fields",
+              "required": false,
+              "internal": false,
+              "defaultValue": "name",
+              "exampleValue": "name, path",
+              "possibleValues": [
+                "name",
+                "path",
+                "qualifier"
+              ]
+            },
+            {
+              "key": "strategy",
+              "description": "Strategy to search for base component descendants:<ul><li>children: return the children components of the base component. Grandchildren components are not returned</li><li>all: return all the descendants components of the base component. Grandchildren are returned.</li><li>leaves: return all the descendant components (files, in general) which don't have other children. They are the leaves of the component tree.</li></ul>",
+              "required": false,
+              "internal": false,
+              "defaultValue": "all",
+              "possibleValues": [
+                "all",
+                "children",
+                "leaves"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "api/projects",
+      "description": "Manage project existence.",
+      "actions": [
+        {
+          "key": "bulk_delete",
+          "description": "Delete one or several projects.<br />At most 1'000 projects matching the supplied filters are deleted. Repeat the call as needed to delete all matching projects.<br />Requires 'Administer System' permission.<br />At least one parameter is required among analyzedBefore, projects and q",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "At least one parameter is required among analyzedBefore, projects and q",
+              "version": "7.8"
+            },
+            {
+              "description": "At most 1'000 projects are deleted per call.",
+              "version": "31 Aug, 2026"
+            }
+          ],
+          "params": [
+            {
+              "key": "analyzedBefore",
+              "description": "Filter the projects for which last analysis is older than the given date (exclusive).<br> Either a date (server timezone) or datetime can be provided.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2017-10-19 or 2017-10-19T13:00:00+0200"
+            },
+            {
+              "key": "onProvisionedOnly",
+              "description": "Filter the projects that are provisioned",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "organization",
+              "description": "The key of the organization",
+              "required": true,
+              "internal": false
+            },
+            {
+              "key": "projects",
+              "description": "Comma-separated list of project keys",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project,another_project"
+            },
+            {
+              "key": "q",
+              "description": "Limit to: <ul><li>component names that contain the supplied string</li><li>component keys that contain the supplied string</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sonar"
+            },
+            {
+              "key": "qualifiers",
+              "description": "No longer used",
+              "required": false,
+              "internal": false,
+              "defaultValue": "TRK",
+              "deprecatedSince": "8.0",
+              "possibleValues": [
+                "TRK"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "bulk_update_key",
+          "description": "Bulk update a project or module key and all its sub-components keys. The bulk update allows to replace a part of the current key by another string on the current project and all its sub-modules.<br>It's possible to simulate the bulk update by setting the parameter 'dryRun' at true. No key is updated with a dry run.<br>Ex: to rename a project with key 'my_project' to 'my_new_project' and all its sub-components keys, call the WS with parameters:<ul>  <li>project: my_project</li>  <li>from: my_</li>  <li>to: my_new_</li></ul>Requires the permission 'Administer' on the specified project.",
+          "deprecatedSince": "7.6",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "dryRun",
+              "description": "Simulate bulk update. No component key is updated.",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "from",
+              "description": "String to match in components keys",
+              "required": true,
+              "internal": false,
+              "exampleValue": "_old"
+            },
+            {
+              "key": "project",
+              "description": "Project or module key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_old_project"
+            },
+            {
+              "key": "to",
+              "description": "String replacement in components keys",
+              "required": true,
+              "internal": false,
+              "exampleValue": "_new"
+            }
+          ]
+        },
+        {
+          "key": "create",
+          "description": "Create a project.<br/>Requires 'Create Projects' permission",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [
+            {
+              "description": "The 'visibility' parameter is public",
+              "version": "7.1"
+            }
+          ],
+          "params": [
+            {
+              "key": "branch",
+              "description": "SCM Branch of the project. The key of the project will become key:branch, for instance 'SonarQube:branch-5.0'",
+              "required": false,
+              "internal": false,
+              "exampleValue": "branch-5.0",
+              "deprecatedSince": "7.8"
+            },
+            {
+              "key": "name",
+              "description": "Name of the project. If name is longer than 500, it is abbreviated.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "SonarQube"
+            },
+            {
+              "key": "newCodeDefinitionType",
+              "description": "Project New Code Definition Type<br/><br/>New code definitions of the following types are allowed:<ul><li>previous_version</li><li>days</li><li>date</li><li>version</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "days"
+            },
+            {
+              "key": "newCodeDefinitionValue",
+              "description": "Project New Code Definition Value<br/><br/>For each new code definition type, a different value is expected:<ul><li>value is 'previous_version', when the new code definition type is previous_version</li><li>value should be a date <YYYY-MM-DD>, when the new code definition type is date</li><li>value should be version string, when the new code definition type is version</li><li>value should be a number between 1 and 90, when the new code definition type is days</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "30"
+            },
+            {
+              "key": "organization",
+              "description": "The key of the organization",
+              "required": true,
+              "internal": false
+            },
+            {
+              "key": "project",
+              "description": "Key of the project",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_project",
+              "maximumLength": 400
+            },
+            {
+              "key": "visibility",
+              "description": "Whether the created project should be visible to everyone, or only specific user/groups.<br/>If no visibility is specified, the default project visibility will be private for plans that allow private projects.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "private",
+                "public"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "delete",
+          "description": "Delete a project.<br> Requires 'Administer System' permission or 'Administer' permission on the project.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "project",
+              "description": "Project key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project"
+            }
+          ]
+        },
+        {
+          "key": "search",
+          "description": "Search for projects. Results are filtered to projects the caller has access to.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [],
+          "params": [
+            {
+              "key": "analyzedBefore",
+              "description": "Filter the projects for which last analysis is older than the given date (exclusive).<br> Either a date (server timezone) or datetime can be provided.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2017-10-19 or 2017-10-19T13:00:00+0200"
+            },
+            {
+              "key": "onProvisionedOnly",
+              "description": "Filter the projects that are provisioned",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "organization",
+              "description": "The key of the organization",
+              "required": true,
+              "internal": false
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42"
+            },
+            {
+              "key": "projectUuidsV4",
+              "description": "Comma-separated list of project ids (UUIDv4)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "cb2c929e-9556-4aff-b59f-ec487efdd8b0,6d835820-21fa-4dc2-a8ee-16d520f00ffd",
+              "maxValuesAllowed": 1000
+            },
+            {
+              "key": "projects",
+              "description": "Comma-separated list of project keys",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project,another_project",
+              "maxValuesAllowed": 1000
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "100",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "q",
+              "description": "Limit search to: <ul><li>component names that contain the supplied string</li><li>component keys that contain the supplied string</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sonar"
+            },
+            {
+              "key": "qualifiers",
+              "description": "No longer used",
+              "required": false,
+              "internal": false,
+              "defaultValue": "TRK",
+              "deprecatedSince": "8.0",
+              "possibleValues": [
+                "TRK"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "update_key",
+          "description": "Update a project or module key and all its sub-components keys.<br>Requires the permission 'Administer' on the specified project.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "Ability to update key of a disabled module",
+              "version": "7.1"
+            }
+          ],
+          "params": [
+            {
+              "key": "from",
+              "description": "Project or module key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_old_project"
+            },
+            {
+              "key": "to",
+              "description": "New component key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_new_project"
+            }
+          ]
+        },
+        {
+          "key": "update_visibility",
+          "description": "Updates visibility of a project.<br>Requires 'Project administer' permission on the specified project",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "project",
+              "description": "Project key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my_project"
+            },
+            {
+              "key": "visibility",
+              "description": "New visibility",
+              "required": true,
+              "internal": false,
+              "possibleValues": [
+                "private",
+                "public"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "api/qualityprofiles",
+      "description": "Manage quality profiles.",
+      "actions": [
+        {
+          "key": "activate_rule",
+          "description": "Activate a rule on a Quality Profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "impacts",
+              "description": "Override impact severities per software quality. Cannot be used with 'severity'. Ignored if 'reset=true'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY=HIGH;SECURITY=MEDIUM"
+            },
+            {
+              "key": "key",
+              "description": "Quality Profile key. Can be obtained through <code>api/qualityprofiles/search</code>",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedKey": "profile_key",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "params",
+              "description": "Parameters as semi-colon list of <code>key=value</code>. Ignored if parameter reset is true.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "params=key1=v1;key2=v2"
+            },
+            {
+              "key": "reset",
+              "description": "Reset severity and parameters of activated rule. Set the values defined on parent profile or from rule default values.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "rule",
+              "description": "Rule key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "squid:AvoidCycles",
+              "deprecatedKey": "rule_key",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "severity",
+              "description": "Severity. Ignored if parameter reset is true. Replaced by 'impacts'.",
+              "required": false,
+              "internal": false,
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "activate_rules",
+          "description": "Bulk-activate rules on one quality profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "activation",
+              "description": "Filter rules that are activated or deactivated on the selected Quality profile. Ignored if the parameter 'qprofile' is not set.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "active_impactSeverities",
+              "description": "Comma-separated list of Activation Software Quality Severities, i.e the impact severity of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "active_impactSoftwareQualities",
+              "description": "Comma-separated list of Activation Software Qualities, i.e the impact software quality of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "active_severities",
+              "description": "Comma-separated list of activation severities, i.e the severity of rules in Quality profiles. Replaced by 'active_impactSeverities' and 'active_impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "asc",
+              "description": "Ascending sort",
+              "required": false,
+              "internal": false,
+              "defaultValue": "true",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "available_since",
+              "description": "Filters rules added since date. Format is yyyy-MM-dd",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2014-06-22"
+            },
+            {
+              "key": "cleanCodeAttributeCategories",
+              "description": "Comma-separated list of Clean Code Attribute Categories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "ADAPTABLE,INTENTIONAL",
+              "possibleValues": [
+                "ADAPTABLE",
+                "CONSISTENT",
+                "INTENTIONAL",
+                "RESPONSIBLE"
+              ]
+            },
+            {
+              "key": "cwe",
+              "description": "Comma-separated list of CWE identifiers. Use 'unknown' to select rules not associated to any CWE.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "12,125,unknown"
+            },
+            {
+              "key": "impactSeverities",
+              "description": "Comma-separated list of Software Quality Severities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "impactSoftwareQualities",
+              "description": "Comma-separated list of Software Qualities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "inheritance",
+              "description": "Comma-separated list of values of inheritance for a rule within a quality profile. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "INHERITED,OVERRIDES",
+              "possibleValues": [
+                "NONE",
+                "INHERITED",
+                "OVERRIDES"
+              ]
+            },
+            {
+              "key": "is_template",
+              "description": "Filter template rules",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "languages",
+              "description": "Comma-separated list of languages",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java,js"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "owaspMobileTop10-2024",
+              "description": "Comma-separated list of OWASP Mobile Top 10 (2024) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "m1",
+                "m2",
+                "m3",
+                "m4",
+                "m5",
+                "m6",
+                "m7",
+                "m8",
+                "m9",
+                "m10"
+              ]
+            },
+            {
+              "key": "owaspTop10",
+              "description": "Comma-separated list of OWASP Top 10 lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "owaspTop10-2021",
+              "description": "Comma-separated list of OWASP Top 10 (2021) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "q",
+              "description": "UTF-8 search query",
+              "required": false,
+              "internal": false,
+              "exampleValue": "xpath",
+              "minimumLength": 2
+            },
+            {
+              "key": "qprofile",
+              "description": "Quality profile key to filter on. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "repositories",
+              "description": "Comma-separated list of repositories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "checkstyle,findbugs"
+            },
+            {
+              "key": "rule_key",
+              "description": "Key of rule to search for",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid:S001"
+            },
+            {
+              "key": "s",
+              "description": "Sort field",
+              "required": false,
+              "internal": false,
+              "exampleValue": "name",
+              "possibleValues": [
+                "name",
+                "updatedAt",
+                "createdAt",
+                "key"
+              ]
+            },
+            {
+              "key": "severities",
+              "description": "Comma-separated list of default severities. Not the same than severity of rules in Quality profiles. Replaced by 'impactSeverities' and 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "sonarsourceSecurity",
+              "description": "Comma-separated list of SonarSource security categories. Use 'others' to select rules not associated with any category",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sql-injection,command-injection,others",
+              "possibleValues": [
+                "buffer-overflow",
+                "permission",
+                "sql-injection",
+                "command-injection",
+                "path-traversal-injection",
+                "ldap-injection",
+                "xpath-injection",
+                "rce",
+                "dos",
+                "ssrf",
+                "csrf",
+                "xss",
+                "log-injection",
+                "http-response-splitting",
+                "open-redirect",
+                "xxe",
+                "object-injection",
+                "weak-cryptography",
+                "auth",
+                "insecure-conf",
+                "encrypt-data",
+                "traceability",
+                "file-manipulation",
+                "others"
+              ]
+            },
+            {
+              "key": "statuses",
+              "description": "Comma-separated list of status codes",
+              "required": false,
+              "internal": false,
+              "exampleValue": "READY",
+              "possibleValues": [
+                "BETA",
+                "DEPRECATED",
+                "READY",
+                "REMOVED"
+              ]
+            },
+            {
+              "key": "tags",
+              "description": "Comma-separated list of tags. Returned rules match any of the tags (OR operator)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "security,java8"
+            },
+            {
+              "key": "targetKey",
+              "description": "Quality Profile key on which the rule activation is done. To retrieve a quality profile key please see <code>api/qualityprofiles/search</code>",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-TpxcA-iU5OvuD2FL0",
+              "deprecatedKey": "profile_key",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "targetSeverity",
+              "description": "Severity to set on the activated rules",
+              "required": false,
+              "internal": false,
+              "deprecatedSince": "21 Aug, 2026",
+              "deprecatedKey": "activation_severity",
+              "deprecatedKeySince": "6.5",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "template_key",
+              "description": "Key of the template rule to filter on. Used to search for the custom rules based on this template.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java:S001"
+            },
+            {
+              "key": "types",
+              "description": "Comma-separated list of types. Returned rules match any of the tags (OR operator). Replaced by 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "BUG",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "CODE_SMELL",
+                "BUG",
+                "VULNERABILITY",
+                "SECURITY_HOTSPOT"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "add_project",
+          "description": "Associate a project with a quality profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li>  <li>Administer right on the specified project</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "project",
+              "description": "Project key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project",
+              "deprecatedKey": "projectKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "projectUuid",
+              "description": "Project ID. Either this parameter or 'project' must be set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-TpxcA-iU5OvuD2FL5",
+              "deprecatedSince": "6.5"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "backup",
+          "description": "Backup a quality profile in XML form. The exported profile can be restored through api/qualityprofiles/restore.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "The 'priority' field is now deprecated.",
+              "version": "26 Sep, 2023"
+            }
+          ],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "change_parent",
+          "description": "Change a quality profile's parent.<br>Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "parentKey",
+              "description": "New parent profile key.<br> If no profile is provided, the inheritance link with current parent profile (if any) is broken, which deactivates all rules which come from the parent and are not overridden.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-TpxcA-iU5OvuD2FLz",
+              "deprecatedSince": "6.6"
+            },
+            {
+              "key": "parentQualityProfile",
+              "description": "Quality profile name. If this parameter is set, 'parentKey' must not be set and 'language' must be set to disambiguate.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "changelog",
+          "description": "Get the history of changes on a quality profile: rule activation/deactivation, change in parameters/severity. Events are ordered by date in descending order (most recent first).",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "Response field 'severity' in 'params' is deprecated, replaced by 'impacts'",
+              "version": "21 Aug, 2026"
+            },
+            {
+              "description": "Possible values 'INFO' and 'BLOCKER' for response field 'severity' of 'impacts' has been added",
+              "version": "03 Oct, 2024"
+            },
+            {
+              "description": "Added 'cleanCodeAttribute', 'cleanCodeAttributeCategory', and 'impacts' fields",
+              "version": "25 Sep, 2023"
+            },
+            {
+              "description": "Added fields 'oldCleanCodeAttribute', 'newCleanCodeAttribute', 'oldCleanCodeAttributeCategory', 'newCleanCodeAttributeCategory' and 'impactChanges' to 'params' section of response",
+              "version": "15 Dec, 2023"
+            }
+          ],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "50",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            },
+            {
+              "key": "since",
+              "description": "Start date for the changelog. <br>Either a date (server timezone) or datetime can be provided.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2017-10-19 or 2017-10-19T13:00:00+0200"
+            },
+            {
+              "key": "to",
+              "description": "End date for the changelog. <br>Either a date (server timezone) or datetime can be provided.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2017-10-19 or 2017-10-19T13:00:00+0200"
+            }
+          ]
+        },
+        {
+          "key": "copy",
+          "description": "Copy a quality profile.<br> Requires to be logged in and the 'Administer Quality Profiles' permission.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "fromKey",
+              "description": "Quality profile key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "toName",
+              "description": "Name for the new quality profile.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "My Sonar way"
+            }
+          ]
+        },
+        {
+          "key": "create",
+          "description": "Create a quality profile.<br>Requires to be logged in and the 'Administer Quality Profiles' permission.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list",
+              "required": true,
+              "internal": false,
+              "exampleValue": "js"
+            },
+            {
+              "key": "name",
+              "description": "Quality profile name",
+              "required": true,
+              "internal": false,
+              "exampleValue": "My Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6",
+              "maximumLength": 100
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            }
+          ]
+        },
+        {
+          "key": "deactivate_rule",
+          "description": "Deactivate a rule on a quality profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality Profile key. Can be obtained through <code>api/qualityprofiles/search</code>",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedKey": "profile_key",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "rule",
+              "description": "Rule key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "squid:AvoidCycles",
+              "deprecatedKey": "rule_key",
+              "deprecatedKeySince": "6.5"
+            }
+          ]
+        },
+        {
+          "key": "deactivate_rules",
+          "description": "Bulk deactivate rules on Quality profiles.<br>Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "activation",
+              "description": "Filter rules that are activated or deactivated on the selected Quality profile. Ignored if the parameter 'qprofile' is not set.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "active_impactSeverities",
+              "description": "Comma-separated list of Activation Software Quality Severities, i.e the impact severity of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "active_impactSoftwareQualities",
+              "description": "Comma-separated list of Activation Software Qualities, i.e the impact software quality of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "active_severities",
+              "description": "Comma-separated list of activation severities, i.e the severity of rules in Quality profiles. Replaced by 'active_impactSeverities' and 'active_impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "asc",
+              "description": "Ascending sort",
+              "required": false,
+              "internal": false,
+              "defaultValue": "true",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "available_since",
+              "description": "Filters rules added since date. Format is yyyy-MM-dd",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2014-06-22"
+            },
+            {
+              "key": "cleanCodeAttributeCategories",
+              "description": "Comma-separated list of Clean Code Attribute Categories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "ADAPTABLE,INTENTIONAL",
+              "possibleValues": [
+                "ADAPTABLE",
+                "CONSISTENT",
+                "INTENTIONAL",
+                "RESPONSIBLE"
+              ]
+            },
+            {
+              "key": "cwe",
+              "description": "Comma-separated list of CWE identifiers. Use 'unknown' to select rules not associated to any CWE.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "12,125,unknown"
+            },
+            {
+              "key": "impactSeverities",
+              "description": "Comma-separated list of Software Quality Severities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "impactSoftwareQualities",
+              "description": "Comma-separated list of Software Qualities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "inheritance",
+              "description": "Comma-separated list of values of inheritance for a rule within a quality profile. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "INHERITED,OVERRIDES",
+              "possibleValues": [
+                "NONE",
+                "INHERITED",
+                "OVERRIDES"
+              ]
+            },
+            {
+              "key": "is_template",
+              "description": "Filter template rules",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "languages",
+              "description": "Comma-separated list of languages",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java,js"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "owaspMobileTop10-2024",
+              "description": "Comma-separated list of OWASP Mobile Top 10 (2024) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "m1",
+                "m2",
+                "m3",
+                "m4",
+                "m5",
+                "m6",
+                "m7",
+                "m8",
+                "m9",
+                "m10"
+              ]
+            },
+            {
+              "key": "owaspTop10",
+              "description": "Comma-separated list of OWASP Top 10 lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "owaspTop10-2021",
+              "description": "Comma-separated list of OWASP Top 10 (2021) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "q",
+              "description": "UTF-8 search query",
+              "required": false,
+              "internal": false,
+              "exampleValue": "xpath",
+              "minimumLength": 2
+            },
+            {
+              "key": "qprofile",
+              "description": "Quality profile key to filter on. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "repositories",
+              "description": "Comma-separated list of repositories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "checkstyle,findbugs"
+            },
+            {
+              "key": "rule_key",
+              "description": "Key of rule to search for",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid:S001"
+            },
+            {
+              "key": "rule_keys",
+              "description": "Comma-separated list of rule keys to deactivate. When provided, other search filter parameters are ignored.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid:AvoidCycles,java:S1234"
+            },
+            {
+              "key": "s",
+              "description": "Sort field",
+              "required": false,
+              "internal": false,
+              "exampleValue": "name",
+              "possibleValues": [
+                "name",
+                "updatedAt",
+                "createdAt",
+                "key"
+              ]
+            },
+            {
+              "key": "severities",
+              "description": "Comma-separated list of default severities. Not the same than severity of rules in Quality profiles. Replaced by 'impactSeverities' and 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "sonarsourceSecurity",
+              "description": "Comma-separated list of SonarSource security categories. Use 'others' to select rules not associated with any category",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sql-injection,command-injection,others",
+              "possibleValues": [
+                "buffer-overflow",
+                "permission",
+                "sql-injection",
+                "command-injection",
+                "path-traversal-injection",
+                "ldap-injection",
+                "xpath-injection",
+                "rce",
+                "dos",
+                "ssrf",
+                "csrf",
+                "xss",
+                "log-injection",
+                "http-response-splitting",
+                "open-redirect",
+                "xxe",
+                "object-injection",
+                "weak-cryptography",
+                "auth",
+                "insecure-conf",
+                "encrypt-data",
+                "traceability",
+                "file-manipulation",
+                "others"
+              ]
+            },
+            {
+              "key": "statuses",
+              "description": "Comma-separated list of status codes",
+              "required": false,
+              "internal": false,
+              "exampleValue": "READY",
+              "possibleValues": [
+                "BETA",
+                "DEPRECATED",
+                "READY",
+                "REMOVED"
+              ]
+            },
+            {
+              "key": "tags",
+              "description": "Comma-separated list of tags. Returned rules match any of the tags (OR operator)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "security,java8"
+            },
+            {
+              "key": "targetKey",
+              "description": "Quality Profile key on which the rule deactivation is done. To retrieve a profile key please see <code>api/qualityprofiles/search</code>",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-TpxcA-iU5OvuD2FL1",
+              "deprecatedKey": "profile_key",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "template_key",
+              "description": "Key of the template rule to filter on. Used to search for the custom rules based on this template.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java:S001"
+            },
+            {
+              "key": "types",
+              "description": "Comma-separated list of types. Returned rules match any of the tags (OR operator). Replaced by 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "BUG",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "CODE_SMELL",
+                "BUG",
+                "VULNERABILITY",
+                "SECURITY_HOTSPOT"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "delete",
+          "description": "Delete a quality profile and all its descendants. The default quality profile cannot be deleted.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "export",
+          "description": "Deprecated. Use GET /api/qualityprofiles/backup instead",
+          "deprecatedSince": "18 March, 2025",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name to export. If left empty, the default profile for the language is exported.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "My Sonar way",
+              "deprecatedKey": "name",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "exporters",
+          "description": "Deprecated. No more custom profile exporters.",
+          "deprecatedSince": "18 March, 2025",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": []
+        },
+        {
+          "key": "importers",
+          "description": "Deprecated. No more custom profile importers.",
+          "deprecatedSince": "18 March, 2025",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": []
+        },
+        {
+          "key": "inheritance",
+          "description": "Show a quality profile's ancestors and children.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "projects",
+          "description": "List projects with their association status regarding a quality profile",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "'more' response field is deprecated",
+              "version": "7.2"
+            },
+            {
+              "description": "'id' response field is deprecated",
+              "version": "6.5"
+            },
+            {
+              "description": "'uuid' response field is deprecated and replaced by 'id'",
+              "version": "6.0"
+            },
+            {
+              "description": "'key' response field has been added to return the project key",
+              "version": "6.0"
+            }
+          ],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42",
+              "deprecatedKey": "page",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "100",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "q",
+              "description": "Limit search to projects that contain the supplied string.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sonar",
+              "deprecatedKey": "query",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "selected",
+              "description": "Depending on the value, show only selected items (selected=selected), deselected items (selected=deselected), or all items with their selection status (selected=all).",
+              "required": false,
+              "internal": false,
+              "defaultValue": "selected",
+              "possibleValues": [
+                "all",
+                "deselected",
+                "selected"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "remove_project",
+          "description": "Remove a project's association with a quality profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li>  <li>Administer right on the specified project</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "project",
+              "description": "Project key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project",
+              "deprecatedKey": "projectKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "projectUuid",
+              "description": "Project ID. Either this parameter, or 'project' must be set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-TpxcB-iU5OvuD2FL6",
+              "deprecatedSince": "6.5"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "rename",
+          "description": "Rename a quality profile.<br> Requires one of the following permissions:<ul>  <li>'Administer Quality Profiles'</li>  <li>Edit right on the specified quality profile</li></ul>",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "name",
+              "description": "New quality profile name",
+              "required": true,
+              "internal": false,
+              "exampleValue": "My Sonar way",
+              "maximumLength": 100
+            }
+          ]
+        },
+        {
+          "key": "restore",
+          "description": "Restore a quality profile using an XML file. The restored profile name is taken from the backup file, so if a profile with the same name and language already exists, it will be overwritten.<br> Requires to be logged in and the 'Administer Quality Profiles' permission.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "backup",
+              "description": "A profile backup file in XML format, as generated by api/qualityprofiles/backup or the former api/profiles/backup.",
+              "required": true,
+              "internal": false
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            }
+          ]
+        },
+        {
+          "key": "restore_built_in",
+          "description": "This web service has no effect since 6.4. It's no more possible to restore built-in quality profiles because they are automatically updated and read only. Returns HTTP code 410.",
+          "deprecatedSince": "6.4",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": []
+        },
+        {
+          "key": "search",
+          "description": "Search quality profiles",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [
+            {
+              "description": "Add available actions 'delete' and 'associateProjects'",
+              "version": "7.0"
+            },
+            {
+              "description": "Add available actions 'edit', 'copy' and 'setAsDefault' and global action 'create'",
+              "version": "6.6"
+            },
+            {
+              "description": "The parameters 'defaults', 'project' and 'language' can be combined without any constraint",
+              "version": "6.5"
+            }
+          ],
+          "params": [
+            {
+              "key": "defaults",
+              "description": "If set to true, return only the quality profiles marked as default for each language",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "language",
+              "description": "Language key, one of the keys returned by api/languages/list. If provided, only profiles for the given language are returned.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "project",
+              "description": "Project key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my_project",
+              "deprecatedKey": "projectKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name",
+              "required": false,
+              "internal": false,
+              "exampleValue": "SonarQube Way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        },
+        {
+          "key": "set_default",
+          "description": "Select the default profile for a given language.<br> Requires to be logged in and the 'Administer Quality Profiles' permission.",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": false,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "key",
+              "description": "Quality profile key. Mandatory unless 'qualityProfile' and 'language' are specified.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy",
+              "deprecatedSince": "6.6",
+              "deprecatedKey": "profileKey",
+              "deprecatedKeySince": "6.5"
+            },
+            {
+              "key": "language",
+              "description": "Quality profile language, one of the keys returned by api/languages/list. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "qualityProfile",
+              "description": "Quality profile name. Mandatory if 'key' is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Sonar way",
+              "deprecatedKey": "profileName",
+              "deprecatedKeySince": "6.6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "api/rules",
+      "description": "Get and update some details of automatic rules, and manage custom rules.",
+      "actions": [
+        {
+          "key": "repositories",
+          "description": "List available rule repositories",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "language",
+              "description": "A language key; if provided, only repositories for the given language will be returned",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java"
+            },
+            {
+              "key": "q",
+              "description": "A pattern to match repository keys/names against",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid"
+            }
+          ]
+        },
+        {
+          "key": "search",
+          "description": "Search for a collection of relevant rules matching a specified query.<br/>Since 5.5, following fields in the response have been deprecated :<ul><li>\"effortToFixDescription\" becomes \"gapDescription\"</li><li>\"debtRemFnCoeff\" becomes \"remFnGapMultiplier\"</li><li>\"defaultDebtRemFnCoeff\" becomes \"defaultRemFnGapMultiplier\"</li><li>\"debtRemFnOffset\" becomes \"remFnBaseEffort\"</li><li>\"defaultDebtRemFnOffset\" becomes \"defaultRemFnBaseEffort\"</li><li>\"debtOverloaded\" becomes \"remFnOverloaded\"</li></ul>",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [
+            {
+              "description": "Possible values 'INFO' and 'BLOCKER' for response field 'impactSeverities' of 'facets' have been added",
+              "version": "03 Oct, 2024"
+            },
+            {
+              "description": "Possible values 'INFO' and 'BLOCKER' for response field 'severity' of 'impacts' have been added",
+              "version": "03 Oct, 2024"
+            },
+            {
+              "description": "Parameter 'severities' now supports values: 'INFO','BLOCKER'",
+              "version": "03 Oct, 2024"
+            },
+            {
+              "description": "'cleanCodeAttribute' and 'impacts' added to optional fields",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "'cleanCodeAttributeCategories', impactSoftwareQualities', and impactSeverities' added to possible values for facets",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "Response field 'impacts' added",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "Response field 'cleanCodeAttributeCategory' added",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "Response field 'cleanCodeAttribute' added",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "The field 'educationPrinciples' has been added to the payload and the 'f' parameter",
+              "version": "08 Mar, 2023"
+            },
+            {
+              "description": "The field 'htmlDesc' has been deprecated use 'descriptionSections' instead",
+              "version": "13 Dec, 2022"
+            },
+            {
+              "description": "The field 'descriptionSections' has been added to the payload",
+              "version": "13 Dec, 2022"
+            },
+            {
+              "description": "The field 'descriptionSections' has been added to the 'f' parameter",
+              "version": "13 Dec, 2022"
+            },
+            {
+              "description": "The security facet OWASP Top 10 - 2021 has been added, and SANS Top 25 removed",
+              "version": "23 Apr, 2025"
+            },
+            {
+              "description": "The facet 'complianceStandards' was added.",
+              "version": "02 Feb, 2026"
+            },
+            {
+              "description": "The parameter 'complianceStandards' was added.",
+              "version": "02 Feb, 2026"
+            },
+            {
+              "description": "Description-related fields in the response are obfuscated for anonymous users.",
+              "version": "09 Feb, 2026"
+            },
+            {
+              "description": "Response field 'requiredEntitlements' added",
+              "version": "16 Mar, 2026"
+            },
+            {
+              "description": "The facet 'active_impactSeverities' has been added.",
+              "version": "27 Jul, 2026"
+            },
+            {
+              "description": "The facet values 'severities' and 'types' have been deprecated, use 'impactSeverities' and 'impactSoftwareQualities' instead",
+              "version": "21 Aug, 2026"
+            },
+            {
+              "description": "The facet value 'active_severities' has been deprecated, use 'active_impactSeverities' instead",
+              "version": "21 Aug, 2026"
+            },
+            {
+              "description": "Response fields 'severity' and 'type' per rule have been deprecated, use 'impacts' instead",
+              "version": "21 Aug, 2026"
+            }
+          ],
+          "params": [
+            {
+              "key": "activation",
+              "description": "Filter rules that are activated or deactivated on the selected Quality profile. Ignored if the parameter 'qprofile' is not set.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "active_impactSeverities",
+              "description": "Comma-separated list of Activation Software Quality Severities, i.e the impact severity of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "active_impactSoftwareQualities",
+              "description": "Comma-separated list of Activation Software Qualities, i.e the impact software quality of rules in Quality profiles.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "active_severities",
+              "description": "Comma-separated list of activation severities, i.e the severity of rules in Quality profiles. Replaced by 'active_impactSeverities' and 'active_impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "asc",
+              "description": "Ascending sort",
+              "required": false,
+              "internal": false,
+              "defaultValue": "true",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "available_since",
+              "description": "Filters rules added since date. Format is yyyy-MM-dd",
+              "required": false,
+              "internal": false,
+              "exampleValue": "2014-06-22"
+            },
+            {
+              "key": "cleanCodeAttributeCategories",
+              "description": "Comma-separated list of Clean Code Attribute Categories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "ADAPTABLE,INTENTIONAL",
+              "possibleValues": [
+                "ADAPTABLE",
+                "CONSISTENT",
+                "INTENTIONAL",
+                "RESPONSIBLE"
+              ]
+            },
+            {
+              "key": "complianceStandards",
+              "description": "Set of compliance standards to filter on. Categories within a standard are comma-separated and behave as an 'or'. Multiple standards are separated by an ampersand and behave as an 'and'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "owasp_asvs:urn:sonar-security-standard:owasp:asvs:5.0=15,16&sonar_standard:urn:sonar-security-standard:sonar:standard:unversioned=log-injection"
+            },
+            {
+              "key": "cwe",
+              "description": "Comma-separated list of CWE identifiers. Use 'unknown' to select rules not associated to any CWE.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "12,125,unknown"
+            },
+            {
+              "key": "f",
+              "description": "Comma-separated list of the fields to be returned in response. All the fields are returned by default, except actives.Since 5.5, following fields have been deprecated :<ul><li>\"defaultDebtRemFn\" becomes \"defaultRemFn\"</li><li>\"debtRemFn\" becomes \"remFn\"</li><li>\"effortToFixDescription\" becomes \"gapDescription\"</li><li>\"debtOverloaded\" becomes \"remFnOverloaded\"</li></ul>",
+              "required": false,
+              "internal": false,
+              "exampleValue": "isTemplate,htmlDesc",
+              "possibleValues": [
+                "actives",
+                "cleanCodeAttribute",
+                "createdAt",
+                "debtOverloaded",
+                "debtRemFn",
+                "defaultDebtRemFn",
+                "defaultRemFn",
+                "deprecatedKeys",
+                "descriptionSections",
+                "educationPrinciples",
+                "effortToFixDescription",
+                "gapDescription",
+                "htmlDesc",
+                "htmlNote",
+                "impacts",
+                "internalKey",
+                "isExternal",
+                "isTemplate",
+                "lang",
+                "langName",
+                "mdDesc",
+                "mdNote",
+                "name",
+                "noteLogin",
+                "params",
+                "remFn",
+                "remFnOverloaded",
+                "repo",
+                "scope",
+                "securityStandards",
+                "severity",
+                "status",
+                "sysTags",
+                "tags",
+                "templateKey",
+                "updatedAt"
+              ]
+            },
+            {
+              "key": "facets",
+              "description": "Comma-separated list of the facets to be computed. No facet is computed by default.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "languages,repositories",
+              "possibleValues": [
+                "languages",
+                "repositories",
+                "tags",
+                "severities",
+                "active_severities",
+                "statuses",
+                "types",
+                "true",
+                "cwe",
+                "owaspMobileTop10-2024",
+                "owaspTop10",
+                "owaspTop10-2021",
+                "sonarsourceSecurity",
+                "cleanCodeAttributeCategories",
+                "impactSeverities",
+                "impactSoftwareQualities",
+                "active_impactSeverities",
+                "complianceStandards"
+              ]
+            },
+            {
+              "key": "impactSeverities",
+              "description": "Comma-separated list of Software Quality Severities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "HIGH,MEDIUM",
+              "possibleValues": [
+                "INFO",
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "impactSoftwareQualities",
+              "description": "Comma-separated list of Software Qualities",
+              "required": false,
+              "internal": false,
+              "exampleValue": "MAINTAINABILITY,RELIABILITY",
+              "possibleValues": [
+                "MAINTAINABILITY",
+                "RELIABILITY",
+                "SECURITY"
+              ]
+            },
+            {
+              "key": "include_external",
+              "description": "Include external engine rules in the results",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "inheritance",
+              "description": "Comma-separated list of values of inheritance for a rule within a quality profile. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "INHERITED,OVERRIDES",
+              "possibleValues": [
+                "NONE",
+                "INHERITED",
+                "OVERRIDES"
+              ]
+            },
+            {
+              "key": "is_template",
+              "description": "Filter template rules",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "languages",
+              "description": "Comma-separated list of languages",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java,js"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "owaspMobileTop10-2024",
+              "description": "Comma-separated list of OWASP Mobile Top 10 (2024) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "m1",
+                "m2",
+                "m3",
+                "m4",
+                "m5",
+                "m6",
+                "m7",
+                "m8",
+                "m9",
+                "m10"
+              ]
+            },
+            {
+              "key": "owaspTop10",
+              "description": "Comma-separated list of OWASP Top 10 lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "owaspTop10-2021",
+              "description": "Comma-separated list of OWASP Top 10 (2021) lowercase categories.",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10"
+              ]
+            },
+            {
+              "key": "p",
+              "description": "1-based page number",
+              "required": false,
+              "internal": false,
+              "defaultValue": "1",
+              "exampleValue": "42"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 500",
+              "required": false,
+              "internal": false,
+              "defaultValue": "100",
+              "exampleValue": "20",
+              "maximumValue": 500
+            },
+            {
+              "key": "q",
+              "description": "UTF-8 search query",
+              "required": false,
+              "internal": false,
+              "exampleValue": "xpath",
+              "minimumLength": 2
+            },
+            {
+              "key": "qprofile",
+              "description": "Quality profile key to filter on. Used only if the parameter 'activation' is set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "AU-Tpxb--iU5OvuD2FLy"
+            },
+            {
+              "key": "repositories",
+              "description": "Comma-separated list of repositories",
+              "required": false,
+              "internal": false,
+              "exampleValue": "checkstyle,findbugs"
+            },
+            {
+              "key": "rule_key",
+              "description": "Key of rule to search for",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid:S001"
+            },
+            {
+              "key": "rule_keys",
+              "description": "Rule keys",
+              "required": false,
+              "internal": false,
+              "exampleValue": "squid:S1002,squid:S1003"
+            },
+            {
+              "key": "s",
+              "description": "Sort field",
+              "required": false,
+              "internal": false,
+              "exampleValue": "name",
+              "possibleValues": [
+                "name",
+                "updatedAt",
+                "createdAt",
+                "key"
+              ]
+            },
+            {
+              "key": "severities",
+              "description": "Comma-separated list of default severities. Not the same than severity of rules in Quality profiles. Replaced by 'impactSeverities' and 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "CRITICAL,BLOCKER",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "sonarsourceSecurity",
+              "description": "Comma-separated list of SonarSource security categories. Use 'others' to select rules not associated with any category",
+              "required": false,
+              "internal": false,
+              "exampleValue": "sql-injection,command-injection,others",
+              "possibleValues": [
+                "buffer-overflow",
+                "permission",
+                "sql-injection",
+                "command-injection",
+                "path-traversal-injection",
+                "ldap-injection",
+                "xpath-injection",
+                "rce",
+                "dos",
+                "ssrf",
+                "csrf",
+                "xss",
+                "log-injection",
+                "http-response-splitting",
+                "open-redirect",
+                "xxe",
+                "object-injection",
+                "weak-cryptography",
+                "auth",
+                "insecure-conf",
+                "encrypt-data",
+                "traceability",
+                "file-manipulation",
+                "others"
+              ]
+            },
+            {
+              "key": "statuses",
+              "description": "Comma-separated list of status codes",
+              "required": false,
+              "internal": false,
+              "exampleValue": "READY",
+              "possibleValues": [
+                "BETA",
+                "DEPRECATED",
+                "READY",
+                "REMOVED"
+              ]
+            },
+            {
+              "key": "tags",
+              "description": "Comma-separated list of tags. Returned rules match any of the tags (OR operator)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "security,java8"
+            },
+            {
+              "key": "template_key",
+              "description": "Key of the template rule to filter on. Used to search for the custom rules based on this template.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java:S001"
+            },
+            {
+              "key": "types",
+              "description": "Comma-separated list of types. Returned rules match any of the tags (OR operator). Replaced by 'impactSoftwareQualities'.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "BUG",
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "CODE_SMELL",
+                "BUG",
+                "VULNERABILITY",
+                "SECURITY_HOTSPOT"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "show",
+          "description": "Get detailed information about a rule<br>Since 5.5, following fields in the response have been deprecated :<ul><li>\"effortToFixDescription\" becomes \"gapDescription\"</li><li>\"debtRemFnCoeff\" becomes \"remFnGapMultiplier\"</li><li>\"defaultDebtRemFnCoeff\" becomes \"defaultRemFnGapMultiplier\"</li><li>\"debtRemFnOffset\" becomes \"remFnBaseEffort\"</li><li>\"defaultDebtRemFnOffset\" becomes \"defaultRemFnBaseEffort\"</li><li>\"debtOverloaded\" becomes \"remFnOverloaded\"</li></ul>In 7.1, the field 'scope' has been added.",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": true,
+          "changelog": [
+            {
+              "description": "Possible values 'INFO' and 'BLOCKER' for response field 'severity' of 'impacts' have been added",
+              "version": "03 Oct, 2024"
+            },
+            {
+              "description": "The field 'educationPrinciples' has been added to the payload",
+              "version": "08 Mar, 2023"
+            },
+            {
+              "description": "The field 'htmlDesc' has been deprecated use 'descriptionSections' instead",
+              "version": "13 Dec, 2022"
+            },
+            {
+              "description": "The field 'descriptionSections' has been added to the payload",
+              "version": "13 Dec, 2022"
+            },
+            {
+              "description": "The fields 'cleanCodeAttribute', 'cleanCodeAttributeCategory', and 'impacts' have been added to the payload",
+              "version": "08 Sept, 2023"
+            },
+            {
+              "description": "Description-related fields in the response are obfuscated for anonymous users.",
+              "version": "09 Feb, 2026"
+            },
+            {
+              "description": "Response field 'requiredEntitlements' added",
+              "version": "16 Mar, 2026"
+            },
+            {
+              "description": "The fields 'severity' and 'type' have been deprecated, use 'impacts' instead",
+              "version": "21 Aug, 2026"
+            },
+            {
+              "description": "The field 'severity' in 'actives' has been deprecated, use 'impacts' instead",
+              "version": "21 Aug, 2026"
+            },
+            {
+              "description": "Added 'contextKey' parameter",
+              "version": "24 Aug, 2026"
+            },
+            {
+              "description": "Hunter Agent rules are only returned to callers who may browse a project of the given organization carrying an issue for the given 'contextKey'",
+              "version": "23 Sep, 2026"
+            }
+          ],
+          "params": [
+            {
+              "key": "actives",
+              "description": "Show rule's activations for all profiles (\"active rules\")",
+              "required": false,
+              "internal": false,
+              "defaultValue": "false",
+              "possibleValues": [
+                "true",
+                "false",
+                "yes",
+                "no"
+              ]
+            },
+            {
+              "key": "contextKey",
+              "description": "Return only the description sections matching the given rule-description context key, along with sections that have no context.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "spring",
+              "maximumLength": 255
+            },
+            {
+              "key": "key",
+              "description": "Rule key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "javascript:EmptyBlock"
+            },
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            }
+          ]
+        },
+        {
+          "key": "tags",
+          "description": "List rule tags",
+          "internal": false,
+          "post": false,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "ps",
+              "description": "Page size. Must be greater than 0 and less or equal than 100",
+              "required": false,
+              "internal": false,
+              "defaultValue": "10",
+              "exampleValue": "20",
+              "maximumValue": 100
+            },
+            {
+              "key": "q",
+              "description": "Limit search to tags that contain the supplied string.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "misra"
+            }
+          ]
+        },
+        {
+          "key": "update",
+          "description": "Update an existing rule.<br>Requires the 'Administer Quality Profiles' permission",
+          "internal": false,
+          "post": true,
+          "hasResponseExample": true,
+          "supportsScopedOrganizationTokens": false,
+          "changelog": [],
+          "params": [
+            {
+              "key": "debt_sub_characteristic",
+              "description": "Debt characteristics are no more supported. This parameter is ignored.",
+              "required": false,
+              "internal": false,
+              "deprecatedSince": "5.5"
+            },
+            {
+              "key": "key",
+              "description": "Key of the rule to update",
+              "required": true,
+              "internal": false,
+              "exampleValue": "javascript:NullCheck",
+              "maximumLength": 200
+            },
+            {
+              "key": "markdown_description",
+              "description": "Rule description (mandatory for custom rule and manual rule)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "Description of my custom rule"
+            },
+            {
+              "key": "markdown_note",
+              "description": "Optional note in markdown format. Use empty value to remove current note. Note is not changed if the parameter is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "my *note*"
+            },
+            {
+              "key": "name",
+              "description": "Rule name (mandatory for custom rule)",
+              "required": false,
+              "internal": false,
+              "exampleValue": "My custom rule",
+              "maximumLength": 200
+            },
+            {
+              "key": "organization",
+              "description": "Organization key",
+              "required": true,
+              "internal": false,
+              "exampleValue": "my-org"
+            },
+            {
+              "key": "params",
+              "description": "Parameters as semi-colon list of <key>=<value>, for example 'params=key1=v1;key2=v2' (Only when updating a custom rule)",
+              "required": false,
+              "internal": false
+            },
+            {
+              "key": "remediation_fn_base_effort",
+              "description": "Base effort of the remediation function of the rule",
+              "required": false,
+              "internal": false,
+              "exampleValue": "1d"
+            },
+            {
+              "key": "remediation_fn_type",
+              "description": "Type of the remediation function of the rule",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "LINEAR",
+                "LINEAR_OFFSET",
+                "CONSTANT_ISSUE"
+              ]
+            },
+            {
+              "key": "remediation_fy_gap_multiplier",
+              "description": "Gap multiplier of the remediation function of the rule",
+              "required": false,
+              "internal": false,
+              "exampleValue": "3min"
+            },
+            {
+              "key": "severity",
+              "description": "Rule severity (Only when updating a custom rule)",
+              "required": false,
+              "internal": false,
+              "deprecatedSince": "21 Aug, 2026",
+              "possibleValues": [
+                "INFO",
+                "MINOR",
+                "MAJOR",
+                "CRITICAL",
+                "BLOCKER"
+              ]
+            },
+            {
+              "key": "status",
+              "description": "Rule status (Only when updating a custom rule)",
+              "required": false,
+              "internal": false,
+              "possibleValues": [
+                "BETA",
+                "DEPRECATED",
+                "READY",
+                "REMOVED"
+              ]
+            },
+            {
+              "key": "tags",
+              "description": "Optional comma-separated list of tags to set. Use blank value to remove current tags. Tags are not changed if the parameter is not set.",
+              "required": false,
+              "internal": false,
+              "exampleValue": "java8,security"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
