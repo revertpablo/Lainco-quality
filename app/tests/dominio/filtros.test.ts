@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FILTROS_POR_DEFECTO, aParametros, leerFiltros } from "@/dominio/filtros";
+import { FILTROS_POR_DEFECTO, aParametros, aRegistro, leerFiltros } from "@/dominio/filtros";
 
 /**
  * Filtros del inventario (entrega 6.1, paso 8; FASE-6.md, sección 5). Viven en la URL: así
@@ -103,5 +103,23 @@ describe("escribir la URL", () => {
 
     expect(a).toBe(b);
     expect(a).toBe("estado=aRevisar&tag=react");
+  });
+});
+
+describe("como se guardan en una vista", () => {
+  it("los parámetros de la URL, valor por valor", () => {
+    const filtros = leerFiltros({ tag: ["react", "vue"], estado: "aRevisar", orden: "nombre" });
+
+    expect(aRegistro(filtros)).toEqual({ estado: ["aRevisar"], tag: ["react", "vue"], orden: ["nombre"] });
+  });
+
+  it("ida y vuelta dan lo mismo", () => {
+    const filtros = leerFiltros({ q: "dispose", severidad: ["MAJOR", "BLOCKER"], deprecadas: "solo" });
+
+    expect(leerFiltros(aRegistro(filtros))).toEqual(filtros);
+  });
+
+  it("los filtros por defecto quedan vacíos", () => {
+    expect(aRegistro(FILTROS_POR_DEFECTO)).toEqual({});
   });
 });

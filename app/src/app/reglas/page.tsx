@@ -9,10 +9,12 @@ import { Encabezado } from "@/ui/Encabezado";
 import { FormularioDeFiltros } from "@/ui/FormularioDeFiltros";
 import { PanelDeFiltros } from "@/ui/PanelDeFiltros";
 import { TablaDeReglas, type Columna } from "@/ui/TablaDeReglas";
+import { VistasGuardadas } from "@/ui/VistasGuardadas";
+import { listarVistas } from "@/vistas/vistas";
 
 /**
- * Inventario de reglas (entrega 6.1, paso 8; FASE-6.md, sección 5): filtros, orden,
- * selección múltiple y operaciones masivas con justificación común.
+ * Inventario de reglas (entrega 6.1, pasos 8 y 9; FASE-6.md, sección 5): filtros, orden,
+ * vistas guardadas, selección múltiple y operaciones masivas con justificación común.
  */
 
 // El botón de sincronizar del encabezado corre en esta página: hasta 5 minutos.
@@ -34,7 +36,11 @@ async function Inventario({ searchParams }: Pick<PageProps<"/reglas">, "searchPa
 
   const db = obtenerDb();
   const ultima = await ultimaSincronizacionOk(db);
-  const [filas, opciones] = await Promise.all([buscarReglas(db, filtros, ultima), opcionesDeFiltro(db)]);
+  const [filas, opciones, vistas] = await Promise.all([
+    buscarReglas(db, filtros, ultima),
+    opcionesDeFiltro(db),
+    listarVistas(db, usuario.id),
+  ]);
 
   const columna = (titulo: string, campo?: CampoDeOrden): Columna => ({
     titulo,
@@ -49,7 +55,10 @@ async function Inventario({ searchParams }: Pick<PageProps<"/reglas">, "searchPa
       <Encabezado usuario={usuario} />
       <div className="flex flex-1 flex-col lg:flex-row">
         <PanelDeFiltros activos={cantidadDeFiltros(filtros)}>
-          <FormularioDeFiltros filtros={filtros} opciones={opciones} />
+          <VistasGuardadas vistas={vistas} parametrosActuales={aParametros(filtros)} />
+          {/* La key regenera el formulario en cada búsqueda: si no, al navegar con un link
+              (una vista, el orden) las casillas quedarían como estaban. */}
+          <FormularioDeFiltros key={aParametros(filtros)} filtros={filtros} opciones={opciones} />
         </PanelDeFiltros>
 
         <main className="flex min-w-0 flex-1 flex-col">

@@ -105,3 +105,15 @@ export function aParametros(filtros: Filtros): string {
 
   return parametros.toString();
 }
+
+/**
+ * Los filtros como parámetros de la URL, valor por valor: la forma en que se guardan en
+ * una vista (`vistaGuardada.filtros`). Al leerlos de vuelta pasan por `leerFiltros`.
+ */
+export function aRegistro(filtros: Filtros): Record<string, string[]> {
+  const registro: Record<string, string[]> = {};
+  for (const [clave, valor] of new URLSearchParams(aParametros(filtros))) {
+    (registro[clave] ??= []).push(valor);
+  }
+  return registro;
+}

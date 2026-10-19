@@ -7,7 +7,7 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 8** (inventario). La pantalla principal es el inventario de reglas,
+Entrega 6.1, **paso 9** (vistas guardadas). La pantalla principal es el inventario de reglas,
 en `/reglas` (`/` lleva ahí).
 
 ## Puesta en marcha
@@ -246,6 +246,20 @@ otra persona cambió una regla mientras tanto), no se aplica nada y la barra dic
 
 Ejemplo, el primer paso del triage: filtrar por estado **Pendiente de analizar** y tag
 `react`, seleccionar todas, **Descartada**, escribir "No usamos React" y aplicar.
+
+### Vistas guardadas
+
+Arriba de los filtros: cualquier búsqueda (filtros y orden) se guarda con un nombre, como
+"Bugs de C# pendientes", y queda como un link (`src/vistas/`).
+
+- El nombre es único por usuario. **Guardar con un nombre que ya tenés actualiza esa vista**
+  con la búsqueda actual. Si la búsqueda actual ya es una vista tuya, el nombre viene
+  precargado.
+- **Que la vea todo el equipo** la comparte: aparece en la lista de los demás con el nombre
+  del autor. Solo el autor la actualiza o la borra.
+- En la base se guarda como los parámetros de la URL (`{"estado": ["aRevisar"], "tag":
+  ["react"]}`), y al leerla pasa por los mismos filtros de la URL: una vista vieja con un
+  valor que ya no existe no rompe nada, ese valor se ignora.
 
 ## Ingreso y roles
 
@@ -528,12 +542,13 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. | Base de pruebas. |
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
 | `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
+| `tests/vistas/` | Vistas guardadas: guardar y recuperar, actualizar, compartir, borrar. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -572,6 +587,7 @@ app/
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
+│   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.

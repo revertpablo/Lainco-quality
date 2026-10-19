@@ -236,7 +236,8 @@ export const vistaGuardada = pgTable(
     id: uuid().notNull().defaultRandom(),
     nombre: text().notNull(),
     usuarioId: uuid().notNull(),
-    filtros: jsonb().notNull().$type<Record<string, unknown>>(),
+    /** Los parámetros de la URL del inventario, valor por valor (src/vistas/vistas.ts). */
+    filtros: jsonb().notNull().$type<Record<string, string[]>>(),
     compartida: boolean().notNull().default(false),
     creadaEn: fechaDeAlta(),
   },
