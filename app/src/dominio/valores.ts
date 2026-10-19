@@ -59,3 +59,39 @@ export const MotivoAviso = {
   Eliminada: "eliminada",
 } as const;
 export type MotivoAviso = (typeof MotivoAviso)[keyof typeof MotivoAviso];
+
+/** En qué está una publicación a Sonar (entrega 6.2; FASE-6-APP.md, sección 8 bis). */
+export const EstadoPublicacion = {
+  /** Espera a publicarse: recién encolada o con un intento fallido que se va a reintentar. */
+  Pendiente: "pendiente",
+  Publicada: "publicada",
+  /** Agotó los reintentos. Se reintenta a mano. */
+  Fallida: "fallida",
+} as const;
+export type EstadoPublicacion = (typeof EstadoPublicacion)[keyof typeof EstadoPublicacion];
+
+/** Qué se le pide a Sonar al publicar: la regla queda como dice la app. */
+export const AccionPublicacion = {
+  /** Incorporada: activa en el perfil, con la severidad y los parámetros decididos. */
+  Activar: "activar",
+  /** Cualquier otro estado: inactiva en el perfil. */
+  Desactivar: "desactivar",
+} as const;
+export type AccionPublicacion = (typeof AccionPublicacion)[keyof typeof AccionPublicacion];
+
+/** Diferencias entre lo que dice la app y lo que hay en Sonar (FASE-6.md, sección 10). */
+export const TipoDesvio = {
+  /** Activa en el perfil sin estar Incorporada (alguien la activó a mano). */
+  ActivaSinIncorporar: "activaSinIncorporar",
+  /** Incorporada en la app e inactiva en el perfil. */
+  IncorporadaInactiva: "incorporadaInactiva",
+  /** Activa en los dos lados, con otra severidad en Sonar. */
+  SeveridadDistinta: "severidadDistinta",
+  /** Activa en los dos lados, con otros valores de parámetros en Sonar. */
+  ParametrosDistintos: "parametrosDistintos",
+  /** El perfil gestionado hereda de otro. */
+  PerfilConHerencia: "perfilConHerencia",
+  /** Un proyecto de la organización usa otro perfil para el lenguaje. */
+  ProyectoConOtroPerfil: "proyectoConOtroPerfil",
+} as const;
+export type TipoDesvio = (typeof TipoDesvio)[keyof typeof TipoDesvio];

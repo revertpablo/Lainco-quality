@@ -45,7 +45,7 @@ Fecha: 2026-09-23.
   (job de prueba 6.5) │            │                            │
                       │   Vercel Cron                           │
                       │   ├─ sincronizar-sonar   (diario)       │
-                      │   ├─ procesar-publicaciones (c/5 min)   │
+                      │   ├─ procesar-publicaciones (diario)    │
                       │   └─ reconciliar-perfil  (diario)       │
                       │            │                            │
                       └────────────┼────────────────────────────┘
@@ -92,7 +92,7 @@ Traducción del modelo de la sección 11 de `FASE-6.md` a tablas de Postgres. No
 | Job | Disparo | Qué hace |
 |---|---|---|
 | `sincronizar-sonar` | Cron diario (D6.6) + botón en la app | Pagina `api/rules/search` por lenguaje, compara con lo almacenado, crea / actualiza / marca deprecadas, escribe una fila en `sincronizacion`. |
-| `procesar-publicaciones` | Cron cada 5 min | Toma filas pendientes de `publicacion` y llama a `activate_rule` / `deactivate_rule`. Reintentos con retroceso exponencial; tras N fallos queda en `fallida` y aparece como alerta en la app. |
+| `procesar-publicaciones` | Enseguida después de cada decisión + cron diario de reintento + botón (decisión P2 de la entrega 6.2) | Toma filas pendientes de `publicacion` y llama a `activate_rule` / `deactivate_rule`. Reintentos con retroceso exponencial; tras N fallos queda en `fallida` y aparece como alerta en la app. |
 | `reconciliar-perfil` | Cron diario | Compara el Quality Profile real contra `estadoRegla` y genera alertas de desvío (sección 10 de `FASE-6.md`). |
 
 La sincronización de ~500 reglas entra holgada en el límite de 300 s de una función de Vercel. Si al implementarla resultara ajustada, se parte por lenguaje en dos invocaciones.
@@ -181,6 +181,41 @@ En orden. Cada paso es verificable antes de pasar al siguiente.
 | 11 | Tablero de progreso | Porcentaje triageado por lenguaje y tipo; reglas estancadas hace más de N días. **Hecho (2026-10-19)**: `/tablero`. Triageada es toda regla que salió de Pendiente de analizar (porcentaje redondeado para abajo). Por lenguaje y tipo, con una barra por estado y link a las pendientes en el inventario; reglas en cada estado por origen (FASE-6.md, sección 5); estancadas en A revisar o En prueba hace más de N días (14 por defecto, se cambia en la página), con quién las pasó. |
 
 Al terminar el paso 11 se cumplen los cinco criterios de aceptación de 6.1 en `docs/FASE-6.md`.
+
+---
+
+## 8 bis. Plan de implementación de la entrega 6.2 — Publicación a Sonar
+
+Criterios de aceptación (`FASE-6.md`, sección 13):
+
+- Incorporar una regla la activa en el perfil de Sonar con la severidad elegida; descartarla la desactiva.
+- Activar una regla a mano en Sonar genera una alerta de desvío.
+
+### Decisiones (2026-10-19)
+
+| # | Decisión |
+|---|---|
+| P1 | **Desvíos: la app alerta y un decisor corrige.** La reconciliación no toca Sonar sola: deja una alerta con la diferencia, y un botón la corrige llevando Sonar a lo que dice la app (la app es la fuente de verdad). Nadie pierde un cambio sin enterarse. |
+| P2 | **Publicación enseguida, con reintento.** La decisión se guarda y en el mismo pedido, ya respondido, se publica (`after()` de Next). Si Sonar falla, la publicación queda pendiente en `publicacion` (outbox) y la reintenta un cron o un botón. Reemplaza el cron cada 5 minutos de la sección 4, que además no entra en el plan Hobby de Vercel (solo crons diarios). |
+| P3 | **Perfiles por variable de entorno.** `SONAR_PERFIL_CS` y `SONAR_PERFIL_TS` dicen el nombre del perfil de cada lenguaje (`Lainco C#` y `Lainco Typescript`). Se prueba contra los perfiles reales. |
+
+Lo que se mantiene de `FASE-6.md`:
+
+- **Solo Incorporada está activa en Sonar.** En prueba no aparece en Sonar (entrega 6.5), así que publicar es: entrar a Incorporada activa la regla (con la severidad y los parámetros decididos); salir de Incorporada (a Descartada o a En prueba) la desactiva. Una transición que no toca Incorporada no publica nada.
+- **La publicación es idempotente.** La fila de `publicacion` dice "llevar esta regla a lo que dice la app"; quien publica lee el estado de la regla al momento de publicar. Si la regla cambió dos veces antes de publicarse, se publica una sola vez, lo último.
+- **El token** es `LAINCO_SONAR_TOKEN`. En SonarQube Cloud el token tiene los permisos de su usuario: ese usuario necesita el permiso **Administer Quality Profiles** en la organización.
+
+### Pasos
+
+| # | Paso | Se verifica con |
+|---|---|---|
+| 1 | Esquema: `publicacion` (outbox: regla, estado, intentos, próximo intento, último error) y `desvio` (tipo, regla si corresponde, detalle, detectado, resuelto). Configuración de los perfiles (P3). | `drizzle-kit migrate` crea las tablas; la configuración rechaza un perfil que falta. **Hecho (2026-10-19)**: migración `0004_publicacion_y_desvios`. La base garantiza una sola publicación pendiente por regla (encolar de nuevo no duplica) y un solo desvío abierto por tipo, lenguaje y clave; toda publicación la pide una decisión o la corrección de un desvío, nunca las dos. El desvío guarda la clave de Sonar además de la regla, porque una regla activada a mano puede no estar en el inventario. Perfiles en `SONAR_PERFIL_CS` y `SONAR_PERFIL_TS`, sin valor por defecto; los lee solo la publicación. |
+| 2 | Cliente de Sonar para perfiles: buscar el perfil por nombre (clave, herencia), reglas activas del perfil con severidad y parámetros, proyectos y el perfil que usan; `activate_rule` y `deactivate_rule`. | Tests contra respuestas grabadas de SonarQube Cloud (se amplía `npm run sonar:grabar` con las lecturas). Se confirma cómo toma la severidad SonarQube Cloud (severidad clásica o impactos). |
+| 3 | Encolar al decidir: `aplicarTransicion` agrega la fila de `publicacion` en la misma transacción, solo al entrar o salir de Incorporada. | Incorporar crea una publicación pendiente; retirar también; un descarte masivo desde Pendiente no crea ninguna; si la transición falla, no queda nada encolado. |
+| 4 | Publicar: enseguida después de la decisión, y un cron diario más un botón para reintentar lo pendiente. Reintentos con espera creciente; tras N fallos queda **fallida** y aparece como alerta. | Con un Sonar simulado: incorporar llama a `activate_rule` con la severidad y los parámetros; retirar llama a `deactivate_rule`; con Sonar caído queda pendiente y el reintento la publica. |
+| 5 | Reconciliación: cron diario más botón. Compara el perfil real con la app y registra desvíos: activa en Sonar sin estar Incorporada, Incorporada e inactiva, severidad o parámetros distintos, perfil con herencia, proyecto con otro perfil. Un desvío que desaparece se cierra solo. | Activar una regla a mano en el Sonar simulado genera el desvío; corregirlo lo cierra. |
+| 6 | Pantalla: estado de publicación en el detalle y en el inventario; lista de desvíos con **Corregir** (decisor, P1) y de publicaciones fallidas con **Reintentar**; aviso en el encabezado. | Un decisor corrige un desvío; un analista lo ve pero no puede corregir. |
+| 7 | Punta a punta contra SonarQube Cloud con los perfiles reales. | Los dos criterios de 6.2: incorporar activa con la severidad elegida, descartar desactiva, activar a mano genera la alerta. |
 
 ---
 

@@ -29,6 +29,13 @@
       "when": 1792193301772,
       "tag": "0003_avisos",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792438623323,
+      "tag": "0004_publicacion_y_desvios",
+      "breakpoints": true
     }
   ]
 }

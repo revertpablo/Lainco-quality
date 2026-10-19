@@ -121,9 +121,10 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0001_valores_de_referencia` | Códigos y descripciones de las tablas de referencia. |
 | `0002_decisores_iniciales` | Seed de los decisores de D6.1: Federico Sánchez y Pablo A. Revert. |
 | `0003_avisos` | Tabla `aviso` y su tabla de referencia `motivoAviso` (paso 6). |
+| `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
 
-Las tablas de las entregas siguientes (publicación, sugerencias de IA, relaciones,
-pruebas) se agregan con su propia migración cuando se implementan.
+Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
+agregan con su propia migración cuando se implementan.
 
 `.env.example` lista las variables que hacen falta. Nunca se commitean valores reales.
 
@@ -457,11 +458,14 @@ Variables de entorno (`src/sonar/configuracion.ts`):
 |---|---|
 | `SONAR_URL` | Opcional. Por defecto, `https://sonarcloud.io`. |
 | `SONAR_ORGANIZACION` | Clave de la organización: hoy `revertpablo`. |
+| `SONAR_PERFIL_CS`, `SONAR_PERFIL_TS` | Nombre del Quality Profile que gestiona la app para cada lenguaje, tal como se ve en SonarQube Cloud: hoy `Lainco C#` y `Lainco Typescript`. Los usa solo la publicación (entrega 6.2); sin ellas, la sincronización anda igual. No tienen valor por defecto a propósito: publicar en el perfil equivocado cambia lo que analiza Sonar. |
 | `LAINCO_SONAR_TOKEN` | Token de usuario de SonarQube Cloud (**My Account → Security**). Secreto. Es **la misma variable que usa `tools/sonar-sync`**: en una máquina que ya la tiene definida, la app la toma sin más configuración, porque una variable de entorno del sistema tiene prioridad sobre los archivos `.env`. Para leer reglas alcanza cualquier token de un miembro de la organización; sin token, Sonar oculta las descripciones. Desde la entrega 6.2 la app necesita en Vercel un token que pueda administrar Quality Profiles (`docs/setup-sonarcloud.md`, paso 3.1). |
 
 ```powershell
 vercel env add SONAR_ORGANIZACION production   # y preview y development
 vercel env add LAINCO_SONAR_TOKEN production   # y preview; en development no hace falta si ya está en la máquina
+vercel env add SONAR_PERFIL_CS production      # y preview y development: Lainco C#
+vercel env add SONAR_PERFIL_TS production      # y preview y development: Lainco Typescript
 vercel env pull .env.local
 ```
 
@@ -585,12 +589,14 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/reglas/detalle.test.ts` | Detalle e historial de una regla. | Base de pruebas. |
 | `tests/dominio/progreso.test.ts` | Cuentas del tablero: porcentaje triageado, agrupación por lenguaje, tipo y origen, el N de las estancadas. | Nada. |
 | `tests/tablero/` | Consultas del tablero: conteos y reglas estancadas. | Base de pruebas. |
+| `tests/sonar/configuracion.test.ts` | Perfiles de Sonar por variable de entorno. | Nada. |
+| `tests/publicacion/` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate

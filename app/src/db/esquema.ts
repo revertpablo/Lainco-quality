@@ -11,13 +11,24 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
-import type { Estado, EstadoSincronizacion, Lenguaje, MotivoAviso, Origen, Rol } from "@/dominio/valores";
+import type {
+  AccionPublicacion,
+  Estado,
+  EstadoPublicacion,
+  EstadoSincronizacion,
+  Lenguaje,
+  MotivoAviso,
+  Origen,
+  Rol,
+  TipoDesvio,
+} from "@/dominio/valores";
 
 /**
- * Esquema de la base de la app de catálogo (entrega 6.1).
+ * Esquema de la base de la app de catálogo (entregas 6.1 y 6.2).
  *
  * Traduce el modelo de la sección 11 de docs/FASE-6.md según la sección 3 de
  * docs/FASE-6-APP.md.
@@ -31,9 +42,10 @@ import type { Estado, EstadoSincronizacion, Lenguaje, MotivoAviso, Origen, Rol }
  *   `descripcion` (el texto que ve el usuario). Las columnas que los usan son claves
  *   foráneas a `codigo`.
  *
- * Solo están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6). Las de las entregas siguientes (publicación,
- * sugerencias de IA, relaciones, grupos de equivalencia, pruebas, tokens de servicio)
- * se agregan con su propia migración cuando se implementan.
+ * Están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6) y las de la
+ * publicación a Sonar de la 6.2 (`publicacion` y `desvio`). Las de las entregas
+ * siguientes (sugerencias de IA, relaciones, grupos de equivalencia, pruebas, tokens de
+ * servicio) se agregan con su propia migración cuando se implementan.
  */
 
 const fechaDeAlta = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -62,6 +74,9 @@ export const lenguaje = tablaDeReferencia<Lenguaje>("lenguaje");
 export const rol = tablaDeReferencia<Rol>("rol");
 export const estadoSincronizacion = tablaDeReferencia<EstadoSincronizacion>("estadoSincronizacion");
 export const motivoAviso = tablaDeReferencia<MotivoAviso>("motivoAviso");
+export const estadoPublicacion = tablaDeReferencia<EstadoPublicacion>("estadoPublicacion");
+export const accionPublicacion = tablaDeReferencia<AccionPublicacion>("accionPublicacion");
+export const tipoDesvio = tablaDeReferencia<TipoDesvio>("tipoDesvio");
 
 // ---------------------------------------------------------------------- usuario
 
@@ -276,5 +291,108 @@ export const aviso = pgTable(
     foreignKey({ name: "avisoResueltoPor", columns: [t.resueltoPorId], foreignColumns: [usuario.id] }),
     index("avisoPorRegla").on(t.reglaId),
     check("avisoResueltoConAutor", sql`(${t.resueltoEn} is null) = (${t.resueltoPorId} is null)`),
+  ],
+);
+
+// ------------------------------------------------------------------------- desvio
+
+/**
+ * Una diferencia entre lo que dice la app y lo que hay en el perfil de Sonar
+ * (FASE-6.md, sección 10). La registra la reconciliación (entrega 6.2, paso 5).
+ *
+ * La app no corrige sola (decisión P1): el desvío queda abierto hasta que desaparece de
+ * Sonar, sea porque un decisor lo corrigió desde la app (una `publicacion`) o porque
+ * alguien lo arregló en Sonar. Mientras está abierto, cada reconciliación que lo vuelve a
+ * ver actualiza `vistoEn`.
+ */
+export const desvio = pgTable(
+  "desvio",
+  {
+    id: uuid().notNull().defaultRandom(),
+    tipo: text().$type<TipoDesvio>().notNull(),
+    /** Lenguaje del perfil donde está la diferencia. */
+    lenguaje: text().$type<Lenguaje>().notNull(),
+    /**
+     * Qué tiene la diferencia, tal como lo nombra Sonar: la clave de la regla
+     * (`csharpsquid:S2325`), la del proyecto o el nombre del perfil. Una regla activa a
+     * mano puede no estar en el inventario, por eso no alcanza con `reglaId`.
+     */
+    clave: text().notNull(),
+    /** La regla del inventario, si la diferencia es sobre una regla que está en él. */
+    reglaId: uuid(),
+    /** Lo que dice la app y lo que hay en Sonar, para mostrar. */
+    detalle: jsonb().$type<{ esperado?: unknown; encontrado?: unknown }>(),
+    detectadoEn: fechaDeAlta(),
+    /** Última reconciliación que lo vio. */
+    vistoEn: fechaDeAlta(),
+    /** Cuándo dejó de verse. Null: sigue abierto. */
+    resueltoEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "desvioPk", columns: [t.id] }),
+    foreignKey({ name: "desvioTipo", columns: [t.tipo], foreignColumns: [tipoDesvio.codigo] }),
+    foreignKey({ name: "desvioLenguaje", columns: [t.lenguaje], foreignColumns: [lenguaje.codigo] }),
+    foreignKey({ name: "desvioRegla", columns: [t.reglaId], foreignColumns: [regla.id] }).onDelete("cascade"),
+    // Un mismo desvío abierto una sola vez: la reconciliación lo actualiza en lugar de
+    // duplicarlo. Uno resuelto no impide que el mismo desvío vuelva a abrirse.
+    uniqueIndex("desvioAbiertoUnico")
+      .on(t.tipo, t.lenguaje, t.clave)
+      .where(sql`${t.resueltoEn} is null`),
+    index("desvioPorRegla").on(t.reglaId),
+    check("desvioVistoDespuesDeDetectado", sql`${t.vistoEn} >= ${t.detectadoEn}`),
+  ],
+);
+
+// -------------------------------------------------------------------- publicacion
+
+/**
+ * Outbox de la publicación a Sonar (entrega 6.2; FASE-6-APP.md, secciones 4 y 8 bis).
+ *
+ * Una fila dice "llevar esta regla, en el perfil de su lenguaje, a lo que dice la app".
+ * Qué se publica (activar con tal severidad y parámetros, o desactivar) se decide al
+ * publicar, leyendo `estadoRegla`: así, si la regla cambió dos veces antes de publicarse,
+ * se publica una sola vez, lo último. `accion`, `severidad` y `parametros` registran lo
+ * que se mandó en el último intento.
+ *
+ * La pide una decisión (`decisionId`) o un decisor que corrige un desvío (`desvioId`):
+ * siempre una de las dos.
+ */
+export const publicacion = pgTable(
+  "publicacion",
+  {
+    id: uuid().notNull().defaultRandom(),
+    reglaId: uuid().notNull(),
+    estado: text().$type<EstadoPublicacion>().notNull().default("pendiente"),
+    decisionId: uuid(),
+    desvioId: uuid(),
+    pedidaPorId: uuid().notNull(),
+    creadaEn: fechaDeAlta(),
+    intentos: integer().notNull().default(0),
+    /** Cuándo se puede volver a intentar (espera creciente entre fallos). */
+    proximoIntentoEn: fechaDeAlta(),
+    ultimoError: text(),
+    accion: text().$type<AccionPublicacion>(),
+    severidad: text(),
+    parametros: jsonb().$type<Record<string, string>>(),
+    publicadaEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "publicacionPk", columns: [t.id] }),
+    foreignKey({ name: "publicacionRegla", columns: [t.reglaId], foreignColumns: [regla.id] }).onDelete("cascade"),
+    foreignKey({ name: "publicacionEstado", columns: [t.estado], foreignColumns: [estadoPublicacion.codigo] }),
+    foreignKey({ name: "publicacionDecision", columns: [t.decisionId], foreignColumns: [decision.id] }),
+    foreignKey({ name: "publicacionDesvio", columns: [t.desvioId], foreignColumns: [desvio.id] }),
+    foreignKey({ name: "publicacionPedidaPor", columns: [t.pedidaPorId], foreignColumns: [usuario.id] }),
+    foreignKey({ name: "publicacionAccion", columns: [t.accion], foreignColumns: [accionPublicacion.codigo] }),
+    // Una sola pendiente por regla: encolar otra vez la misma regla no duplica.
+    uniqueIndex("publicacionPendienteUnica")
+      .on(t.reglaId)
+      .where(sql`${t.estado} = 'pendiente'`),
+    // Lo que busca quien publica: las pendientes cuyo próximo intento ya llegó.
+    index("publicacionPorEstado").on(t.estado, t.proximoIntentoEn),
+    check("publicacionPorDecisionODesvio", sql`(${t.decisionId} is null) <> (${t.desvioId} is null)`),
+    check("publicacionPublicadaConFecha", sql`(${t.estado} = 'publicada') = (${t.publicadaEn} is not null)`),
+    check("publicacionPublicadaConAccion", sql`${t.estado} <> 'publicada' or ${t.accion} is not null`),
+    check("publicacionIntentosNoNegativos", sql`${t.intentos} >= 0`),
   ],
 );
