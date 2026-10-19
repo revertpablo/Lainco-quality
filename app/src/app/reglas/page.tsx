@@ -52,7 +52,7 @@ async function Inventario({ searchParams }: Pick<PageProps<"/reglas">, "searchPa
 
   return (
     <>
-      <Encabezado usuario={usuario} />
+      <Encabezado usuario={usuario} seccion="inventario" />
       <div className="flex flex-1 flex-col lg:flex-row">
         <PanelDeFiltros activos={cantidadDeFiltros(filtros)}>
           <VistasGuardadas vistas={vistas} parametrosActuales={aParametros(filtros)} />

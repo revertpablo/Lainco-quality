@@ -7,8 +7,8 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 10** (detalle de regla e historial). La pantalla principal es el inventario de reglas,
-en `/reglas` (`/` lleva ahí).
+Entrega 6.1 completa: los 11 pasos. La pantalla principal es el inventario de reglas,
+en `/reglas` (`/` lleva ahí); el progreso del triage está en `/tablero`.
 
 ## Puesta en marcha
 
@@ -267,6 +267,23 @@ vuelve a la búsqueda de la que se vino.
   autor, fecha y justificación, la severidad y los parámetros elegidos, y si fue parte de una
   operación masiva (de cuántas reglas). También cuándo llegó al inventario, si el origen la
   deprecó y los avisos de la sincronización.
+
+### Progreso del triage
+
+`/tablero` (link **Progreso** en el encabezado; `src/dominio/progreso.ts` hace las cuentas y
+`src/tablero/consulta.ts` las consultas):
+
+- **Triageada** es toda regla que salió de Pendiente de analizar: alguien ya la miró y
+  decidió qué hacer, aunque siga en A revisar o En prueba. El porcentaje se redondea para
+  abajo, así 100 % significa que no queda ninguna pendiente.
+- **Por lenguaje y tipo**: cuántas reglas, qué porcentaje está triageado y una barra con
+  cuántas hay en cada estado. La cantidad de pendientes es un link al inventario con ese
+  filtro.
+- **Reglas en cada estado, por origen.**
+- **Estancadas**: las que llevan más de N días en A revisar o En prueba, de la más vieja a
+  la más nueva, con quién las pasó a ese estado. N es 14 por defecto y se cambia en la
+  página (`/tablero?dias=30`, de 1 a 365). "Desde cuándo" es la última transición de la
+  regla.
 
 ### Vistas guardadas
 
@@ -566,12 +583,14 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/vistas/` | Vistas guardadas: guardar y recuperar, actualizar, compartir, borrar. | Base de pruebas. |
 | `tests/reglas/descripcion.test.ts` | Saneado de la descripción de Sonar. | Nada. |
 | `tests/reglas/detalle.test.ts` | Detalle e historial de una regla. | Base de pruebas. |
+| `tests/dominio/progreso.test.ts` | Cuentas del tablero: porcentaje triageado, agrupación por lenguaje, tipo y origen, el N de las estancadas. | Nada. |
+| `tests/tablero/` | Consultas del tablero: conteos y reglas estancadas. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -605,17 +624,18 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL).
+│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
+│   ├── tablero/      # Consultas del tablero de progreso.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
-│   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva.
+│   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva, barra de estados del tablero.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
 ├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
 ├── tests/            # Tests (Vitest). Ver "Tests".

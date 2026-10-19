@@ -17,8 +17,18 @@ const fecha = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
 });
 
-/** Encabezado de las pantallas con sesión: quién entró, la sincronización con Sonar y salir. */
-export async function Encabezado({ usuario }: { usuario: UsuarioActual }) {
+/** Las secciones de la app, para la navegación del encabezado. */
+const SECCIONES = [
+  { codigo: "inventario", texto: "Inventario", href: "/reglas" },
+  { codigo: "progreso", texto: "Progreso", href: "/tablero" },
+] as const;
+export type Seccion = (typeof SECCIONES)[number]["codigo"];
+
+/**
+ * Encabezado de las pantallas con sesión: las secciones, quién entró, la sincronización
+ * con Sonar y salir.
+ */
+export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual; seccion: Seccion }) {
   const db = obtenerDb();
   const [[ultima], [{ avisos }]] = await Promise.all([
     db
@@ -44,9 +54,27 @@ export async function Encabezado({ usuario }: { usuario: UsuarioActual }) {
   return (
     <header className="border-b border-linea bg-superficie">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 lg:px-6">
-        <Link href="/reglas" className="text-base font-semibold tracking-tight">
-          Catálogo de reglas
-        </Link>
+        <div className="flex items-baseline gap-x-5">
+          <Link href="/reglas" className="text-base font-semibold tracking-tight">
+            Catálogo de reglas
+          </Link>
+          <nav aria-label="Secciones" className="flex gap-x-4 text-sm">
+            {SECCIONES.map((s) => (
+              <Link
+                key={s.codigo}
+                href={s.href}
+                aria-current={s.codigo === seccion ? "page" : undefined}
+                className={
+                  s.codigo === seccion
+                    ? "font-medium text-tinta underline decoration-pino decoration-2 underline-offset-[6px]"
+                    : "text-tenue hover:text-tinta"
+                }
+              >
+                {s.texto}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tenue" data-seccion="sincronizacion">
           <span data-ultima={ultima?.estado}>

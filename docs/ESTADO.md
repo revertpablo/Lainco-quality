@@ -2,7 +2,7 @@
 
 Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
-Última actualización: **2026-10-16**.
+Última actualización: **2026-10-19**.
 
 ---
 
@@ -16,7 +16,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | 🟡 Entrega 6.1 en curso: pasos 1 a 10 de 11 (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial). Ver `app/README.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Sigue 6.2 (publicación a Sonar). Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 

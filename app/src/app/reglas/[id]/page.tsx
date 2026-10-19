@@ -51,7 +51,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
 
   return (
     <>
-      <Encabezado usuario={usuario} />
+      <Encabezado usuario={usuario} seccion="inventario" />
       <main className="flex flex-1 flex-col gap-6 px-4 py-5 lg:px-6">
         <div className="flex flex-col gap-2">
           <Link
