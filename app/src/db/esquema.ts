@@ -14,7 +14,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import type { Estado, EstadoSincronizacion, Lenguaje, Origen, Rol } from "@/dominio/valores";
+import type { Estado, EstadoSincronizacion, Lenguaje, MotivoAviso, Origen, Rol } from "@/dominio/valores";
 
 /**
  * Esquema de la base de la app de catálogo (entrega 6.1).
@@ -31,7 +31,7 @@ import type { Estado, EstadoSincronizacion, Lenguaje, Origen, Rol } from "@/domi
  *   `descripcion` (el texto que ve el usuario). Las columnas que los usan son claves
  *   foráneas a `codigo`.
  *
- * Solo están las tablas de la entrega 6.1. Las de las entregas siguientes (publicación,
+ * Solo están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6). Las de las entregas siguientes (publicación,
  * sugerencias de IA, relaciones, grupos de equivalencia, pruebas, tokens de servicio)
  * se agregan con su propia migración cuando se implementan.
  */
@@ -61,6 +61,7 @@ export const origen = tablaDeReferencia<Origen>("origen");
 export const lenguaje = tablaDeReferencia<Lenguaje>("lenguaje");
 export const rol = tablaDeReferencia<Rol>("rol");
 export const estadoSincronizacion = tablaDeReferencia<EstadoSincronizacion>("estadoSincronizacion");
+export const motivoAviso = tablaDeReferencia<MotivoAviso>("motivoAviso");
 
 // ---------------------------------------------------------------------- usuario
 
@@ -243,5 +244,36 @@ export const vistaGuardada = pgTable(
     primaryKey({ name: "vistaGuardadaPk", columns: [t.id] }),
     foreignKey({ name: "vistaGuardadaUsuario", columns: [t.usuarioId], foreignColumns: [usuario.id] }).onDelete("cascade"),
     unique("vistaGuardadaUsuarioNombre").on(t.usuarioId, t.nombre),
+  ],
+);
+
+// ------------------------------------------------------------------------------ aviso
+
+/**
+ * Algo que cambió en el origen y obliga a revisar una decisión (FASE-6.md, sección 3):
+ * una regla Incorporada o En prueba que cambió en Sonar, o una Incorporada que Sonar
+ * deprecó o eliminó. Lo crea la sincronización; queda pendiente hasta que alguien lo da
+ * por resuelto.
+ */
+export const aviso = pgTable(
+  "aviso",
+  {
+    id: uuid().notNull().defaultRandom(),
+    reglaId: uuid().notNull(),
+    motivo: text().$type<MotivoAviso>().notNull(),
+    /** Sincronización que lo generó. */
+    sincronizacionId: uuid().notNull(),
+    creadoEn: fechaDeAlta(),
+    resueltoEn: timestamp({ withTimezone: true }),
+    resueltoPorId: uuid(),
+  },
+  (t) => [
+    primaryKey({ name: "avisoPk", columns: [t.id] }),
+    foreignKey({ name: "avisoRegla", columns: [t.reglaId], foreignColumns: [regla.id] }).onDelete("cascade"),
+    foreignKey({ name: "avisoMotivo", columns: [t.motivo], foreignColumns: [motivoAviso.codigo] }),
+    foreignKey({ name: "avisoSincronizacion", columns: [t.sincronizacionId], foreignColumns: [sincronizacion.id] }),
+    foreignKey({ name: "avisoResueltoPor", columns: [t.resueltoPorId], foreignColumns: [usuario.id] }),
+    index("avisoPorRegla").on(t.reglaId),
+    check("avisoResueltoConAutor", sql`(${t.resueltoEn} is null) = (${t.resueltoPorId} is null)`),
   ],
 );

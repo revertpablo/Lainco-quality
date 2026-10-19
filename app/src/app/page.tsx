@@ -1,17 +1,26 @@
-import { asc } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull } from "drizzle-orm";
 import { Suspense } from "react";
 
 import { signOut } from "@/auth";
 import { exigirUsuario } from "@/auth/sesion";
 import { obtenerDb } from "@/db/cliente";
-import { estado } from "@/db/esquema";
+import { aviso, estado, estadoSincronizacion, lenguaje, regla, sincronizacion, usuario as tablaUsuario } from "@/db/esquema";
 import { transicionesDisponibles } from "@/dominio/transiciones";
+import { Origen } from "@/dominio/valores";
+import { sincronizarAhora } from "@/sincronizacion/acciones";
+import { describirResumen } from "@/sincronizacion/resumen";
+import { BotonSincronizar } from "@/ui/BotonSincronizar";
+
+/** El botón de sincronizar corre en esta página: hasta 5 minutos (como el cron). */
+export const maxDuration = 300;
 
 /**
- * Página de inicio provisoria. Muestra quién entró, con qué rol, y qué cambios de estado
- * puede hacer ese rol: es la verificación del paso 4 de la entrega 6.1 ("un analista no
- * ve las acciones de decisor"). Se reemplaza por el inventario en el paso 8, donde esas
- * mismas acciones aparecen sobre cada regla.
+ * Página de inicio provisoria. Muestra:
+ * - quién entró, con qué rol, y qué cambios de estado puede hacer ese rol (paso 4: "un
+ *   analista no ve las acciones de decisor");
+ * - la última sincronización con Sonar, cuántas reglas hay y el botón para sincronizar
+ *   (paso 6).
+ * Se reemplaza por el inventario en el paso 8 y el tablero en el paso 11.
  */
 export default function Inicio() {
   return (
@@ -49,6 +58,10 @@ async function Contenido() {
         </form>
       </header>
 
+      <Suspense fallback={<p className="text-sm opacity-70">Cargando la sincronización…</p>}>
+        <Sincronizacion />
+      </Suspense>
+
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Cambios de estado que podés hacer</h2>
         <ul className="flex flex-col gap-3 text-sm">
@@ -74,5 +87,65 @@ async function Contenido() {
         </ul>
       </section>
     </>
+  );
+}
+
+const fecha = new Intl.DateTimeFormat("es-AR", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "America/Argentina/Buenos_Aires",
+});
+
+async function Sincronizacion() {
+  const db = obtenerDb();
+  const [ultima] = await db
+    .select({
+      iniciadaEn: sincronizacion.iniciadaEn,
+      estado: sincronizacion.estado,
+      estadoDescripcion: estadoSincronizacion.descripcion,
+      nuevas: sincronizacion.nuevas,
+      modificadas: sincronizacion.modificadas,
+      deprecadas: sincronizacion.deprecadas,
+      error: sincronizacion.error,
+      disparadaPor: tablaUsuario.nombre,
+    })
+    .from(sincronizacion)
+    .innerJoin(estadoSincronizacion, eq(estadoSincronizacion.codigo, sincronizacion.estado))
+    .leftJoin(tablaUsuario, eq(tablaUsuario.id, sincronizacion.disparadaPorId))
+    .where(eq(sincronizacion.origen, Origen.Sonar))
+    .orderBy(desc(sincronizacion.iniciadaEn))
+    .limit(1);
+
+  const porLenguaje = await db
+    .select({ lenguaje: lenguaje.descripcion, cantidad: count() })
+    .from(regla)
+    .innerJoin(lenguaje, eq(lenguaje.codigo, regla.lenguaje))
+    .where(and(eq(regla.origen, Origen.Sonar), isNull(regla.deprecadaEn)))
+    .groupBy(lenguaje.descripcion, lenguaje.orden)
+    .orderBy(asc(lenguaje.orden));
+
+  const [{ pendientes }] = await db.select({ pendientes: count() }).from(aviso).where(isNull(aviso.resueltoEn));
+
+  return (
+    <section className="flex flex-col gap-3" data-seccion="sincronizacion">
+      <h2 className="text-lg font-medium">Sincronización con Sonar</h2>
+      <div className="text-sm">
+        {ultima ? (
+          <p data-ultima={ultima.estado}>
+            Última: {fecha.format(ultima.iniciadaEn)} ({ultima.disparadaPor ?? "automática"}) —{" "}
+            {ultima.estado === "ok" ? describirResumen(ultima) : `${ultima.estadoDescripcion}. ${describirResumen(ultima)}`}
+          </p>
+        ) : (
+          <p>Todavía no se sincronizó.</p>
+        )}
+        <p className="opacity-70" data-reglas>
+          {porLenguaje.length === 0
+            ? "No hay reglas de Sonar."
+            : `Reglas vigentes (sin las deprecadas): ${porLenguaje.map((l) => `${l.cantidad} de ${l.lenguaje}`).join(", ")}.`}
+          {pendientes > 0 && ` Avisos sin resolver: ${pendientes}.`}
+        </p>
+      </div>
+      <BotonSincronizar accion={sincronizarAhora} />
+    </section>
   );
 }

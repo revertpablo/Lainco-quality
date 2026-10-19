@@ -7,9 +7,9 @@ Next.js 16 (App Router) + TypeScript, Postgres (Neon) con Drizzle, desplegada en
 
 ## Estado
 
-Entrega 6.1, **paso 5** (cliente de la Web API de Sonar). La página de inicio es
-provisoria: muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol.
-Se reemplaza por el inventario en el paso 8.
+Entrega 6.1, **paso 6** (sincronización con Sonar). La página de inicio es provisoria:
+muestra quién entró, con qué rol y qué cambios de estado puede hacer ese rol, y la última
+sincronización con el botón para sincronizar. Se reemplaza por el inventario en el paso 8.
 
 ## Puesta en marcha
 
@@ -121,6 +121,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0000_esquema_inicial` | Tablas de la entrega 6.1: `usuario`, `regla`, `estadoRegla`, `decision`, `sincronizacion`, `vistaGuardada`, y las tablas de referencia `estado`, `origen`, `lenguaje`, `rol`, `estadoSincronizacion`. |
 | `0001_valores_de_referencia` | Códigos y descripciones de las tablas de referencia. |
 | `0002_decisores_iniciales` | Seed de los decisores de D6.1: Federico Sánchez y Pablo A. Revert. |
+| `0003_avisos` | Tabla `aviso` y su tabla de referencia `motivoAviso` (paso 6). |
 
 Las tablas de las entregas siguientes (publicación, sugerencias de IA, relaciones,
 pruebas) se agregan con su propia migración cuando se implementan.
@@ -191,7 +192,7 @@ que se valida.
 
 | Capa | Qué hace |
 |---|---|
-| `src/proxy.ts` | Filtro grueso: sin sesión, redirige a `/ingresar` (o `401` en `/api/`). No va a la base. Quedan afuera `/ingresar`, `/api/auth/*` y `/api/salud`. |
+| `src/proxy.ts` | Filtro grueso: sin sesión, redirige a `/ingresar` (o `401` en `/api/`). No va a la base. Quedan afuera `/ingresar`, `/api/auth/*`, `/api/salud` y `/api/cron/*` (que se autentica con `CRON_SECRET`). |
 | `src/auth/sesion.ts` | `usuarioActual()` / `exigirUsuario()`: el usuario de la sesión leído de la base, con su rol. **Cada página, Server Action y Route Handler que toca datos lo llama**: `proxy` no alcanza (ver la guía de Next en `node_modules/next/dist/docs/01-app/02-guides/authentication.md`). |
 | `src/auth/index.ts` | Configuración de Auth.js: al entrar, decide con `src/dominio/acceso.ts` y da de alta a los nuevos de Google (`src/auth/usuarios.ts`). |
 
@@ -300,7 +301,7 @@ el despliegue (Auth.js lo resuelve con `AUTH_REDIRECT_PROXY_URL`).
 ## SonarQube
 
 `src/sonar/cliente.ts` lee el catálogo de reglas de SonarQube Cloud con
-`api/rules/search`. Lo va a usar el job de sincronización (paso 6).
+`api/rules/search`. Lo usa la [sincronización](#sincronización-con-sonar).
 
 - Pide las reglas de **un lenguaje** (`cs`, `ts`), en estado `READY`, `BETA` o
   `DEPRECATED`, sin las externas (`external_roslyn:LAIN005` y demás no son reglas de
@@ -381,12 +382,66 @@ fallan con `ETIMEDOUT` o `ENETUNREACH`. En Vercel no pasa.
 
    Para no repetirlo, se pueden definir como variables de entorno de usuario en Windows.
 
+## Sincronización con Sonar
+
+Trae de Sonar todas las reglas de C# y TypeScript y las compara con las guardadas
+(FASE-6.md, sección 3). Corre todos los días con Vercel Cron y cuando alguien toca
+**Sincronizar ahora** en la página de inicio (cualquier usuario con sesión: no cambia el
+estado de ninguna regla).
+
+| Caso | Qué hace |
+|---|---|
+| Regla nueva | La crea en **Pendiente de analizar**, asociada a la corrida que la trajo (`altaEnSincronizacionId`). Si Sonar ya la da como deprecada, entra marcada. |
+| Cambió la descripción, los parámetros o la severidad por defecto | La actualiza y la marca **modificada** (`modificadaEnSincronizacionId`, `ultimaModificacion`). Si estaba Incorporada o En prueba, crea un **aviso**. |
+| Cambió solo el nombre, los tags, el tipo, el atributo de clean code o los impactos | La actualiza, sin marcarla ni avisar. |
+| Sonar la marca deprecada, o ya no aparece | Le pone fecha en `deprecadaEn`. Si estaba Incorporada, crea un aviso (`deprecada` o `eliminada`). |
+| Estaba deprecada y vuelve a estar lista | Le saca la marca y la cuenta como modificada. |
+
+Nunca cambia el estado del ciclo de vida de una regla. Cada corrida queda en
+`sincronizacion` con su resultado y quién la disparó (vacío si fue el cron).
+
+**Lógica y escritura, separadas.** Qué cambió lo decide `src/dominio/sincronizacion.ts`, sin
+base ni red; el job (`src/sincronizacion/sincronizarSonar.ts`) trae las reglas, aplica los
+cambios y registra la corrida.
+
+**Protecciones**:
+- Si Sonar no devuelve la lista completa, o no devuelve ninguna regla de un lenguaje que
+  tiene reglas guardadas, la corrida termina con error y no se marca nada.
+- Todos los cambios de una corrida van en una sola transacción: si algo falla, no queda
+  nada a medias.
+- Dos corridas a la vez (el cron y el botón) no se pisan: la transacción toma un lock de
+  Postgres, y la segunda compara recién cuando terminó la primera.
+
+### Cron
+
+`vercel.json` programa `GET /api/cron/sincronizar-sonar` todos los días a las 9:00 UTC
+(6:00 en Argentina; D6.6 sigue abierta, se asume diaria). Vercel manda
+`Authorization: Bearer <CRON_SECRET>`; sin eso, la ruta responde `401`. Responde `200` con
+el resumen si la corrida terminó bien y `500` si no.
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"   # generar
+vercel env add CRON_SECRET production
+```
+
+Para correrlo a mano en local, con `npm run dev` levantado:
+
+```powershell
+curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/sincronizar-sonar
+```
+
+Si la función se corta a mitad de camino (por ejemplo, por el límite de tiempo), la
+corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre igual.
+
 ## Tests
 
 `npm test` corre todos. Los de `tests/dominio/` y `tests/sonar/` no necesitan base ni red.
 
 Los de `tests/auth/` prueban el ingreso contra una base real (alta, duplicados, ingresos
-simultáneos, bajas). Necesitan una base **de pruebas** con las migraciones aplicadas, en
+simultáneos, bajas). Los de `tests/sincronizacion/` corren la sincronización completa contra
+una base real, con la grabación de Sonar: la primera corrida carga las 1.123 reglas, la
+segunda no cambia nada, se aplican cambios y avisos, y dos corridas a la vez no duplican.
+**Borran todas las reglas de Sonar, los avisos y las sincronizaciones de esa base.** Necesitan una base **de pruebas** con las migraciones aplicadas, en
 `DATABASE_URL_PRUEBAS`; sin esa variable se saltean. No usan `DATABASE_URL` a propósito,
 para no escribir por error en la base de desarrollo. Crean usuarios con el prefijo
 `prueba-ingreso-` y los borran al terminar.
@@ -423,19 +478,19 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud.
+│   ├── app/          # Rutas (App Router). ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra).
+│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar).
+│   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube (cliente.ts) y su configuración (configuracion.ts).
+│   ├── ui/           # Componentes de cliente.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
 ├── scripts/          # grabar-respuestas-sonar.mts: graba respuestas reales para los tests.
 ├── tests/            # Tests (Vitest). tests/dominio/ y tests/sonar/ no necesitan base ni red; tests/auth/ necesita una base de pruebas.
 │   └── fixtures/sonar/  # Respuestas grabadas de SonarQube Cloud. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
+├── vercel.json       # Cron de la sincronización.
 └── .env.example
 ```
-
-El resto de la estructura (`ui/`) se agrega
-en los pasos siguientes, según `docs/FASE-6-APP.md`, sección 7.

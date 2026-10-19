@@ -11,7 +11,7 @@ import { configuracionBase } from "@/auth/config";
  * src/auth/sesion.ts, al lado de los datos.
  *
  * Quedan afuera (ver `matcher`): la pantalla de ingreso, las rutas de Auth.js, el chequeo
- * de salud y los archivos estáticos.
+ * de salud, los jobs de cron (se autentican con CRON_SECRET) y los archivos estáticos.
  */
 const { auth } = NextAuth(configuracionBase);
 
@@ -33,5 +33,5 @@ export const proxy = auth((pedido) => {
 });
 
 export const config = {
-  matcher: ["/((?!ingresar|api/auth|api/salud|_next/static|_next/image|favicon\\.ico).*)"],
+  matcher: ["/((?!ingresar|api/auth|api/salud|api/cron|_next/static|_next/image|favicon\\.ico).*)"],
 };

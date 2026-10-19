@@ -48,3 +48,14 @@ export const EstadoSincronizacion = {
   Error: "error",
 } as const;
 export type EstadoSincronizacion = (typeof EstadoSincronizacion)[keyof typeof EstadoSincronizacion];
+
+/** Por qué la sincronización avisa sobre una regla (FASE-6.md, sección 3). */
+export const MotivoAviso = {
+  /** Cambió en el origen (descripción, parámetros o severidad) estando Incorporada o En prueba. */
+  Modificada: "modificada",
+  /** El origen la marcó deprecada estando Incorporada. */
+  Deprecada: "deprecada",
+  /** Ya no está en el origen y estaba Incorporada. */
+  Eliminada: "eliminada",
+} as const;
+export type MotivoAviso = (typeof MotivoAviso)[keyof typeof MotivoAviso];
