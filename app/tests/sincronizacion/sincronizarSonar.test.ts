@@ -26,7 +26,7 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
     process.env.DATABASE_URL = url;
   }
   const { obtenerDb } = await import("@/db/cliente");
-  const { aviso, decision, estadoRegla, regla, sincronizacion, usuario } = await import("@/db/esquema");
+  const { aviso, decision, desvio, estadoRegla, publicacion, regla, sincronizacion, usuario } = await import("@/db/esquema");
   const { sincronizarSonar } = await import("@/sincronizacion/sincronizarSonar");
 
   const db = () => obtenerDb();
@@ -41,10 +41,12 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
 
   async function limpiar() {
     await db().delete(aviso);
-    // Solo las decisiones de reglas de Sonar: otros tests usan la misma base en paralelo.
-    await db()
-      .delete(decision)
-      .where(inArray(decision.reglaId, db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Sonar))));
+    // Solo lo de reglas de Sonar: otros tests usan la misma base en paralelo. Primero las
+    // publicaciones, que apuntan a las decisiones y a los desvíos (entrega 6.2).
+    const deSonar = db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Sonar));
+    await db().delete(publicacion).where(inArray(publicacion.reglaId, deSonar));
+    await db().delete(desvio).where(inArray(desvio.reglaId, deSonar));
+    await db().delete(decision).where(inArray(decision.reglaId, deSonar));
     await db().delete(regla).where(eq(regla.origen, Origen.Sonar));
     await db().delete(sincronizacion);
   }

@@ -10,7 +10,7 @@ import type { ResultadoDeTransicion } from "./aplicarTransicion";
  *
  * | HTTP | `error`           | Cuándo |
  * |------|-------------------|--------|
- * | 200  | —                 | Se aplicó. Devuelve las decisiones escritas y el lote. |
+ * | 200  | —                 | Se aplicó. Devuelve las decisiones escritas, el lote y las publicaciones en Sonar que quedaron pendientes. |
  * | 400  | `pedidoInvalido`  | El cuerpo no tiene la forma esperada. |
  * | 401  | `sinSesion`       | No hay sesión. |
  * | 403  | `otroOrigen`      | El pedido viene de otro sitio. |
@@ -21,7 +21,7 @@ import type { ResultadoDeTransicion } from "./aplicarTransicion";
  */
 export function responder(resultado: ResultadoDeTransicion): Response {
   if (resultado.ok) {
-    return Response.json({ loteId: resultado.loteId, decisiones: resultado.decisiones });
+    return Response.json({ loteId: resultado.loteId, decisiones: resultado.decisiones, publicaciones: resultado.publicaciones });
   }
 
   switch (resultado.tipo) {

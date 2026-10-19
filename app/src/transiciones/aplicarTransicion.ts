@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { asc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
-import { decision, estadoRegla, regla } from "@/db/esquema";
+import { decision, estadoRegla, publicacion, regla } from "@/db/esquema";
+import { cambiaElPerfil } from "@/dominio/publicacion";
 import { validarTransicion, type MotivoDeRechazo } from "@/dominio/transiciones";
 import { Estado, type Rol } from "@/dominio/valores";
 
@@ -20,6 +21,9 @@ import { Estado, type Rol } from "@/dominio/valores";
  *    justificación, severidad, operación masiva, parámetros.
  * 4. Si todas pasan, actualiza `estadoRegla` y escribe una `decision` por regla. En una
  *    operación masiva todas comparten el `loteId` y la justificación.
+ * 5. Encola la publicación en Sonar de las reglas que entran a Incorporada o salen
+ *    (src/dominio/publicacion.ts; entrega 6.2, paso 3). Va en la misma transacción: no
+ *    puede quedar una decisión sin su publicación, ni una publicación sin su decisión.
  *
  * **Todo o nada**: si una sola regla no puede, no cambia ninguna, y la respuesta dice cuál
  * y por qué.
@@ -50,6 +54,8 @@ export type ResultadoDeTransicion =
       /** Agrupa las decisiones de una operación masiva. `null` en una individual. */
       loteId: string | null;
       decisiones: { reglaId: string; decisionId: string; desde: Estado; hacia: Estado }[];
+      /** Las publicaciones en Sonar que quedaron pendientes por esta decisión. */
+      publicaciones: string[];
     }
   | { ok: false; tipo: "noEncontradas"; reglaIds: string[] }
   | { ok: false; tipo: "estadoCambio"; reglas: { id: string; esperado: Estado; actual: Estado }[] }
@@ -78,7 +84,7 @@ export async function aplicarTransicion(
   return db.transaction(async (tx) => {
     // Bloqueo en orden de id: dos lotes que se superponen no se trancan entre sí.
     const actuales = await tx
-      .select({ id: estadoRegla.reglaId, estado: estadoRegla.estado, parametros: regla.parametros })
+      .select({ id: estadoRegla.reglaId, estado: estadoRegla.estado, parametros: regla.parametros, origen: regla.origen })
       .from(estadoRegla)
       .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
       .where(inArray(estadoRegla.reglaId, ids))
@@ -141,6 +147,30 @@ export async function aplicarTransicion(
       .returning({ id: decision.id, reglaId: decision.reglaId });
     const decisionDe = new Map(escritas.map((e) => [e.reglaId, e.id]));
 
+    // Una sola publicación pendiente por regla: si ya había una (la decisión anterior
+    // todavía no se publicó), pasa a ser de esta decisión y vuelve a intentarse ya. Igual
+    // se publica lo último, porque quien publica lee `estadoRegla` al publicar.
+    const aPublicar = pedido.reglas.filter((r) => cambiaElPerfil(porId.get(r.id)!.origen, r.desde, pedido.hacia));
+    const publicaciones =
+      aPublicar.length === 0
+        ? []
+        : await tx
+            .insert(publicacion)
+            .values(aPublicar.map((r) => ({ reglaId: r.id, decisionId: decisionDe.get(r.id)!, pedidaPorId: autor.id })))
+            .onConflictDoUpdate({
+              target: publicacion.reglaId,
+              targetWhere: sql`${publicacion.estado} = 'pendiente'`,
+              set: {
+                decisionId: sql`excluded."decisionId"`,
+                desvioId: null,
+                pedidaPorId: sql`excluded."pedidaPorId"`,
+                intentos: 0,
+                proximoIntentoEn: sql`now()`,
+                ultimoError: null,
+              },
+            })
+            .returning({ id: publicacion.id });
+
     return {
       ok: true,
       loteId,
@@ -150,6 +180,7 @@ export async function aplicarTransicion(
         desde: r.desde,
         hacia: pedido.hacia,
       })),
+      publicaciones: publicaciones.map((p) => p.id),
     };
   });
 }

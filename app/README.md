@@ -180,6 +180,13 @@ Es la única función que escribe `estadoRegla`, y en la misma transacción escr
 4. Escribe el estado nuevo y una decisión por regla, con autor, justificación y, al
    incorporar, severidad y parámetros. Al salir de Incorporada se borran la severidad y los
    parámetros asignados; el historial los conserva.
+5. Si una regla de Sonar entra a Incorporada o sale, deja pendiente su publicación en el
+   perfil de Sonar (tabla `publicacion`; `src/dominio/publicacion.ts`). Solo Incorporada
+   está activa en Sonar, así que las demás transiciones no publican nada, y las reglas
+   propias (Roslyn, ESLint) se publican por otro lado (entrega 6.4). Una regla tiene a lo
+   sumo una publicación pendiente: si se vuelve a decidir antes de publicarse, la pendiente
+   pasa a ser de la nueva decisión y se intenta de nuevo enseguida; al publicar se lee el
+   estado de ese momento, así que se publica lo último.
 
 **Todo o nada**: en una operación masiva, si una regla no puede, no cambia ninguna, y la
 respuesta dice cuál y por qué. Las decisiones de una masiva comparten `loteId` y
@@ -209,7 +216,7 @@ al incorporar. Los parámetros tienen que ser de la regla.
 
 | HTTP | `error` | Cuándo |
 |---|---|---|
-| 200 | — | Se aplicó. Devuelve `loteId` (`null` si es individual) y las decisiones. |
+| 200 | — | Se aplicó. Devuelve `loteId` (`null` si es individual), las decisiones y `publicaciones`: los ids de las publicaciones en Sonar que quedaron pendientes. |
 | 400 | `pedidoInvalido` | El cuerpo no tiene la forma esperada. `detalles` dice qué campo. |
 | 401 | `sinSesion` | No hay sesión. |
 | 403 | `otroOrigen` | El pedido viene de otro sitio. |
@@ -645,7 +652,9 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/sonar/perfiles.test.ts` | Quality Profiles: buscar, reglas activas, proyectos, activar y desactivar. | Nada. |
 | `tests/dominio/severidad.test.ts` | Severidad elegida traducida a los impactos que pide Sonar. | Nada. |
 | `tests/sonar/perfiles-grabados.test.ts` | Lo mismo contra respuestas reales (`npm run sonar:grabar-perfiles`), y que lo que manda la app exista en la API sin deprecar. | La grabación. |
-| `tests/publicacion/` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
+| `tests/dominio/publicacion.test.ts` | Qué decisiones se publican en el perfil de Sonar, sobre la tabla de transiciones entera. | Nada. |
+| `tests/publicacion/esquema.test.ts` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
+| `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por

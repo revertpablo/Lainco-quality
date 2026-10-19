@@ -8,6 +8,7 @@ import { responder } from "@/transiciones/respuestas";
 
 const ID = "4a2ae8f4-bb1c-4a56-9c55-f19e55b8e101";
 const OTRO = "b48e97fd-c952-4efe-9156-40a5c862bf86";
+const TERCERO = "0d3f6a1e-5b8c-4e2a-9f7d-2c1b0a9e8d7c";
 
 describe("pedido individual", () => {
   it("acepta una incorporación con severidad y parámetros", () => {
@@ -83,17 +84,19 @@ describe("pedido masivo", () => {
 });
 
 describe("respuestas", () => {
-  it("200 con las decisiones", async () => {
+  it("200 con las decisiones y las publicaciones pendientes", async () => {
     const respuesta = responder({
       ok: true,
       loteId: null,
-      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "enPrueba" }],
+      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "incorporada" }],
+      publicaciones: [TERCERO],
     });
 
     expect(respuesta.status).toBe(200);
     expect(await respuesta.json()).toEqual({
       loteId: null,
-      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "enPrueba" }],
+      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "incorporada" }],
+      publicaciones: [TERCERO],
     });
   });
 
