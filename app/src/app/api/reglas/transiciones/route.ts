@@ -1,5 +1,4 @@
-import { obtenerDb } from "@/db/cliente";
-import { aplicarTransicion } from "@/transiciones/aplicarTransicion";
+import { aplicarYPublicar } from "@/transiciones/aplicarYPublicar";
 import { prepararPedido } from "@/transiciones/http";
 import { pedidoMasivo } from "@/transiciones/pedidos";
 import { responder } from "@/transiciones/respuestas";
@@ -21,7 +20,7 @@ export async function POST(pedido: Request) {
   }
   const { usuario, cuerpo } = preparado;
 
-  const resultado = await aplicarTransicion(obtenerDb(), usuario, {
+  const resultado = await aplicarYPublicar(usuario, {
     reglas: cuerpo.reglas,
     hacia: cuerpo.hacia,
     justificacion: cuerpo.justificacion,

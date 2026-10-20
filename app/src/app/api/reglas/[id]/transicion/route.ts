@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { obtenerDb } from "@/db/cliente";
-import { aplicarTransicion } from "@/transiciones/aplicarTransicion";
+import { aplicarYPublicar } from "@/transiciones/aplicarYPublicar";
 import { prepararPedido } from "@/transiciones/http";
 import { pedidoIndividual } from "@/transiciones/pedidos";
 import { error, responder } from "@/transiciones/respuestas";
@@ -26,7 +25,7 @@ export async function POST(pedido: Request, ctx: RouteContext<"/api/reglas/[id]/
   }
   const { usuario, cuerpo } = preparado;
 
-  const resultado = await aplicarTransicion(obtenerDb(), usuario, {
+  const resultado = await aplicarYPublicar(usuario, {
     reglas: [{ id, desde: cuerpo.desde }],
     hacia: cuerpo.hacia,
     justificacion: cuerpo.justificacion,

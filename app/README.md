@@ -630,6 +630,46 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 Si la función se corta a mitad de camino (por ejemplo, por el límite de tiempo), la
 corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre igual.
 
+## Publicación en Sonar
+
+Entrega 6.2. Lo que se decide en la app se publica en el Quality Profile de cada lenguaje
+(`SONAR_PERFIL_CS`, `SONAR_PERFIL_TS`): Incorporada queda activa con la severidad y los
+parámetros elegidos; cualquier otro estado, inactiva.
+
+**Cuándo.** Cada decisión que entra o sale de Incorporada deja una publicación pendiente
+(paso 3) y la publica **después de responder** (`after()` de Next, en
+`src/transiciones/aplicarYPublicar.ts`): quien decide no espera a Sonar. Si Sonar falla,
+la publicación queda pendiente y la retoman:
+
+- el cron `GET /api/cron/publicar-sonar`, todos los días a las 10:00 UTC (después de la
+  sincronización), con el mismo `CRON_SECRET`. El plan Hobby de Vercel solo permite crons
+  diarios, con una precisión de ±59 minutos;
+- la acción `publicarPendientesAhora` (`src/publicacion/acciones.ts`), que además vuelve a
+  poner pendientes las fallidas. Su botón llega con la pantalla del paso 6.
+
+**Cómo** (`src/publicacion/publicar.ts`). Cada publicación se toma en su transacción con
+la fila bloqueada (`FOR UPDATE SKIP LOCKED`), así dos corridas a la vez no publican la
+misma dos veces. Lo que se publica se decide en ese momento, leyendo el estado de la
+regla: si cambió dos veces antes de publicarse, se publica una sola vez, lo último.
+
+**Si falla** (`src/dominio/publicacion.ts`):
+
+| Falla | Qué pasa |
+|---|---|
+| Sonar no responde, se corta la red | Se reintenta: espera 1, 5, 30 y 120 minutos. Al quinto intento queda **fallida**. |
+| El token no sirve o no tiene permiso, el perfil no existe | Igual: se arregla sin tocar la publicación. |
+| Sonar rechaza el pedido (un parámetro inválido, una regla que ya no existe), o el pedido no se puede armar (un valor con `;`) | **Fallida** enseguida: reintentar daría lo mismo. |
+
+Cada publicación guarda los intentos, el último error y lo que se mandó (acción, severidad,
+parámetros). Una fallida se reintenta a mano; si después hubo otra publicación de la misma
+regla, la fallida ya no importa y no se reintenta.
+
+Para correr el cron a mano en local:
+
+```powershell
+curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/publicar-sonar
+```
+
 ## Tests
 
 `npm test` corre todos.
@@ -654,13 +694,15 @@ corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre ig
 | `tests/sonar/perfiles-grabados.test.ts` | Lo mismo contra respuestas reales (`npm run sonar:grabar-perfiles`), y que lo que manda la app exista en la API sin deprecar. | La grabación. |
 | `tests/dominio/publicacion.test.ts` | Qué decisiones se publican en el perfil de Sonar, sobre la tabla de transiciones entera. | Nada. |
 | `tests/publicacion/esquema.test.ts` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
+| `tests/publicacion/publicar.test.ts` | Publicar lo pendiente con un Sonar falso: qué se activa o desactiva, reintentos, fallidas, perfiles, dos corridas a la vez, reintentar fallidas. | Base de pruebas. |
+| `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`) y los borran al terminar.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -694,13 +736,14 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: jobs. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar y publicar-sonar. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.
+│   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).

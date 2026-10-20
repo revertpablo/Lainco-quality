@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/sincronizar-sonar",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/publicar-sonar",
+      "schedule": "0 10 * * *"
     }
   ]
 }

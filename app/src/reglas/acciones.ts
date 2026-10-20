@@ -4,9 +4,8 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { exigirUsuario } from "@/auth/sesion";
-import { obtenerDb } from "@/db/cliente";
 import { MENSAJES_DE_RECHAZO } from "@/dominio/transiciones";
-import { aplicarTransicion } from "@/transiciones/aplicarTransicion";
+import { aplicarYPublicar } from "@/transiciones/aplicarYPublicar";
 import { pedidoIndividual } from "@/transiciones/pedidos";
 
 export interface ResultadoDeCambio {
@@ -52,7 +51,7 @@ export async function cambiarEstadoDeRegla(_anterior: ResultadoDeCambio | null, 
     return { ok: false, mensaje: pedido.error.issues.map((i) => i.message).join(" ") };
   }
 
-  const resultado = await aplicarTransicion(obtenerDb(), usuario, {
+  const resultado = await aplicarYPublicar(usuario, {
     reglas: [{ id: reglaId.data, desde: pedido.data.desde }],
     hacia: pedido.data.hacia,
     justificacion: pedido.data.justificacion,

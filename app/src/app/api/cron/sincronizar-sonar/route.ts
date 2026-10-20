@@ -1,7 +1,6 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { connection } from "next/server";
 
+import { autorizarCron } from "@/app/api/cron/autorizar";
 import { obtenerDb } from "@/db/cliente";
 import { sincronizarSonar } from "@/sincronizacion/sincronizarSonar";
 import { clienteSonarDesdeEntorno } from "@/sonar/configuracion";
@@ -20,12 +19,9 @@ export const maxDuration = 300;
 export async function GET(pedido: Request) {
   await connection();
 
-  const secreto = process.env.CRON_SECRET;
-  if (!secreto) {
-    return Response.json({ error: "Falta la variable de entorno CRON_SECRET." }, { status: 500 });
-  }
-  if (!autorizado(pedido.headers.get("authorization"), `Bearer ${secreto}`)) {
-    return Response.json({ error: "No autorizado." }, { status: 401 });
+  const rechazo = autorizarCron(pedido);
+  if (rechazo) {
+    return rechazo;
   }
 
   let sonar;
@@ -37,11 +33,4 @@ export async function GET(pedido: Request) {
 
   const resumen = await sincronizarSonar({ db: obtenerDb(), sonar });
   return Response.json(resumen, { status: resumen.estado === "ok" ? 200 : 500 });
-}
-
-/** Compara en tiempo constante, para no dar pistas del secreto por lo que tarda. */
-function autorizado(recibido: string | null, esperado: string): boolean {
-  const a = Buffer.from(recibido ?? "");
-  const b = Buffer.from(esperado);
-  return a.length === b.length && timingSafeEqual(a, b);
 }

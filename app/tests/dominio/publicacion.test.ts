@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { accionEnSonar, cambiaElPerfil } from "@/dominio/publicacion";
+import { accionEnSonar, cambiaElPerfil, despuesDeFallar, MAXIMO_DE_INTENTOS } from "@/dominio/publicacion";
 import { TRANSICIONES } from "@/dominio/transiciones";
 import { Estado, Origen } from "@/dominio/valores";
 
@@ -49,5 +49,30 @@ describe("qué se le pide a Sonar", () => {
 
   it.each([Estado.PendienteDeAnalizar, Estado.ARevisar, Estado.EnPrueba, Estado.Descartada])("%s se desactiva", (estado) => {
     expect(accionEnSonar(estado)).toBe("desactivar");
+  });
+});
+
+describe("reintentos de una publicación que falló", () => {
+  it.each([
+    [1, 1],
+    [2, 5],
+    [3, 30],
+    [4, 120],
+  ])("después del intento %i fallido espera %i minutos", (intentos, minutos) => {
+    expect(despuesDeFallar(intentos, "transitorio")).toEqual({ fallida: false, esperaEnMinutos: minutos });
+  });
+
+  it(`al intento ${MAXIMO_DE_INTENTOS} queda fallida: se reintenta a mano`, () => {
+    expect(MAXIMO_DE_INTENTOS).toBe(5);
+    expect(despuesDeFallar(5, "transitorio")).toEqual({ fallida: true });
+    expect(despuesDeFallar(6, "transitorio")).toEqual({ fallida: true });
+  });
+
+  it("un rechazo de Sonar no se reintenta: daría lo mismo", () => {
+    expect(despuesDeFallar(1, "permanente")).toEqual({ fallida: true });
+  });
+
+  it("un problema de configuración se reintenta como uno transitorio", () => {
+    expect(despuesDeFallar(2, "configuracion")).toEqual({ fallida: false, esperaEnMinutos: 5 });
   });
 });

@@ -3,9 +3,8 @@
 import { refresh } from "next/cache";
 
 import { exigirUsuario } from "@/auth/sesion";
-import { obtenerDb } from "@/db/cliente";
 import { MENSAJES_DE_RECHAZO } from "@/dominio/transiciones";
-import { aplicarTransicion } from "@/transiciones/aplicarTransicion";
+import { aplicarYPublicar } from "@/transiciones/aplicarYPublicar";
 import { pedidoMasivo } from "@/transiciones/pedidos";
 
 export interface ResultadoDeOperacion {
@@ -28,7 +27,7 @@ export async function aplicarOperacionMasiva(entrada: unknown): Promise<Resultad
     return { ok: false, mensaje: pedido.error.issues.map((i) => i.message).join(" ") };
   }
 
-  const resultado = await aplicarTransicion(obtenerDb(), usuario, { ...pedido.data, masiva: true });
+  const resultado = await aplicarYPublicar(usuario, { ...pedido.data, masiva: true });
 
   if (resultado.ok) {
     refresh();
