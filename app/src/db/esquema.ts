@@ -396,3 +396,35 @@ export const publicacion = pgTable(
     check("publicacionIntentosNoNegativos", sql`${t.intentos} >= 0`),
   ],
 );
+
+// ---------------------------------------------------------------- reconciliacion
+
+/**
+ * Log de cada corrida de la reconciliación con Sonar (entrega 6.2, paso 5): cuándo, cómo
+ * terminó y qué encontró. Los desvíos en sí están en `desvio`.
+ */
+export const reconciliacion = pgTable(
+  "reconciliacion",
+  {
+    id: uuid().notNull().defaultRandom(),
+    iniciadaEn: fechaDeAlta(),
+    terminadaEn: timestamp({ withTimezone: true }),
+    estado: text().$type<EstadoSincronizacion>().notNull().default("enCurso"),
+    /** Desvíos abiertos al terminar. */
+    abiertos: integer().notNull().default(0),
+    /** Desvíos que aparecieron en esta corrida. */
+    nuevos: integer().notNull().default(0),
+    /** Desvíos que dejaron de verse en esta corrida. */
+    resueltos: integer().notNull().default(0),
+    /** Lo raro que no es un desvío (por ejemplo, cuentas de Sonar que no coinciden). */
+    advertencias: jsonb().$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    error: text(),
+    /** Quién la disparó desde la app. Null si la disparó el cron. */
+    disparadaPorId: uuid(),
+  },
+  (t) => [
+    primaryKey({ name: "reconciliacionPk", columns: [t.id] }),
+    foreignKey({ name: "reconciliacionEstado", columns: [t.estado], foreignColumns: [estadoSincronizacion.codigo] }),
+    foreignKey({ name: "reconciliacionDisparadaPor", columns: [t.disparadaPorId], foreignColumns: [usuario.id] }),
+  ],
+);

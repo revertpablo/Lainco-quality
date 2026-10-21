@@ -7,6 +7,7 @@ import { accionEnSonar, despuesDeFallar, type TipoDeFalla } from "@/dominio/publ
 import { impactosParaPublicar } from "@/dominio/severidad";
 import { AccionPublicacion, EstadoPublicacion, type Lenguaje } from "@/dominio/valores";
 import type { ClienteSonar } from "@/sonar/cliente";
+import { cerrarDesviosDeLaRegla } from "@/reconciliacion/corregir";
 import { ErrorDeSonar } from "@/sonar/http";
 import type { PerfilDeSonar } from "@/sonar/perfiles";
 
@@ -25,6 +26,9 @@ import type { PerfilDeSonar } from "@/sonar/perfiles";
  *
  * Si Sonar falla, la publicación se reprograma con una espera creciente o queda fallida
  * (src/dominio/publicacion.ts). Nunca lanza por una publicación: el resumen dice qué pasó.
+ *
+ * Una publicación exitosa deja la regla en Sonar como dice la app: cierra sus desvíos de
+ * regla abiertos (paso 5).
  */
 
 export interface OpcionesDePublicacion {
@@ -89,6 +93,7 @@ export async function publicarPendientes(opciones: OpcionesDePublicacion): Promi
       const [fila] = await tx
         .select({
           intentos: publicacion.intentos,
+          reglaId: publicacion.reglaId,
           clave: regla.clave,
           lenguaje: regla.lenguaje,
           impactos: regla.impactos,
@@ -144,6 +149,7 @@ export async function publicarPendientes(opciones: OpcionesDePublicacion): Promi
         .update(publicacion)
         .set({ ...intento, estado: EstadoPublicacion.Publicada, publicadaEn: sql`now()`, ultimoError: null })
         .where(eq(publicacion.id, id));
+      await cerrarDesviosDeLaRegla(tx, fila.reglaId);
       resumen.publicadas++;
     });
   }

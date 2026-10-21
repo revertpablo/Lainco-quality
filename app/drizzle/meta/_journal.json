@@ -43,6 +43,13 @@
       "when": 1792441413790,
       "tag": "0005_perfil_no_es_default",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792500678929,
+      "tag": "0006_reconciliacion",
+      "breakpoints": true
     }
   ]
 }

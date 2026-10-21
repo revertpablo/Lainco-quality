@@ -123,6 +123,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0003_avisos` | Tabla `aviso` y su tabla de referencia `motivoAviso` (paso 6). |
 | `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
 | `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
+| `0006_reconciliacion` | Entrega 6.2, paso 5: `reconciliacion`, el log de cada corrida (estado, desvíos abiertos, nuevos y resueltos, advertencias). |
 
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
 agregan con su propia migración cuando se implementan.
@@ -670,6 +671,51 @@ Para correr el cron a mano en local:
 curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/publicar-sonar
 ```
 
+## Reconciliación con Sonar
+
+Entrega 6.2, paso 5. Compara el Quality Profile real de cada lenguaje con la app y anota
+las diferencias como **desvíos** (tabla `desvio`; FASE-6.md, sección 10). La app no corrige
+sola (decisión P1): un decisor decide.
+
+| Desvío | Cuándo |
+|---|---|
+| Activa en Sonar sin estar Incorporada | Alguien la activó a mano. Si la regla no está en el inventario, el desvío queda sin regla. |
+| Incorporada e inactiva en Sonar | Alguien la desactivó a mano, o nunca se publicó. |
+| Otra severidad en Sonar | Algún impacto no tiene la severidad elegida, traducida. Sin severidad elegida no se compara. |
+| Otros parámetros en Sonar | Un parámetro elegido con otro valor, o uno no elegido distinto del valor por defecto de la regla. |
+| El perfil hereda de otro | |
+| El perfil no es el default | Decisión P5. |
+| Un proyecto usa otro perfil | Por lenguaje; los otros lenguajes de Sonar no cuentan. |
+
+Una regla con una publicación en camino (pendiente, o publicada mientras corría la
+reconciliación) no es desvío: ya está por resolverse. Si el perfil dice tener otra cantidad
+de reglas activas que las que devuelve la búsqueda, queda una advertencia en la corrida.
+
+**Cómo** (`src/reconciliacion/reconciliar.ts`; la comparación, en
+`src/dominio/reconciliacion.ts`). Lee Sonar, después la app, compara y deja los desvíos al
+día: uno que sigue se actualiza (`vistoEn`, el detalle), uno nuevo se agrega y uno abierto
+que ya no aparece se cierra solo. **Si Sonar falla, la corrida termina con error sin tocar
+los desvíos**: con una foto incompleta se cerrarían desvíos que siguen ahí. Cada corrida
+queda en la tabla `reconciliacion`.
+
+**Cuándo.** El cron `GET /api/cron/reconciliar-sonar`, todos los días a las 11:00 UTC
+(después de publicar), con el mismo `CRON_SECRET`, y la acción `reconciliarAhora` (cualquier
+usuario). El botón llega con la pantalla del paso 6.
+
+**Corregir** (`src/reconciliacion/corregir.ts`, acción `corregirDesvioAhora`; solo
+decisores). Un desvío de una regla se corrige publicándola otra vez: se encola una
+publicación ligada al desvío, que lleva Sonar a lo que dice la app, y se publica después de
+responder. **Toda publicación exitosa de una regla cierra sus desvíos de regla**, venga de
+una corrección o de una decisión. Los desvíos del perfil o de un proyecto se corrigen en
+SonarQube.
+
+**La primera corrida** marca como "Incorporada e inactiva" toda regla incorporada antes de
+la 6.2, porque nunca se publicó: se corrigen con **Corregir**.
+
+```powershell
+curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/reconciliar-sonar
+```
+
 ## Tests
 
 `npm test` corre todos.
@@ -694,6 +740,9 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/sonar/perfiles-grabados.test.ts` | Lo mismo contra respuestas reales (`npm run sonar:grabar-perfiles`), y que lo que manda la app exista en la API sin deprecar. | La grabación. |
 | `tests/dominio/publicacion.test.ts` | Qué decisiones se publican en el perfil de Sonar, sobre la tabla de transiciones entera. | Nada. |
 | `tests/publicacion/esquema.test.ts` | Restricciones de las tablas `publicacion` y `desvio`. | Base de pruebas. |
+| `tests/dominio/reconciliacion.test.ts` | Qué diferencias son desvíos, regla por regla y del perfil y los proyectos. | Nada. |
+| `tests/reconciliacion/reconciliar.test.ts` | La reconciliación con un Sonar falso: desvíos nuevos, que siguen y que se cierran solos, Sonar caído, publicaciones en camino, corregir. Cada test corre en una transacción que se descarta. | Base de pruebas. |
+| `tests/reconciliacion/resumen.test.ts` | El resultado de reconciliar, en una frase. | Nada. |
 | `tests/publicacion/publicar.test.ts` | Publicar lo pendiente con un Sonar falso: qué se activa o desactiva, reintentos, fallidas, perfiles, dos corridas a la vez, reintentar fallidas. | Base de pruebas. |
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
@@ -702,7 +751,9 @@ La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicad
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`) y los borran al terminar.
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`) y los borran al terminar; los
+que necesitan reglas de Sonar (`PRUEBA-ENC-`, `PRUEBA-REC-`) corren en una transacción que se
+descarta.
 
 ```powershell
 $env:DATABASE_URL = "<URL de la base de pruebas>"; npm run db:migrate
@@ -736,7 +787,7 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar y publicar-sonar. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
@@ -744,6 +795,7 @@ app/
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.
 │   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
+│   ├── reconciliacion/  # Reconciliar el perfil de Sonar con la app, corregir desvíos y sus acciones.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
