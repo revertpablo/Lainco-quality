@@ -13,3 +13,12 @@ Rule ID | Category | Severity | Notes
 --------|----------|----------|-------------------------------------------------------
 LAIN004 | Diseño   | Warning  | No se permite inicialización inline de properties.
 LAIN005 | Diseño   | Warning  | No se permiten métodos estáticos, salvo operators.
+
+## Release 0.1.1
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------------------------------------------------------
+LAIN004 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).
+LAIN005 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).
