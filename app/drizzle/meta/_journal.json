@@ -71,6 +71,13 @@
       "when": 1793219584452,
       "tag": "0009_pr_de_configuracion",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793227876972,
+      "tag": "0010_seguimiento_del_paquete",
+      "breakpoints": true
     }
   ]
 }

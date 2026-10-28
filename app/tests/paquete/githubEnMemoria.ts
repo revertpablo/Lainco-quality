@@ -22,11 +22,13 @@ export interface PrEnMemoria extends PrDeGitHub {
   titulo: string;
   cuerpo: string;
   abierto: boolean;
+  mergeadoEn: Date | null;
+  cerradoEn: Date | null;
 }
 
 type Operacion = keyof Pick<
   ClienteGitHub,
-  "commitDeRama" | "leerArchivo" | "crearCommit" | "crearRama" | "moverRama" | "prAbierto" | "crearPr" | "actualizarPr"
+  "commitDeRama" | "leerArchivo" | "crearCommit" | "crearRama" | "moverRama" | "prAbierto" | "crearPr" | "actualizarPr" | "estadoDePr"
 >;
 
 // Los archivos de main antes del primer PR de la app (tests/fixtures/paquete/LEEME.md).
@@ -86,7 +88,7 @@ export function githubEnMemoria(fallar: (operacion: Operacion) => Error | undefi
     async crearPr({ titulo, cuerpo, rama, base }) {
       registrar("crearPr");
       const numero = prs.length + 1;
-      const pr = { numero, url: `https://github.com/revertpablo/Lainco-quality/pull/${numero}`, rama, base, titulo, cuerpo, abierto: true };
+      const pr = { numero, url: `https://github.com/revertpablo/Lainco-quality/pull/${numero}`, rama, base, titulo, cuerpo, abierto: true, mergeadoEn: null, cerradoEn: null };
       prs.push(pr);
       return { numero, url: pr.url };
     },
@@ -95,7 +97,13 @@ export function githubEnMemoria(fallar: (operacion: Operacion) => Error | undefi
       const pr = prs.find((p) => p.numero === numero)!;
       if (titulo !== undefined) pr.titulo = titulo;
       if (cuerpo !== undefined) pr.cuerpo = cuerpo;
-      if (cerrar) pr.abierto = false;
+      if (cerrar) Object.assign(pr, { abierto: false, cerradoEn: new Date() });
+    },
+    async estadoDePr(numero) {
+      registrar("estadoDePr");
+      const pr = prs.find((p) => p.numero === numero);
+      if (!pr) return null;
+      return { estado: pr.abierto ? "abierto" : pr.mergeadoEn ? "mergeado" : "cerrado", mergeadoEn: pr.mergeadoEn, cerradoEn: pr.cerradoEn };
     },
   };
 
@@ -112,7 +120,11 @@ export function githubEnMemoria(fallar: (operacion: Operacion) => Error | undefi
     mergear(rama: string) {
       const sha = nuevoCommit({ padre: ramas.get("main")!, mensaje: `merge ${rama}`, archivos: new Map(commits.get(ramas.get(rama)!)!.archivos) });
       ramas.set("main", sha);
-      for (const pr of prs.filter((p) => p.rama === rama)) pr.abierto = false;
+      for (const pr of prs.filter((p) => p.rama === rama && p.abierto)) Object.assign(pr, { abierto: false, mergeadoEn: new Date(), cerradoEn: new Date() });
+    },
+    /** Cierra un PR sin mergearlo, como alguien desde GitHub. */
+    cerrarSinMergear(numero: number) {
+      Object.assign(prs.find((p) => p.numero === numero)!, { abierto: false, cerradoEn: new Date() });
     },
     /** Cambia un archivo en main, como un commit de otra persona. */
     cambiarEnMain(ruta: string, contenido: string) {

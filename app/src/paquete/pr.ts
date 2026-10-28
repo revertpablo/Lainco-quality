@@ -117,21 +117,36 @@ export interface PlanDelPr {
   releasesMovidas: boolean;
 }
 
+/** Si dos `.globalconfig` son el mismo archivo (sin contar los finales de línea). */
+export function mismoGlobalconfig(a: string, b: string): boolean {
+  return sinRetornos(a) === sinRetornos(b);
+}
+
+/** Las reglas cuya severidad cambia de un `.globalconfig` a otro, ordenadas por clave. */
+export function cambiosDeSeveridad(enMainTexto: string, conElPrTexto: string): CambioDeRegla[] {
+  const enMain = severidadesDelGlobalconfig(enMainTexto);
+  const conElPr = severidadesDelGlobalconfig(conElPrTexto);
+  return [...new Set([...enMain.keys(), ...conElPr.keys()])]
+    .sort()
+    .filter((clave) => enMain.get(clave) !== conElPr.get(clave))
+    .map((clave) => ({ clave, enMain: enMain.get(clave) ?? null, conElPr: conElPr.get(clave) ?? null }));
+}
+
+/** La versión del `<Version>` del proyecto del paquete, o null si no tiene una sola. */
+export function versionDelProyecto(csproj: string): string | null {
+  const versiones = [...csproj.matchAll(/<Version>([^<]*)<\/Version>/g)];
+  return versiones.length === 1 ? versiones[0][1].trim() : null;
+}
+
 /** Qué propone el PR, o null si `main` ya tiene el `.globalconfig` de la app. */
 export function planDelPr({ main, globalconfig }: { main: ArchivosDeMain; globalconfig: string }): PlanDelPr | null {
-  if (sinRetornos(main.globalconfig) === sinRetornos(globalconfig)) {
+  if (mismoGlobalconfig(main.globalconfig, globalconfig)) {
     return null;
   }
 
   const version = subirParche(main.csproj);
   const movidas = moverAShipped(main.shipped, main.unshipped, version.nueva);
-
-  const enMain = severidadesDelGlobalconfig(main.globalconfig);
-  const conElPr = severidadesDelGlobalconfig(globalconfig);
-  const claves = [...new Set([...enMain.keys(), ...conElPr.keys()])].sort();
-  const cambios = claves
-    .filter((clave) => enMain.get(clave) !== conElPr.get(clave))
-    .map((clave) => ({ clave, enMain: enMain.get(clave) ?? null, conElPr: conElPr.get(clave) ?? null }));
+  const cambios = cambiosDeSeveridad(main.globalconfig, globalconfig);
 
   return {
     versionAnterior: version.anterior,

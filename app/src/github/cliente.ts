@@ -21,6 +21,8 @@
  * ningún mensaje de error incluye el token. Credencial: decisión R2 (`LAINCO_GITHUB_TOKEN`).
  */
 
+import { EstadoPr } from "@/dominio/valores";
+
 const INTENTOS = 3;
 const ESPERA_INICIAL_MS = 1_000;
 const TIEMPO_MAXIMO_POR_PEDIDO_MS = 30_000;
@@ -102,6 +104,14 @@ export interface ClienteGitHub {
   crearPr(opciones: { titulo: string; cuerpo: string; rama: string; base: string }): Promise<PrDeGitHub>;
   /** Cambia el título y la descripción de un PR, o lo cierra. */
   actualizarPr(numero: number, cambios: { titulo?: string; cuerpo?: string; cerrar?: boolean }): Promise<void>;
+  /** En qué está un PR, o null si no existe. */
+  estadoDePr(numero: number): Promise<EstadoDePrEnGitHub | null>;
+}
+
+export interface EstadoDePrEnGitHub {
+  estado: EstadoPr;
+  mergeadoEn: Date | null;
+  cerradoEn: Date | null;
 }
 
 interface Pedido {
@@ -303,6 +313,23 @@ export function crearClienteGitHub(opciones: OpcionesDelClienteGitHub): ClienteG
         metodo: "PATCH",
         cuerpo: { ...(titulo === undefined ? {} : { title: titulo }), ...(cuerpo === undefined ? {} : { body: cuerpo }), ...(cerrar ? { state: "closed" } : {}) },
       });
+    },
+
+    async estadoDePr(numero) {
+      const descripcion = `el PR #${numero}`;
+      const respuesta = await siExiste({ url: `${repo}/pulls/${numero}`, aceptar: API, descripcion });
+      if (!respuesta) return null;
+      const cuerpo = await json(respuesta, descripcion);
+      if (!esObjeto(cuerpo) || (cuerpo.state !== "open" && cuerpo.state !== "closed")) {
+        throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub sobre ${descripcion} no tiene la forma de un PR.`);
+      }
+      const fecha = (valor: unknown) => (typeof valor === "string" ? new Date(valor) : null);
+      const mergeadoEn = fecha(cuerpo.merged_at);
+      return {
+        estado: cuerpo.state === "open" ? EstadoPr.Abierto : mergeadoEn ? EstadoPr.Mergeado : EstadoPr.Cerrado,
+        mergeadoEn,
+        cerradoEn: fecha(cuerpo.closed_at),
+      };
     },
 
     async ultimoRelease() {

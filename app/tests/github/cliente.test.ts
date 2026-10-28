@@ -250,6 +250,24 @@ describe("cliente de GitHub: lo que usa el PR de configuración (paso 6)", () =>
     ]);
   });
 
+  it("el estado de un PR: abierto, mergeado o cerrado sin mergear; null si no existe", async () => {
+    const { fetch } = fetchFalso((p) =>
+      p.url.endsWith("/pulls/1")
+        ? { number: 1, state: "open", merged_at: null, closed_at: null }
+        : p.url.endsWith("/pulls/2")
+          ? { number: 2, state: "closed", merged_at: "2026-10-28T22:40:00Z", closed_at: "2026-10-28T22:40:00Z" }
+          : p.url.endsWith("/pulls/3")
+            ? { number: 3, state: "closed", merged_at: null, closed_at: "2026-10-28T23:00:00Z" }
+            : conEstado(404),
+    );
+    const github = cliente(fetch);
+
+    expect(await github.estadoDePr(1)).toEqual({ estado: "abierto", mergeadoEn: null, cerradoEn: null });
+    expect(await github.estadoDePr(2)).toEqual({ estado: "mergeado", mergeadoEn: new Date("2026-10-28T22:40:00Z"), cerradoEn: new Date("2026-10-28T22:40:00Z") });
+    expect(await github.estadoDePr(3)).toEqual({ estado: "cerrado", mergeadoEn: null, cerradoEn: new Date("2026-10-28T23:00:00Z") });
+    expect(await github.estadoDePr(4)).toBeNull();
+  });
+
   it("sin permiso de escritura, lo dice", async () => {
     const { fetch } = fetchFalso(() => conEstado(403, { message: "Resource not accessible by personal access token" }));
 

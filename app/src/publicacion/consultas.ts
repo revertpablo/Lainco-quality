@@ -1,15 +1,17 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, gt, inArray, isNull, notExists, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, notExists, notInArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type { Db } from "@/db/cliente";
-import { desvio, estadoPublicacion, publicacion, reconciliacion, regla, tipoDesvio, usuario } from "@/db/esquema";
+import { desvio, estadoPublicacion, prConfiguracion, publicacion, reconciliacion, regla, tipoDesvio, usuario } from "@/db/esquema";
 import { DESVIOS_QUE_SE_CORRIGEN_PUBLICANDO } from "@/dominio/reconciliacion";
 import {
+  DESVIOS_DEL_PAQUETE,
   DestinoPublicacion,
   EstadoPublicacion,
   type AccionPublicacion,
+  type EstadoPr,
   type EstadoPublicacion as TipoEstadoPublicacion,
   type EstadoSincronizacion,
   type Lenguaje,
@@ -28,11 +30,11 @@ import {
  * Una publicación fallida **vigente**: la última palabra sobre su regla. Si después hubo
  * otra publicación (pendiente o publicada), la fallida ya no importa.
  */
-function fallidaVigente(db: Db) {
+export function fallidaVigente(db: Db, destino: DestinoPublicacion = DestinoPublicacion.PerfilSonar) {
   const posterior = alias(publicacion, "posterior");
   return and(
     eq(publicacion.estado, EstadoPublicacion.Fallida),
-    eq(publicacion.destino, DestinoPublicacion.PerfilSonar),
+    eq(publicacion.destino, destino),
     notExists(
       db
         .select({ uno: sql`1` })
@@ -48,10 +50,13 @@ function fallidaVigente(db: Db) {
   );
 }
 
-/** Para el encabezado: lo que alguien tiene que mirar. */
+/** Los desvíos con Sonar: los del paquete de reglas propias van en su pantalla (entrega 6.4). */
+const deSonar = notInArray(desvio.tipo, [...DESVIOS_DEL_PAQUETE]);
+
+/** Para el encabezado: lo que alguien tiene que mirar en la sección Sonar. */
 export async function pendientesDeAtencion(db: Db): Promise<{ desvios: number; fallidas: number }> {
   const [[{ desvios }], [{ fallidas }]] = await Promise.all([
-    db.select({ desvios: count() }).from(desvio).where(isNull(desvio.resueltoEn)),
+    db.select({ desvios: count() }).from(desvio).where(and(isNull(desvio.resueltoEn), deSonar)),
     db.select({ fallidas: count() }).from(publicacion).where(fallidaVigente(db)),
   ]);
   return { desvios, fallidas };
@@ -72,8 +77,14 @@ export interface PublicacionParaMostrar {
   pedidaPor: string;
 }
 
-/** Las pendientes y las fallidas vigentes, las más viejas primero. */
-export async function publicacionesSinPublicar(db: Db): Promise<PublicacionParaMostrar[]> {
+/**
+ * Las pendientes y las fallidas vigentes, las más viejas primero. En el perfil de Sonar
+ * (la pantalla Sonar) o en el PR de configuración (la pantalla Paquete, entrega 6.4).
+ */
+export async function publicacionesSinPublicar(
+  db: Db,
+  destino: DestinoPublicacion = DestinoPublicacion.PerfilSonar,
+): Promise<PublicacionParaMostrar[]> {
   return db
     .select({
       id: publicacion.id,
@@ -94,7 +105,7 @@ export async function publicacionesSinPublicar(db: Db): Promise<PublicacionParaM
     .innerJoin(estadoPublicacion, eq(estadoPublicacion.codigo, publicacion.estado))
     .innerJoin(usuario, eq(usuario.id, publicacion.pedidaPorId))
     .where(
-      sql`((${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) and ${eq(publicacion.destino, DestinoPublicacion.PerfilSonar)}) or (${fallidaVigente(db)})`,
+      sql`((${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) and ${eq(publicacion.destino, destino)}) or (${fallidaVigente(db, destino)})`,
     )
     .orderBy(desc(sql`${publicacion.estado} = 'fallida'`), asc(publicacion.creadaEn));
 }
@@ -136,7 +147,7 @@ export async function desviosAbiertos(db: Db, reglaId?: string): Promise<DesvioP
     .innerJoin(tipoDesvio, eq(tipoDesvio.codigo, desvio.tipo))
     .leftJoin(regla, eq(regla.id, desvio.reglaId))
     .leftJoin(pendiente, and(eq(pendiente.reglaId, desvio.reglaId), eq(pendiente.estado, EstadoPublicacion.Pendiente)))
-    .where(and(isNull(desvio.resueltoEn), reglaId ? eq(desvio.reglaId, reglaId) : undefined))
+    .where(and(isNull(desvio.resueltoEn), deSonar, reglaId ? eq(desvio.reglaId, reglaId) : undefined))
     .orderBy(asc(desvio.lenguaje), asc(tipoDesvio.orden), asc(desvio.clave));
 
   return filas.map((f) => ({
@@ -196,6 +207,8 @@ export interface UltimaPublicacionDeRegla {
   /** El PR de configuración, en las reglas propias (entrega 6.4). */
   prNumero: number | null;
   prUrl: string | null;
+  /** En qué está ese PR (entrega 6.4, paso 7). */
+  prEstado: EstadoPr | null;
 }
 
 /** La publicación más reciente de una regla, o null si nunca se publicó. */
@@ -212,9 +225,11 @@ export async function ultimaPublicacionDeRegla(db: Db, reglaId: string): Promise
       publicadaEn: publicacion.publicadaEn,
       prNumero: publicacion.prNumero,
       prUrl: publicacion.prUrl,
+      prEstado: prConfiguracion.estado,
     })
     .from(publicacion)
     .innerJoin(estadoPublicacion, eq(estadoPublicacion.codigo, publicacion.estado))
+    .leftJoin(prConfiguracion, eq(prConfiguracion.numero, publicacion.prNumero))
     .where(eq(publicacion.reglaId, reglaId))
     .orderBy(desc(publicacion.creadaEn))
     .limit(1);

@@ -1,9 +1,9 @@
 import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
-import { decision, estado, estadoRegla, publicacion, regla, usuario } from "@/db/esquema";
+import { decision, estado, estadoRegla, prConfiguracion, publicacion, regla, usuario } from "@/db/esquema";
 import { despuesDeFallar, type TipoDeFalla } from "@/dominio/publicacion";
-import { AccionPublicacion, DestinoPublicacion, Estado, EstadoPublicacion, Origen } from "@/dominio/valores";
+import { AccionPublicacion, DestinoPublicacion, Estado, EstadoPr, EstadoPublicacion, Origen } from "@/dominio/valores";
 import { ErrorDeGitHub, type ClienteGitHub, type PrDeGitHub } from "@/github/cliente";
 
 import { ErrorDeGlobalconfig, generarGlobalconfig } from "./globalconfig";
@@ -49,6 +49,11 @@ export interface OpcionesDePublicacionDelPaquete {
   base?: string;
   /** Sin esperar los reintentos programados: el botón. */
   sinEsperar?: boolean;
+  /**
+   * Llevar main a lo que dice la app aunque no haya nada pendiente: corregir el desvío del
+   * paquete (paso 7), cuando main cambió por fuera de la app.
+   */
+  forzar?: boolean;
 }
 
 export interface ResumenDelPaquete {
@@ -62,7 +67,13 @@ export interface ResumenDelPaquete {
   error: string | null;
 }
 
-export async function publicarPaquete({ db, github, base = "main", sinEsperar = false }: OpcionesDePublicacionDelPaquete): Promise<ResumenDelPaquete> {
+export async function publicarPaquete({
+  db,
+  github,
+  base = "main",
+  sinEsperar = false,
+  forzar = false,
+}: OpcionesDePublicacionDelPaquete): Promise<ResumenDelPaquete> {
   const resumen: ResumenDelPaquete = { publicadas: 0, reprogramadas: 0, fallidas: 0, pr: null, version: null, error: null };
 
   return db.transaction(async (tx) => {
@@ -80,22 +91,11 @@ export async function publicarPaquete({ db, github, base = "main", sinEsperar = 
       )
       .orderBy(asc(publicacion.creadaEn))
       .for("update", { skipLocked: true });
-    if (pendientes.length === 0) {
+    if (pendientes.length === 0 && !forzar) {
       return resumen;
     }
 
-    const reglas = await tx
-      .select({
-        id: regla.id,
-        clave: regla.clave,
-        titulo: regla.nombre,
-        estado: estadoRegla.estado,
-        severidadPorDefecto: regla.severidadDefault,
-        eliminada: sql<boolean>`${regla.deprecadaEn} is not null`,
-      })
-      .from(regla)
-      .innerJoin(estadoRegla, eq(estadoRegla.reglaId, regla.id))
-      .where(eq(regla.origen, Origen.Roslyn));
+    const reglas = await reglasDelPaquete(tx);
 
     let pr: PrDeGitHub | null;
     try {
@@ -116,6 +116,10 @@ export async function publicarPaquete({ db, github, base = "main", sinEsperar = 
             cuerpo: `Se cerró solo: \`${base}\` ya tiene el \`.globalconfig\` que dice el catálogo de reglas.`,
             cerrar: true,
           });
+          await tx
+            .update(prConfiguracion)
+            .set({ estado: EstadoPr.Cerrado, cerradoEn: sql`now()`, revisadoEn: sql`now()` })
+            .where(eq(prConfiguracion.numero, abierto.numero));
         }
         pr = null;
       } else {
@@ -137,6 +141,15 @@ export async function publicarPaquete({ db, github, base = "main", sinEsperar = 
           pr = await github.crearPr({ titulo, cuerpo, rama: RAMA_DEL_PR, base });
         }
         resumen.version = plan.version;
+
+        // El seguimiento (paso 7) arranca acá: abierto, con la versión que propone.
+        await tx
+          .insert(prConfiguracion)
+          .values({ numero: pr.numero, url: pr.url, version: plan.version })
+          .onConflictDoUpdate({
+            target: prConfiguracion.numero,
+            set: { url: pr.url, version: plan.version, estado: EstadoPr.Abierto, actualizadoEn: sql`now()`, mergeadoEn: null, cerradoEn: null },
+          });
       }
     } catch (e) {
       const { falla, mensaje } = clasificar(e);
@@ -201,6 +214,22 @@ async function leerDeMain(github: OpcionesDePublicacionDelPaquete["github"], com
 }
 
 type Transaccion = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+/** Las reglas Roslyn con su estado: de lo que sale el `.globalconfig`. */
+export function reglasDelPaquete(db: Pick<Db, "select">) {
+  return db
+    .select({
+      id: regla.id,
+      clave: regla.clave,
+      titulo: regla.nombre,
+      estado: estadoRegla.estado,
+      severidadPorDefecto: regla.severidadDefault,
+      eliminada: sql<boolean>`${regla.deprecadaEn} is not null`,
+    })
+    .from(regla)
+    .innerJoin(estadoRegla, eq(estadoRegla.reglaId, regla.id))
+    .where(eq(regla.origen, Origen.Roslyn));
+}
 
 /**
  * Para la descripción del PR, la decisión que explica el estado de cada regla Roslyn: la

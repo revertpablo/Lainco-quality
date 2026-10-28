@@ -1,9 +1,9 @@
-import { and, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { desvio, estadoRegla, publicacion, reconciliacion, regla } from "@/db/esquema";
 import { compararPerfil, type DesvioDetectado, type EntradaDeReconciliacion } from "@/dominio/reconciliacion";
-import { EstadoPublicacion, EstadoSincronizacion, Estado, Lenguaje, Origen } from "@/dominio/valores";
+import { DESVIOS_DEL_PAQUETE, EstadoPublicacion, EstadoSincronizacion, Estado, Lenguaje, Origen } from "@/dominio/valores";
 import type { ClienteSonar } from "@/sonar/cliente";
 
 /**
@@ -154,7 +154,8 @@ export async function reconciliar(opciones: OpcionesDeReconciliacion): Promise<R
     const abiertosAntes = await tx
       .select({ id: desvio.id, tipo: desvio.tipo, lenguaje: desvio.lenguaje, clave: desvio.clave })
       .from(desvio)
-      .where(and(isNull(desvio.resueltoEn), inArray(desvio.lenguaje, lenguajes)));
+      // Los del paquete de reglas propias los maneja su revisión (entrega 6.4, paso 7).
+      .where(and(isNull(desvio.resueltoEn), inArray(desvio.lenguaje, lenguajes), notInArray(desvio.tipo, [...DESVIOS_DEL_PAQUETE])));
     const llave = (d: { tipo: string; lenguaje: string; clave: string }) => `${d.tipo}|${d.lenguaje}|${d.clave}`;
     const porLlave = new Map(abiertosAntes.map((d) => [llave(d), d.id]));
     const vistos = new Set<string>();

@@ -18,7 +18,11 @@ export interface UltimaPublicacion {
   /** El PR de configuración que la llevó al paquete (reglas propias). */
   prNumero?: number | null;
   prUrl?: string | null;
+  /** En qué está ese PR: abierto, mergeado o cerrado. */
+  prEstado?: string | null;
 }
+
+const ESTADO_DEL_PR: Record<string, string> = { abierto: "abierto", mergeado: "mergeado", cerrado: "cerrado sin mergear" };
 
 export interface EstadoEnSonar {
   texto: string;
@@ -100,8 +104,8 @@ export function describirEstadoEnPaquete(
       return ultima.prNumero && ultima.prUrl
         ? {
             enElArchivo,
-            pedido: `Incluida en el PR #${ultima.prNumero} el ${fecha(ultima.publicadaEn!)}`,
-            tono: "normal",
+            pedido: `Incluida en el PR #${ultima.prNumero}${ultima.prEstado ? ` (${ESTADO_DEL_PR[ultima.prEstado] ?? ultima.prEstado})` : ""} el ${fecha(ultima.publicadaEn!)}`,
+            tono: ultima.prEstado === "cerrado" ? "alerta" : "normal",
             error: null,
             pr: { numero: ultima.prNumero, url: ultima.prUrl },
           }

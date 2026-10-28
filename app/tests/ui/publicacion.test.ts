@@ -82,6 +82,16 @@ describe("estado de una regla propia en el paquete (entrega 6.4, paso 4)", () =>
     expect(describirEstadoEnPaquete(ultima, estado, severidad, fecha)).toEqual({ enElArchivo, pedido, tono, error: null, pr: null });
   });
 
+  it.each([
+    ["abierto", "Incluida en el PR #3 (abierto) el 2026-10-20", "normal"],
+    ["mergeado", "Incluida en el PR #3 (mergeado) el 2026-10-20", "normal"],
+    ["cerrado", "Incluida en el PR #3 (cerrado sin mergear) el 2026-10-20", "alerta"],
+  ])("dice en qué está el PR: %s (paso 7)", (prEstado, pedido, tono) => {
+    const ultima = publicacion({ prNumero: 3, prUrl: "https://github.com/x/y/pull/3", prEstado });
+
+    expect(describirEstadoEnPaquete(ultima, Estado.Incorporada, "warning", fecha)).toMatchObject({ pedido, tono });
+  });
+
   it("incluida en un PR, lo nombra y da su link", () => {
     const pr = { prNumero: 3, prUrl: "https://github.com/revertpablo/Lainco-quality/pull/3" };
 

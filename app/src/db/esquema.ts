@@ -19,6 +19,7 @@ import type {
   AccionPublicacion,
   DestinoPublicacion,
   Estado,
+  EstadoPr,
   EstadoPublicacion,
   EstadoSincronizacion,
   Lenguaje,
@@ -79,6 +80,7 @@ export const estadoPublicacion = tablaDeReferencia<EstadoPublicacion>("estadoPub
 export const accionPublicacion = tablaDeReferencia<AccionPublicacion>("accionPublicacion");
 export const destinoPublicacion = tablaDeReferencia<DestinoPublicacion>("destinoPublicacion");
 export const tipoDesvio = tablaDeReferencia<TipoDesvio>("tipoDesvio");
+export const estadoPr = tablaDeReferencia<EstadoPr>("estadoPr");
 
 // ---------------------------------------------------------------------- usuario
 
@@ -446,5 +448,58 @@ export const reconciliacion = pgTable(
     primaryKey({ name: "reconciliacionPk", columns: [t.id] }),
     foreignKey({ name: "reconciliacionEstado", columns: [t.estado], foreignColumns: [estadoSincronizacion.codigo] }),
     foreignKey({ name: "reconciliacionDisparadaPor", columns: [t.disparadaPorId], foreignColumns: [usuario.id] }),
+  ],
+);
+
+// ------------------------------------------------------------ paquete (entrega 6.4)
+
+/**
+ * Los PRs de configuración que abrió la app (entrega 6.4, pasos 6 y 7). Los crea y
+ * actualiza la publicación en el paquete; su estado lo trae de GitHub la revisión del
+ * paquete.
+ */
+export const prConfiguracion = pgTable(
+  "prConfiguracion",
+  {
+    numero: integer().notNull(),
+    url: text().notNull(),
+    /** La versión que propone. Null en uno que la app conoció por sus publicaciones, antes del paso 7. */
+    version: text(),
+    estado: text().$type<EstadoPr>().notNull().default("abierto"),
+    creadoEn: fechaDeAlta(),
+    /** La última vez que la app le cambió el contenido. */
+    actualizadoEn: fechaDeAlta(),
+    /** La última vez que se miró su estado en GitHub. */
+    revisadoEn: timestamp({ withTimezone: true }),
+    mergeadoEn: timestamp({ withTimezone: true }),
+    cerradoEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "prConfiguracionPk", columns: [t.numero] }),
+    foreignKey({ name: "prConfiguracionEstado", columns: [t.estado], foreignColumns: [estadoPr.codigo] }),
+    check("prConfiguracionMergeadoConFecha", sql`(${t.estado} = 'mergeado') = (${t.mergeadoEn} is not null)`),
+  ],
+);
+
+/** Cada revisión del paquete (entrega 6.4, paso 7): el estado de los PRs y si main coincide con la app. */
+export const revisionPaquete = pgTable(
+  "revisionPaquete",
+  {
+    id: uuid().notNull().defaultRandom(),
+    iniciadaEn: fechaDeAlta(),
+    terminadaEn: timestamp({ withTimezone: true }),
+    estado: text().$type<EstadoSincronizacion>().notNull().default("enCurso"),
+    /** La versión del paquete en main. */
+    versionEnMain: text(),
+    /** El .globalconfig de main coincide con el que genera la app. */
+    coincide: boolean(),
+    error: text(),
+    /** Quién la disparó desde la app. Null si la disparó el cron. */
+    disparadaPorId: uuid(),
+  },
+  (t) => [
+    primaryKey({ name: "revisionPaquetePk", columns: [t.id] }),
+    foreignKey({ name: "revisionPaqueteEstado", columns: [t.estado], foreignColumns: [estadoSincronizacion.codigo] }),
+    foreignKey({ name: "revisionPaqueteDisparadaPor", columns: [t.disparadaPorId], foreignColumns: [usuario.id] }),
   ],
 );

@@ -6,6 +6,7 @@ import type { UsuarioActual } from "@/auth/sesion";
 import { obtenerDb, type Db } from "@/db/cliente";
 import { aviso, sincronizacion, usuario as tablaUsuario } from "@/db/esquema";
 import { Origen } from "@/dominio/valores";
+import { atencionDelPaquete } from "@/paquete/consultas";
 import { pendientesDeAtencion } from "@/publicacion/consultas";
 import { sincronizarAhora } from "@/sincronizacion/acciones";
 import { describirResumen } from "@/sincronizacion/resumen";
@@ -23,6 +24,7 @@ const SECCIONES = [
   { codigo: "inventario", texto: "Inventario", href: "/reglas" },
   { codigo: "progreso", texto: "Progreso", href: "/tablero" },
   { codigo: "sonar", texto: "Sonar", href: "/sonar" },
+  { codigo: "paquete", texto: "Paquete", href: "/paquete" },
 ] as const;
 export type Seccion = (typeof SECCIONES)[number]["codigo"];
 
@@ -59,19 +61,17 @@ async function ultimaSincronizacion(db: Db, origen: Origen) {
  */
 export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual; seccion: Seccion }) {
   const db = obtenerDb();
-  const [ultimas, [{ avisos }], atencion] = await Promise.all([
+  const [ultimas, [{ avisos }], atencion, delPaquete] = await Promise.all([
     Promise.all(ORIGENES_SINCRONIZADOS.map(({ origen }) => ultimaSincronizacion(db, origen))),
     db.select({ avisos: count() }).from(aviso).where(and(isNull(aviso.resueltoEn))),
     pendientesDeAtencion(db),
+    atencionDelPaquete(db),
   ]);
-  // Lo que alguien tiene que mirar en la sección Sonar: desvíos y publicaciones fallidas.
-  const enSonar = atencion.desvios + atencion.fallidas;
-  const detalleSonar = [
-    atencion.desvios > 0 && (atencion.desvios === 1 ? "1 desvío" : `${atencion.desvios} desvíos`),
-    atencion.fallidas > 0 && (atencion.fallidas === 1 ? "1 publicación fallida" : `${atencion.fallidas} publicaciones fallidas`),
-  ]
-    .filter(Boolean)
-    .join(" y ");
+  // Lo que alguien tiene que mirar en cada sección: desvíos y publicaciones fallidas.
+  const insignias: Partial<Record<Seccion, { cantidad: number; detalle: string }>> = {
+    sonar: insignia(atencion.desvios, atencion.fallidas),
+    paquete: insignia(delPaquete.desvio ? 1 : 0, delPaquete.fallidas),
+  };
 
   return (
     <header className="border-b border-linea bg-superficie">
@@ -93,14 +93,14 @@ export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual;
                 }`}
               >
                 {s.texto}
-                {s.codigo === "sonar" && enSonar > 0 && (
+                {(insignias[s.codigo]?.cantidad ?? 0) > 0 && (
                   <span
                     className="ml-1.5 inline-block rounded-full bg-[var(--estado-revisar)] px-1.5 py-px text-xs font-medium text-superficie"
-                    title={detalleSonar}
-                    data-atencion={enSonar}
+                    title={insignias[s.codigo]!.detalle}
+                    data-atencion={insignias[s.codigo]!.cantidad}
                   >
-                    {enSonar}
-                    <span className="sr-only"> ({detalleSonar})</span>
+                    {insignias[s.codigo]!.cantidad}
+                    <span className="sr-only"> ({insignias[s.codigo]!.detalle})</span>
                   </span>
                 )}
               </Link>
@@ -158,4 +158,15 @@ export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual;
 /** "Sin cambios en Sonar." → "sin cambios en Sonar.": solo la primera letra. */
 function conMinuscula(texto: string): string {
   return texto.charAt(0).toLowerCase() + texto.slice(1);
+}
+
+/** La insignia de una sección: cuántas cosas hay que mirar y cuáles. */
+function insignia(desvios: number, fallidas: number): { cantidad: number; detalle: string } {
+  const detalle = [
+    desvios > 0 && (desvios === 1 ? "1 desvío" : `${desvios} desvíos`),
+    fallidas > 0 && (fallidas === 1 ? "1 publicación fallida" : `${fallidas} publicaciones fallidas`),
+  ]
+    .filter(Boolean)
+    .join(" y ");
+  return { cantidad: desvios + fallidas, detalle };
 }

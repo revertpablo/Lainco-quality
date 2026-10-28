@@ -110,5 +110,26 @@ export const TipoDesvio = {
    * a mano analizaría con otro (decisión del 2026-10-19).
    */
   PerfilNoEsDefault: "perfilNoEsDefault",
+  /**
+   * El `.globalconfig` de main no es el que genera la app y no hay un PR de configuración
+   * abierto que lo corrija (entrega 6.4, paso 7). Alguien lo cambió a mano, o se cerró el PR
+   * sin mergear.
+   */
+  GlobalconfigDistinto: "globalconfigDistinto",
 } as const;
 export type TipoDesvio = (typeof TipoDesvio)[keyof typeof TipoDesvio];
+
+/**
+ * Los desvíos del paquete de reglas propias (entrega 6.4): los detecta la revisión del
+ * paquete, no la reconciliación con Sonar, y se ven en la pantalla Paquete.
+ */
+export const DESVIOS_DEL_PAQUETE: readonly TipoDesvio[] = [TipoDesvio.GlobalconfigDistinto];
+
+/** En qué está un PR de configuración (entrega 6.4, paso 7), según GitHub. */
+export const EstadoPr = {
+  Abierto: "abierto",
+  Mergeado: "mergeado",
+  /** Cerrado sin mergear. */
+  Cerrado: "cerrado",
+} as const;
+export type EstadoPr = (typeof EstadoPr)[keyof typeof EstadoPr];
