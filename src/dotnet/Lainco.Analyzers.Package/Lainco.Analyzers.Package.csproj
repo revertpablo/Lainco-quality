@@ -7,6 +7,10 @@
       - sonar-sync en tools/sonar-sync, y el .targets que lo corre antes de compilar
         (Fase 4, tarea 2), en buildTransitive
 
+    Además, después de compilar genera el catálogo de reglas, reglas-roslyn.json, junto al
+    .nupkg (entrega 6.4, paso 1). No viaja dentro del paquete: es un asset del release, y lo
+    lee la app de catálogo. Ver docs/catalogo-de-reglas.md.
+
     A partir de la Fase 6, el .globalconfig lo genera la app de catálogo a partir de las
     decisiones registradas. Por ahora se mantiene a mano.
   -->
@@ -60,6 +64,13 @@
                       ReferenceOutputAssembly="false"
                       SkipGetTargetFrameworkProperties="true"
                       GlobalPropertiesToRemove="TargetFramework" />
+
+    <!-- Lo mismo para el generador del catálogo de reglas (net8.0), que corre en el build. -->
+    <ProjectReference Include="..\..\..\tools\catalogo-reglas\src\Lainco.CatalogoReglas\Lainco.CatalogoReglas.csproj"
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      GlobalPropertiesToRemove="TargetFramework" />
   </ItemGroup>
 
   <ItemGroup>
@@ -103,5 +114,29 @@
           PackagePath="tools/sonar-sync"
           Visible="false" />
   </ItemGroup>
+
+  <!--
+    Catálogo de reglas (entrega 6.4, paso 1; decisión R1). Después de compilar, el
+    generador lee los descriptores de Lainco.Analyzers.dll, AnalyzerReleases y docs/rules,
+    y escribe reglas-roslyn.json en la carpeta del .nupkg (la de "dotnet pack -o").
+
+    Si una regla no cumple las convenciones (sin documentación, ID que no es LAIN###, fuera
+    de AnalyzerReleases, severidad 'error'), el build falla con el detalle de cada una.
+    Con -p:GenerarCatalogoDeReglas=false no se genera.
+  -->
+  <Target Name="GenerarCatalogoDeReglas"
+          AfterTargets="Build"
+          Condition="'$(GenerarCatalogoDeReglas)' != 'false'">
+    <PropertyGroup>
+      <_DotnetDelCatalogo>$(DOTNET_HOST_PATH)</_DotnetDelCatalogo>
+      <_DotnetDelCatalogo Condition="'$(_DotnetDelCatalogo)' == ''">dotnet</_DotnetDelCatalogo>
+      <_RaizDelRepositorio>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..', '..'))</_RaizDelRepositorio>
+      <_GeneradorDelCatalogo>$(_RaizDelRepositorio)tools/catalogo-reglas/src/Lainco.CatalogoReglas/bin/$(Configuration)/net8.0/catalogo-reglas.dll</_GeneradorDelCatalogo>
+      <_AnalyzersDelCatalogo>$(MSBuildProjectDirectory)/../Lainco.Analyzers/bin/$(Configuration)/netstandard2.0/Lainco.Analyzers.dll</_AnalyzersDelCatalogo>
+      <CatalogoDeReglas>$([MSBuild]::EnsureTrailingSlash('$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(PackageOutputPath)'))'))reglas-roslyn.json</CatalogoDeReglas>
+    </PropertyGroup>
+
+    <Exec Command="&quot;$(_DotnetDelCatalogo)&quot; &quot;$(_GeneradorDelCatalogo)&quot; --analyzers &quot;$(_AnalyzersDelCatalogo)&quot; --releases &quot;$(MSBuildProjectDirectory)/../Lainco.Analyzers&quot; --documentacion &quot;$(_RaizDelRepositorio)docs/rules&quot; --paquete $(PackageId) --version $(Version) --salida &quot;$(CatalogoDeReglas)&quot;" />
+  </Target>
 
 </Project>

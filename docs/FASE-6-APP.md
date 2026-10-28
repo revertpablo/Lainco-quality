@@ -221,6 +221,49 @@ Lo que se mantiene de `FASE-6.md`:
 
 ---
 
+## 8 ter. Plan de implementación de la entrega 6.4 — Reglas propias (parte Roslyn)
+
+Criterios de aceptación (`FASE-6.md`, sección 13):
+
+- Publicar una versión nueva de `Lainco.Analyzers` agrega sus reglas al inventario sin carga manual.
+- Incorporar una regla propia abre un PR con el cambio en el `.globalconfig`.
+
+**Alcance.** Solo las reglas Roslyn: la Fase 5 (ESLint) no empezó. Lo de ESLint usa el
+mismo formato de catálogo y el mismo código de sincronización, y se suma cuando exista
+`@lainco/eslint-plugin`. Se hace antes que la 6.3 porque la 6.3 espera las decisiones D6.2 y
+D6.3, y la 6.4 no depende de ella (decisión del 2026-10-28).
+
+### Decisiones (2026-10-28)
+
+| # | Decisión |
+|---|---|
+| R1 | **Catálogo generado en el build, como asset del release.** El build de `Lainco.Analyzers` genera `reglas-roslyn.json`: un paso después de compilar lee los descriptores del `.dll` (ID, título, descripción, categoría, severidad por defecto, link de ayuda) y la documentación de `docs/rules/`. No lo genera el analyzer en la compilación de los proyectos que lo usan: Roslyn no permite que un analyzer escriba archivos (RS1035), y correría en cada build de cada repo. **Formato común con ESLint**: en la Fase 5 el build de `@lainco/eslint-plugin` genera el mismo formato desde el `meta` de sus reglas. El JSON se adjunta al release de GitHub de cada versión, y la app lo sincroniza como hace con Sonar. |
+| R2 | **Token fine-grained de GitHub** (`LAINCO_GITHUB_TOKEN`), limitado a este repositorio, con permiso de lectura y escritura sobre *Contents* y *Pull requests*. Los PRs figuran a nombre del dueño del token; vence (máximo un año). |
+| R3 | **La severidad la dice la regla.** Al incorporar una regla propia no se elige severidad: el `.globalconfig` le pone la severidad por defecto de su descriptor (hoy, `warning` en todas). Cualquier otro estado es `none`. El generador del catálogo falla si un descriptor dice `error` (convención de `CLAUDE.md`). |
+| R4 | **El merge publica.** El PR de la app sube la versión del paquete (parche) además de cambiar el `.globalconfig`; al mergearse, un workflow empaqueta, publica en GitHub Packages y crea el release con el `.nupkg` y `reglas-roslyn.json`. Resuelve la tarea pendiente de la Fase 1 ("Publicar el paquete en GitHub Packages"). |
+| R5 | **Un solo PR abierto, que se actualiza.** Como la publicación a Sonar, cada decisión que entra o sale de Incorporada deja pendiente "llevar el `.globalconfig` a lo que dice la app"; quien publica genera el archivo con el estado de ese momento y crea o actualiza **el** PR de la app (rama `catalogo/globalconfig`). Varias decisiones antes del merge van al mismo PR, y la descripción las lista con autor y justificación. |
+
+Lo que se sigue de R3: el `.globalconfig` generado pone `none` en toda regla que no esté
+Incorporada, porque los descriptores vienen habilitados por defecto. Hoy LAIN004 y LAIN005
+están en `warning` a mano: **antes de mergear el primer PR hay que incorporarlas en la app**
+(son decisiones ya tomadas en las fases 1 y 3), o el PR las apaga. El PR lo deja a la vista
+en el diff.
+
+### Pasos
+
+| # | Paso | Se verifica con |
+|---|---|---|
+| 1 | Catálogo de reglas propias: el formato (documentado, con número de versión de formato) y su generador para Roslyn (`tools/catalogo-reglas`), enganchado al build de `Lainco.Analyzers.Package`. Falla si una regla no tiene documentación en `docs/rules/`, si su ID no es `LAIN###`, si no está en `AnalyzerReleases` o si su severidad por defecto es `error`. | Tests del generador; el build produce `reglas-roslyn.json` con LAIN004 y LAIN005. **Hecho (2026-10-28)**: formato en `docs/catalogo-de-reglas.md` (versión de formato 1, común con ESLint: `origen`, `paquete`, `version`, `lenguaje` y las reglas con clave, título, descripción, categoría, severidad por defecto con las palabras del `.globalconfig`, habilitada por defecto, link de ayuda y el markdown de `docs/rules`). Generador en `tools/catalogo-reglas` (net8.0, carga el `.dll` y lee los descriptores; además de lo pedido verifica que el `helpLinkUri` lleve a su documentación). Target `GenerarCatalogoDeReglas` en `Lainco.Analyzers.Package`, después de compilar: deja el JSON junto al `.nupkg`, y si una regla no cumple el build falla con un error por regla. 45 tests, uno de ellos sobre las reglas de verdad. Verificado en la nube sin acceso a NuGet (con las DLLs de Roslyn y xunit de un build local): los tests pasan, el generador produce el catálogo con LAIN004 y LAIN005, y el target, en un proyecto con la misma estructura, lo deja junto al `.nupkg` con `dotnet pack -o` y hace fallar el build si falta un `docs/rules/<ID>.md`. Falta correr `dotnet pack` del paquete real en una máquina con NuGet. |
+| 2 | Workflow de publicación (R4): al llegar a `main` un cambio de versión del paquete, empaqueta, publica en GitHub Packages y crea el release `vX.Y.Z` con el `.nupkg` y el catálogo. Falla si la versión ya existe. | La primera publicación real: el paquete en GitHub Packages y el release con sus dos assets. |
+| 3 | Sincronizar reglas Roslyn en la app: cliente de la API de GitHub (último release y su catálogo) y job `sincronizar-roslyn` (cron diario más botón), con la misma comparación que Sonar: nuevas, modificadas y las que ya no están, deprecadas. Los datos de prueba de los tests dejan de usar el origen Roslyn. | Tests con un release grabado; el primer criterio de 6.4: una versión nueva agrega sus reglas sin carga manual. |
+| 4 | Ciclo de vida de las reglas propias (R3): incorporar no pide severidad ni parámetros; el detalle muestra la documentación de la regla y, en lugar del recuadro "En Sonar", el estado en el paquete. Cada decisión que entra o sale de Incorporada encola la publicación con destino "PR de configuración" (la tabla `publicacion` suma el destino). | Tests de dominio y contra la base, como el paso 3 de la 6.2. |
+| 5 | Generar el `.globalconfig` (función pura): orden por ID, un comentario por regla con su título, Incorporada con la severidad del descriptor, el resto `none`; nunca `error`. | Tests; con LAIN004 y LAIN005 incorporadas, el archivo generado equivale al que hoy se mantiene a mano. |
+| 6 | El PR automático (R2, R5): lee el `.globalconfig` y la versión en `main`, y si difieren de lo que dice la app, crea o actualiza la rama y el PR, con la versión subida y las decisiones en la descripción. Reintentos como la publicación a Sonar. | Tests con un GitHub simulado; el segundo criterio de 6.4: incorporar una regla propia abre el PR. |
+| 7 | Seguimiento en la app: estado del PR (abierto, mergeado, cerrado sin mergear) y de la versión publicada; un desvío si el `.globalconfig` de `main` no coincide con la app y no hay PR abierto. | En la pantalla, como el paso 6 de la 6.2. |
+| 8 | Punta a punta contra GitHub: incorporar una regla propia abre el PR; mergearlo publica la versión; una regla nueva publicada aparece en el inventario. | Los dos criterios de 6.4. |
+
+---
+
 ## 9. Puntos a confirmar
 
 | # | Punto | Por qué importa |

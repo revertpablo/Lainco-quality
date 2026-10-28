@@ -50,7 +50,8 @@ lainco-quality/
 │       ├── eslint-plugin/          # @lainco/eslint-plugin (fase 5)
 │       └── eslint-config/          # @lainco/eslint-config (fase 5)
 ├── tools/
-│   └── sonar-sync/                 # Descarga de issues aceptados (fase 4)
+│   ├── sonar-sync/                 # Descarga de issues aceptados (fase 4)
+│   └── catalogo-reglas/            # Catálogo de reglas Roslyn para la app (fase 6, entrega 6.4)
 ├── ci-templates/                   # Pipelines reutilizables
 ├── samples/
 │   └── SampleSolution/             # Solución de prueba con violaciones conocidas

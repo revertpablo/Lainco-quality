@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- El ejecutable se llama como la herramienta: catalogo-reglas.dll -->
+    <AssemblyName>catalogo-reglas</AssemblyName>
+    <RootNamespace>Lainco.CatalogoReglas</RootNamespace>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Corre solo en el build del paquete, no viaja dentro de él. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      La misma versión que usa Lainco.Analyzers: la herramienta carga su .dll y necesita
+      los tipos de Roslyn (DiagnosticAnalyzer, DiagnosticDescriptor) de una versión igual
+      o más nueva. Si Lainco.Analyzers sube de versión, esta sube con ella.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lainco.CatalogoReglas.Tests" />
+  </ItemGroup>
+
+</Project>

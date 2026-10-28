@@ -37,7 +37,7 @@ Los resultados de los spikes y las decisiones medidas están en `docs/decisiones
 - IDs: `LAIN###` para Roslyn, `lainco/<nombre-kebab>` para ESLint. **Un ID nunca se reutiliza**, aunque la regla se elimine (Sonar lo usa para reconocer issues entre corridas).
 - Severidad por defecto: `warning`. Nunca `error` en el descriptor: el que bloquea es el quality gate, y el suppressor necesita poder actuar.
 - **El mensaje de cada diagnóstico debe incluir el nombre completamente calificado del símbolo afectado** (ej.: `Método estático 'Lainco.Dico.Contenedor.Calcular' no permitido`). Es lo que permite reconocer un issue aceptado aunque cambie de línea. No incluir números de línea ni datos variables en el mensaje.
-- Cada regla lleva: analyzer, tests positivos y negativos, y documentación en `docs/rules/<ID>.md` referenciada desde `helpLinkUri`.
+- Cada regla lleva: analyzer, tests positivos y negativos, y documentación en `docs/rules/<ID>.md` referenciada desde `helpLinkUri`. El build del paquete lo verifica al generar el catálogo de reglas (`tools/catalogo-reglas`, formato en `docs/catalogo-de-reglas.md`).
 - Analyzers Roslyn: target `netstandard2.0`, mantener `AnalyzerReleases.Shipped.md` / `AnalyzerReleases.Unshipped.md` al día.
 - Tests Roslyn con `Microsoft.CodeAnalysis.Testing` (`CSharpAnalyzerVerifier`).
 
