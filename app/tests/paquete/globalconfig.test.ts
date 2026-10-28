@@ -13,10 +13,8 @@ import { ErrorDeGlobalconfig, generarGlobalconfig, type ReglaDelPaquete } from "
  * que hoy se mantiene a mano".
  */
 
-const MANTENIDO_A_MANO = readFileSync(
-  new URL("../../../src/dotnet/Lainco.Analyzers.Package/build/Lainco.Analyzers.globalconfig", import.meta.url),
-  "utf8",
-);
+// El de main antes del primer PR de la app (tests/fixtures/paquete/LEEME.md).
+const MANTENIDO_A_MANO = readFileSync(new URL("../fixtures/paquete/Lainco.Analyzers.globalconfig", import.meta.url), "utf8");
 
 const regla = (clave: string, estado: Estado, cambios: Partial<ReglaDelPaquete> = {}): ReglaDelPaquete => ({
   clave,

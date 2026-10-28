@@ -59,8 +59,16 @@ describe("estado de una regla propia en el paquete (entrega 6.4, paso 4)", () =>
       Estado.Descartada,
       null,
       "En el .globalconfig va apagada (none).",
-      "Incluida en el PR de configuración el 2026-10-20",
+      "Sin PR: main ya la tenía así (2026-10-20)",
       "normal",
+    ],
+    [
+      publicacion({ estado: "pendiente", intentos: 2, publicadaEn: null }),
+      Estado.Incorporada,
+      "warning",
+      "En el .globalconfig va con severidad Warning.",
+      "Pendiente de pasar al PR de configuración: falló 2 veces, se reintenta el 2026-10-21",
+      "alerta",
     ],
     [
       publicacion({ estado: "fallida", intentos: 5, publicadaEn: null }),
@@ -71,6 +79,18 @@ describe("estado de una regla propia en el paquete (entrega 6.4, paso 4)", () =>
       "error",
     ],
   ])("%#", (ultima, estado, severidad, enElArchivo, pedido, tono) => {
-    expect(describirEstadoEnPaquete(ultima, estado, severidad, fecha)).toEqual({ enElArchivo, pedido, tono, error: null });
+    expect(describirEstadoEnPaquete(ultima, estado, severidad, fecha)).toEqual({ enElArchivo, pedido, tono, error: null, pr: null });
+  });
+
+  it("incluida en un PR, lo nombra y da su link", () => {
+    const pr = { prNumero: 3, prUrl: "https://github.com/revertpablo/Lainco-quality/pull/3" };
+
+    expect(describirEstadoEnPaquete(publicacion(pr), Estado.Incorporada, "warning", fecha)).toEqual({
+      enElArchivo: "En el .globalconfig va con severidad Warning.",
+      pedido: "Incluida en el PR #3 el 2026-10-20",
+      tono: "normal",
+      error: null,
+      pr: { numero: 3, url: pr.prUrl },
+    });
   });
 });

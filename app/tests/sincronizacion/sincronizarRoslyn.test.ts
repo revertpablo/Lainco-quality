@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 
 import { and, asc, eq, inArray, like } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import type { Db } from "@/db/cliente";
 
 import { Estado, Origen } from "@/dominio/valores";
 import type { ClienteGitHub, ReleaseDeGitHub } from "@/github/cliente";
@@ -15,9 +17,9 @@ import { ErrorDeGitHub } from "@/github/cliente";
  * Criterio de la 6.4: "Publicar una versión nueva de Lainco.Analyzers agrega sus reglas al
  * inventario sin carga manual."
  *
- * Necesita DATABASE_URL_PRUEBAS. **Borra todas las reglas Roslyn, sus avisos y las
- * sincronizaciones de Roslyn de esa base**: por eso los demás tests usan reglas de otros
- * orígenes.
+ * Necesita DATABASE_URL_PRUEBAS. Cada test corre en una transacción que se descarta, así
+ * que no deja nada; al empezar borra las reglas Roslyn que hayan quedado en esa base. Los
+ * demás tests usan reglas de otros orígenes, o reglas Roslyn en transacciones descartadas.
  */
 
 const url = process.env.DATABASE_URL_PRUEBAS;
@@ -76,7 +78,25 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
   const { sincronizarRoslyn } = await import("@/sincronizacion/sincronizarRoslyn");
   const { ultimasSincronizacionesOk } = await import("@/inventario/consulta");
 
-  const db = () => obtenerDb();
+  // Cada test corre en una transacción que nunca se confirma: el job del PR de
+  // configuración (tests/paquete/publicar.test.ts) lee todas las reglas Roslyn, y no tiene
+  // que ver las de este test, ni este las de aquel.
+  let actual: Db | null = null;
+  const db = () => actual ?? obtenerDb();
+
+  class Descartada extends Error {}
+  async function enTransaccion(prueba: () => Promise<void>) {
+    const resultado = obtenerDb().transaction(async (tx) => {
+      actual = tx as unknown as Db;
+      try {
+        await prueba();
+      } finally {
+        actual = null;
+      }
+      throw new Descartada();
+    });
+    await expect(resultado).rejects.toBeInstanceOf(Descartada);
+  }
 
   async function limpiar() {
     const deRoslyn = db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Roslyn));
@@ -120,13 +140,14 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
 
   const corrida = async (id: string) => (await db().select().from(sincronizacion).where(eq(sincronizacion.id, id)))[0];
 
-  beforeEach(limpiar);
+  // Lo que haya quedado de corridas viejas de este test, de cuando confirmaba.
+  beforeAll(limpiar);
   afterAll(async () => {
     await limpiar();
     await db().$client.end();
   });
 
-  it("la primera corrida carga las reglas del último release en Pendiente de analizar", async () => {
+  it("la primera corrida carga las reglas del último release en Pendiente de analizar", () => enTransaccion(async () => {
     const resumen = await sincronizarRoslyn({ db: db(), github: github(v010) });
 
     expect(resumen).toMatchObject({ estado: "ok", nuevas: 2, modificadas: 0, deprecadas: 0, avisos: 0, version: "Lainco.Analyzers 0.1.0" });
@@ -155,9 +176,9 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
     });
     // Cuenta para "nuevas" en el inventario.
     expect(await ultimasSincronizacionesOk(db())).toContain(resumen.id);
-  });
+  }));
 
-  it("la segunda corrida con el mismo release no cambia nada", async () => {
+  it("la segunda corrida con el mismo release no cambia nada", () => enTransaccion(async () => {
     await sincronizarRoslyn({ db: db(), github: github(v010) });
     const antes = await reglasRoslyn();
 
@@ -165,9 +186,9 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
 
     expect(resumen).toMatchObject({ estado: "ok", nuevas: 0, modificadas: 0, deprecadas: 0, actualizadas: 0, avisos: 0 });
     expect(await reglasRoslyn()).toEqual(antes);
-  });
+  }));
 
-  it("una versión nueva agrega sus reglas, actualiza las cambiadas y depreca las que ya no están", async () => {
+  it("una versión nueva agrega sus reglas, actualiza las cambiadas y depreca las que ya no están", () => enTransaccion(async () => {
     await sincronizarRoslyn({ db: db(), github: github(v010) });
     const lain004 = await ponerEnEstado("LAIN004", Estado.Incorporada);
     const lain005 = await ponerEnEstado("LAIN005", Estado.Incorporada);
@@ -201,9 +222,9 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
       { reglaId: lain005, motivo: "eliminada" },
       { reglaId: lain004, motivo: "modificada" },
     ]);
-  });
+  }));
 
-  it("una regla que vuelve al paquete deja de estar deprecada", async () => {
+  it("una regla que vuelve al paquete deja de estar deprecada", () => enTransaccion(async () => {
     await sincronizarRoslyn({ db: db(), github: github(v010) });
     await sincronizarRoslyn({ db: db(), github: github(version("0.2.0", (c) => void c.reglas.splice(1, 1))) });
 
@@ -211,9 +232,9 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
 
     expect(resumen).toMatchObject({ estado: "ok", modificadas: 1, deprecadas: 0 });
     expect((await reglasRoslyn()).every((r) => r.deprecada === null)).toBe(true);
-  });
+  }));
 
-  it("no toca las reglas de otros orígenes", async () => {
+  it("no toca las reglas de otros orígenes", () => enTransaccion(async () => {
     const [otra] = await db()
       .insert(regla)
       .values({ origen: Origen.Eslint, clave: "PRUEBA-ROS-1", lenguaje: "cs", nombre: "De otro origen", hashDescripcion: "x" })
@@ -224,7 +245,7 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
 
     const [despues] = await db().select({ deprecadaEn: regla.deprecadaEn }).from(regla).where(eq(regla.id, otra.id));
     expect(despues.deprecadaEn).toBeNull();
-  });
+  }));
 
   it.each([
     ["sin releases", github(null), "El repositorio no tiene ningún release publicado: todavía no hay catálogo de reglas Roslyn."],
@@ -236,15 +257,15 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
       github({ ...v010, formato: 2 }),
       "El catálogo tiene el formato 2 y la app conoce el 1: hay que actualizar la app.",
     ],
-  ])("con %s, la corrida queda con error y no se escribe nada", async (_caso, falso, mensaje) => {
+  ])("con %s, la corrida queda con error y no se escribe nada", (_caso, falso, mensaje) => enTransaccion(async () => {
     const resumen = await sincronizarRoslyn({ db: db(), github: falso });
 
     expect(resumen).toMatchObject({ estado: "error", nuevas: 0, error: mensaje });
     expect(await corrida(resumen.id)).toMatchObject({ estado: "error", error: mensaje, version: null });
     expect(await reglasRoslyn()).toEqual([]);
-  });
+  }));
 
-  it("si GitHub falla, dice por qué", async () => {
+  it("si GitHub falla, dice por qué", () => enTransaccion(async () => {
     const falso = {
       ultimoRelease: async () => {
         throw new ErrorDeGitHub("autenticacion", "El token de GitHub no es válido o venció. (HTTP 401)", 401);
@@ -255,9 +276,9 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
     const resumen = await sincronizarRoslyn({ db: db(), github: falso });
 
     expect(resumen).toMatchObject({ estado: "error", error: "El token de GitHub no es válido o venció. (HTTP 401)" });
-  });
+  }));
 
-  it("registra quién la disparó desde la app", async () => {
+  it("registra quién la disparó desde la app", () => enTransaccion(async () => {
     const [persona] = await db()
       .insert(usuario)
       .values({ nombre: "Rosa Roslyn", email: "prueba-ros-analista@laincosoftware.com" })
@@ -266,5 +287,5 @@ describe.skipIf(!url)("sincronización de Roslyn contra la base", async () => {
     const resumen = await sincronizarRoslyn({ db: db(), github: github(v010), disparadaPorId: persona.id });
 
     expect((await corrida(resumen.id)).disparadaPorId).toBe(persona.id);
-  });
+  }));
 });

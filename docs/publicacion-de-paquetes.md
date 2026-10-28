@@ -31,7 +31,8 @@ a ser el último, y la app no la toma.
 
 ### Subir la versión
 
-En el mismo cambio (a mano, o el PR que abre la app al incorporar una regla propia):
+El PR que abre la app al decidir sobre una regla propia (entrega 6.4, paso 6) hace los dos
+pasos solo. A mano, en el mismo cambio:
 
 1. Subir `<Version>` en `src/dotnet/Lainco.Analyzers.Package/Lainco.Analyzers.Package.csproj`.
 2. Mover las filas de `AnalyzerReleases.Unshipped.md` a `AnalyzerReleases.Shipped.md`,

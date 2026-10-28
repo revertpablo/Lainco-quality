@@ -193,6 +193,9 @@ export interface UltimaPublicacionDeRegla {
   creadaEn: Date;
   proximoIntentoEn: Date;
   publicadaEn: Date | null;
+  /** El PR de configuración, en las reglas propias (entrega 6.4). */
+  prNumero: number | null;
+  prUrl: string | null;
 }
 
 /** La publicación más reciente de una regla, o null si nunca se publicó. */
@@ -207,6 +210,8 @@ export async function ultimaPublicacionDeRegla(db: Db, reglaId: string): Promise
       creadaEn: publicacion.creadaEn,
       proximoIntentoEn: publicacion.proximoIntentoEn,
       publicadaEn: publicacion.publicadaEn,
+      prNumero: publicacion.prNumero,
+      prUrl: publicacion.prUrl,
     })
     .from(publicacion)
     .innerJoin(estadoPublicacion, eq(estadoPublicacion.codigo, publicacion.estado))

@@ -64,6 +64,13 @@
       "when": 1793216331693,
       "tag": "0008_destino_de_publicacion",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793219584452,
+      "tag": "0009_pr_de_configuracion",
+      "breakpoints": true
     }
   ]
 }

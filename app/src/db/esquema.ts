@@ -387,6 +387,12 @@ export const publicacion = pgTable(
     severidad: text(),
     parametros: jsonb().$type<Record<string, string>>(),
     publicadaEn: timestamp({ withTimezone: true }),
+    /**
+     * El PR de configuración que la llevó al paquete (entrega 6.4, paso 6). Null en las del
+     * perfil de Sonar, y en una del paquete que no necesitó PR (main ya estaba así).
+     */
+    prNumero: integer(),
+    prUrl: text(),
   },
   (t) => [
     primaryKey({ name: "publicacionPk", columns: [t.id] }),
@@ -407,6 +413,7 @@ export const publicacion = pgTable(
     check("publicacionPublicadaConFecha", sql`(${t.estado} = 'publicada') = (${t.publicadaEn} is not null)`),
     check("publicacionPublicadaConAccion", sql`${t.estado} <> 'publicada' or ${t.accion} is not null`),
     check("publicacionIntentosNoNegativos", sql`${t.intentos} >= 0`),
+    check("publicacionPrSoloDelPaquete", sql`${t.destino} = 'prConfiguracion' or ${t.prNumero} is null`),
   ],
 );
 

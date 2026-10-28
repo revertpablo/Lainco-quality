@@ -14,6 +14,10 @@
       "schedule": "0 10 * * *"
     },
     {
+      "path": "/api/cron/publicar-paquete",
+      "schedule": "30 10 * * *"
+    },
+    {
       "path": "/api/cron/reconciliar-sonar",
       "schedule": "0 11 * * *"
     }

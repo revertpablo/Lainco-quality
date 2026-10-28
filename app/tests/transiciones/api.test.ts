@@ -90,6 +90,7 @@ describe("respuestas", () => {
       loteId: null,
       decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "incorporada" }],
       publicaciones: [TERCERO],
+      destinos: ["perfilSonar"],
     });
 
     expect(respuesta.status).toBe(200);

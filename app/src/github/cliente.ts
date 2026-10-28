@@ -1,7 +1,8 @@
 /**
- * Cliente de la API REST de GitHub (entrega 6.4). Por ahora, lo que necesita el job
- * `sincronizar-roslyn` (paso 3): el último release del repositorio y la descarga de sus
- * assets. El PR automático (paso 6) suma lo suyo acá.
+ * Cliente de la API REST de GitHub (entrega 6.4): lo que necesitan el job
+ * `sincronizar-roslyn` (paso 3: el último release y sus assets) y el PR de configuración
+ * (paso 6: leer archivos de una rama, crear un commit con la API de Git, mover una rama y
+ * crear o actualizar un PR).
  *
  * - El último release es `GET /repos/{repo}/releases/latest`: el más reciente que no es
  *   borrador ni versión previa. Un 404 quiere decir que no hay ninguno (o que el token no
@@ -10,9 +11,14 @@
  *   funciona también en un repositorio privado. GitHub redirige al almacenamiento, y
  *   `fetch` no reenvía el token en una redirección a otro dominio.
  *
+ * - Un commit se arma sin clonar: un árbol nuevo sobre el del commit base, con el
+ *   contenido de los archivos que cambian (`POST git/trees`), y el commit con ese árbol
+ *   (`POST git/commits`). Después se mueve la rama.
+ *
  * Como el cliente de Sonar: no depende de Next ni de la base (recibe `fetch` y la
- * configuración), reintenta las fallas de red, los 429 y los 5xx, y ningún mensaje de
- * error incluye el token. Credencial: decisión R2 (`LAINCO_GITHUB_TOKEN`).
+ * configuración), reintenta las fallas de red, los 429 y los 5xx (también los pedidos que
+ * escriben: repetidos, dejan el mismo resultado o un error que quien llama sabe manejar), y
+ * ningún mensaje de error incluye el token. Credencial: decisión R2 (`LAINCO_GITHUB_TOKEN`).
  */
 
 const INTENTOS = 3;
@@ -69,11 +75,33 @@ export interface ReleaseDeGitHub {
   assets: AssetDeGitHub[];
 }
 
+export interface PrDeGitHub {
+  numero: number;
+  /** La página del PR. */
+  url: string;
+}
+
 export interface ClienteGitHub {
   /** El último release publicado, o null si el repositorio no tiene ninguno. */
   ultimoRelease(): Promise<ReleaseDeGitHub | null>;
   /** El contenido de un asset, como texto. */
   descargarAsset(asset: AssetDeGitHub): Promise<string>;
+
+  /** El commit al que apunta una rama, o null si la rama no existe. */
+  commitDeRama(rama: string): Promise<string | null>;
+  /** El contenido de un archivo en un commit (o una rama), o null si no existe. */
+  leerArchivo(ruta: string, ref: string): Promise<string | null>;
+  /** Crea un commit sobre `base` que cambia esos archivos. Devuelve su sha. No mueve ninguna rama. */
+  crearCommit(opciones: { base: string; mensaje: string; archivos: readonly { ruta: string; contenido: string }[] }): Promise<string>;
+  /** Crea la rama apuntando al commit. */
+  crearRama(rama: string, commit: string): Promise<void>;
+  /** Mueve la rama al commit, aunque no sea descendiente del anterior (force). */
+  moverRama(rama: string, commit: string): Promise<void>;
+  /** El PR abierto desde esa rama, o null. */
+  prAbierto(rama: string): Promise<PrDeGitHub | null>;
+  crearPr(opciones: { titulo: string; cuerpo: string; rama: string; base: string }): Promise<PrDeGitHub>;
+  /** Cambia el título y la descripción de un PR, o lo cierra. */
+  actualizarPr(numero: number, cambios: { titulo?: string; cuerpo?: string; cerrar?: boolean }): Promise<void>;
 }
 
 interface Pedido {
@@ -81,6 +109,9 @@ interface Pedido {
   aceptar: string;
   /** Qué se pide, para los mensajes: "el último release". */
   descripcion: string;
+  metodo?: "GET" | "POST" | "PATCH";
+  /** Se manda como JSON. */
+  cuerpo?: unknown;
 }
 
 export function crearClienteGitHub(opciones: OpcionesDelClienteGitHub): ClienteGitHub {
@@ -106,12 +137,15 @@ export function crearClienteGitHub(opciones: OpcionesDelClienteGitHub): ClienteG
       let respuesta: Response;
       try {
         respuesta = await hacerFetch(pedido.url, {
+          method: pedido.metodo ?? "GET",
           headers: {
             Authorization: `Bearer ${opciones.token}`,
             Accept: pedido.aceptar,
             "X-GitHub-Api-Version": VERSION_DE_LA_API,
             "User-Agent": "lainco-quality",
+            ...(pedido.cuerpo === undefined ? {} : { "Content-Type": "application/json" }),
           },
+          body: pedido.cuerpo === undefined ? undefined : JSON.stringify(pedido.cuerpo),
           signal: AbortSignal.timeout(TIEMPO_MAXIMO_POR_PEDIDO_MS),
         });
       } catch (e) {
@@ -135,7 +169,142 @@ export function crearClienteGitHub(opciones: OpcionesDelClienteGitHub): ClienteG
     throw ultimoError!;
   }
 
+  const repo = `${base}/repos/${opciones.repositorio}`;
+  const API = "application/vnd.github+json";
+
+  /** El pedido, o null si GitHub contesta 404. */
+  async function siExiste(pedido: Pedido): Promise<Response | null> {
+    try {
+      return await pedir(pedido);
+    } catch (e) {
+      if (e instanceof ErrorDeGitHub && e.tipo === "noEncontrado") return null;
+      throw e;
+    }
+  }
+
+  async function objeto(pedido: Pedido): Promise<Record<string, unknown>> {
+    const cuerpo = await json(await pedir(pedido), pedido.descripcion);
+    if (!esObjeto(cuerpo)) {
+      throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub al traer ${pedido.descripcion} no tiene la forma esperada.`);
+    }
+    return cuerpo;
+  }
+
+  function sha(cuerpo: Record<string, unknown>, descripcion: string): string {
+    if (typeof cuerpo.sha !== "string") {
+      throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub sobre ${descripcion} no trae el sha.`);
+    }
+    return cuerpo.sha;
+  }
+
+  function leerPr(cuerpo: unknown, descripcion: string): PrDeGitHub {
+    if (!esObjeto(cuerpo) || typeof cuerpo.number !== "number" || typeof cuerpo.html_url !== "string") {
+      throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub sobre ${descripcion} no tiene la forma de un PR.`);
+    }
+    return { numero: cuerpo.number, url: cuerpo.html_url };
+  }
+
+  const [dueno] = opciones.repositorio.split("/");
+  const rutaCodificada = (ruta: string) => ruta.split("/").map(encodeURIComponent).join("/");
+
   return {
+    async commitDeRama(rama) {
+      const descripcion = `la rama ${rama}`;
+      const respuesta = await siExiste({ url: `${repo}/git/ref/heads/${rutaCodificada(rama)}`, aceptar: API, descripcion });
+      if (!respuesta) return null;
+      const cuerpo = await json(respuesta, descripcion);
+      if (!esObjeto(cuerpo) || !esObjeto(cuerpo.object) || typeof cuerpo.object.sha !== "string") {
+        throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub sobre ${descripcion} no trae el commit.`);
+      }
+      return cuerpo.object.sha;
+    },
+
+    async leerArchivo(ruta, ref) {
+      const respuesta = await siExiste({
+        url: `${repo}/contents/${rutaCodificada(ruta)}?ref=${encodeURIComponent(ref)}`,
+        aceptar: "application/vnd.github.raw+json",
+        descripcion: `el archivo ${ruta}`,
+      });
+      return respuesta ? respuesta.text() : null;
+    },
+
+    async crearCommit({ base: padre, mensaje, archivos }) {
+      const commitBase = await objeto({ url: `${repo}/git/commits/${padre}`, aceptar: API, descripcion: `el commit ${padre}` });
+      const arbolBase = esObjeto(commitBase.tree) && typeof commitBase.tree.sha === "string" ? commitBase.tree.sha : null;
+      if (!arbolBase) {
+        throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub sobre el commit ${padre} no trae su árbol.`);
+      }
+      const arbol = await objeto({
+        url: `${repo}/git/trees`,
+        aceptar: API,
+        descripcion: "el árbol del commit",
+        metodo: "POST",
+        cuerpo: { base_tree: arbolBase, tree: archivos.map((a) => ({ path: a.ruta, mode: "100644", type: "blob", content: a.contenido })) },
+      });
+      const commit = await objeto({
+        url: `${repo}/git/commits`,
+        aceptar: API,
+        descripcion: "el commit",
+        metodo: "POST",
+        cuerpo: { message: mensaje, tree: sha(arbol, "el árbol"), parents: [padre] },
+      });
+      return sha(commit, "el commit");
+    },
+
+    async crearRama(rama, commit) {
+      await pedir({
+        url: `${repo}/git/refs`,
+        aceptar: API,
+        descripcion: `la rama ${rama}`,
+        metodo: "POST",
+        cuerpo: { ref: `refs/heads/${rama}`, sha: commit },
+      });
+    },
+
+    async moverRama(rama, commit) {
+      await pedir({
+        url: `${repo}/git/refs/heads/${rutaCodificada(rama)}`,
+        aceptar: API,
+        descripcion: `la rama ${rama}`,
+        metodo: "PATCH",
+        cuerpo: { sha: commit, force: true },
+      });
+    },
+
+    async prAbierto(rama) {
+      const descripcion = `el PR de la rama ${rama}`;
+      const cuerpo = await json(
+        await pedir({ url: `${repo}/pulls?state=open&head=${encodeURIComponent(`${dueno}:${rama}`)}`, aceptar: API, descripcion }),
+        descripcion,
+      );
+      if (!Array.isArray(cuerpo)) {
+        throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub al buscar ${descripcion} no es una lista.`);
+      }
+      return cuerpo.length > 0 ? leerPr(cuerpo[0], descripcion) : null;
+    },
+
+    async crearPr({ titulo, cuerpo, rama, base: destino }) {
+      const descripcion = `el PR de la rama ${rama}`;
+      const respuesta = await pedir({
+        url: `${repo}/pulls`,
+        aceptar: API,
+        descripcion,
+        metodo: "POST",
+        cuerpo: { title: titulo, body: cuerpo, head: rama, base: destino },
+      });
+      return leerPr(await json(respuesta, descripcion), descripcion);
+    },
+
+    async actualizarPr(numero, { titulo, cuerpo, cerrar }) {
+      await pedir({
+        url: `${repo}/pulls/${numero}`,
+        aceptar: API,
+        descripcion: `el PR #${numero}`,
+        metodo: "PATCH",
+        cuerpo: { ...(titulo === undefined ? {} : { title: titulo }), ...(cuerpo === undefined ? {} : { body: cuerpo }), ...(cerrar ? { state: "closed" } : {}) },
+      });
+    },
+
     async ultimoRelease() {
       const descripcion = "el último release";
       let respuesta: Response;
@@ -187,12 +356,12 @@ async function errorHttp(
       : (estado === 403 || estado === 429) && sinCupo
         ? ["limite", "Se agotó el límite de pedidos a GitHub de esta hora."]
         : estado === 403
-          ? ["permisos", `El token de GitHub no tiene permiso para leer ${repositorio}.`]
+          ? ["permisos", `El token de GitHub no tiene permiso para ${pedido.metodo && pedido.metodo !== "GET" ? "escribir en" : "leer"} ${repositorio}.`]
           : estado === 404
             ? ["noEncontrado", `GitHub no encontró ${pedido.descripcion} de ${repositorio}.`]
             : estado === 429 || estado >= 500
               ? ["servidor", `GitHub no respondió bien al traer ${pedido.descripcion}.`]
-              : ["pedidoInvalido", `GitHub rechazó el pedido de ${pedido.descripcion}.`];
+              : ["pedidoInvalido", `GitHub rechazó el pedido sobre ${pedido.descripcion}.`];
 
   return new ErrorDeGitHub(tipo, sinToken(`${explicacion} (HTTP ${estado}${detalle ? `: ${detalle}` : ""})`), estado);
 }

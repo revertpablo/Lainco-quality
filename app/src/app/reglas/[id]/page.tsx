@@ -10,6 +10,7 @@ import { destinoDePublicacion } from "@/dominio/publicacion";
 import { seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
 import { DestinoPublicacion, Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
+import { publicarPaqueteAhora } from "@/paquete/acciones";
 import { publicarPendientesAhora } from "@/publicacion/acciones";
 import { desviosAbiertos, ultimaPublicacionDeRegla } from "@/publicacion/consultas";
 import { corregirDesvioAhora } from "@/reconciliacion/acciones";
@@ -190,7 +191,15 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                     {enElPaquete.pedido}
                   </p>
                 )}
+                {enElPaquete.pr && (
+                  <a href={enElPaquete.pr.url} target="_blank" rel="noopener noreferrer" className="self-start underline underline-offset-2">
+                    Ver el PR #{enElPaquete.pr.numero} en GitHub
+                  </a>
+                )}
                 {enElPaquete.error && <p className="text-tenue [overflow-wrap:anywhere]">{enElPaquete.error}</p>}
+                {publicada && publicada.estado !== "publicada" && (
+                  <BotonAccion accion={publicarPaqueteAhora} texto="Publicar en el paquete" enCurso="Publicando…" />
+                )}
               </section>
             )}
 

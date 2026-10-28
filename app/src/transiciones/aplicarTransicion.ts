@@ -6,7 +6,7 @@ import type { Db } from "@/db/cliente";
 import { decision, estadoRegla, publicacion, regla } from "@/db/esquema";
 import { destinoDeLaDecision } from "@/dominio/publicacion";
 import { seEligeLaSeveridad, validarTransicion, type MotivoDeRechazo } from "@/dominio/transiciones";
-import { Estado, type Rol } from "@/dominio/valores";
+import { Estado, type DestinoPublicacion, type Rol } from "@/dominio/valores";
 
 /**
  * `aplicarTransicion`: **la única función que cambia el estado de una regla**
@@ -61,6 +61,8 @@ export type ResultadoDeTransicion =
       decisiones: { reglaId: string; decisionId: string; desde: Estado; hacia: Estado }[];
       /** Las publicaciones (en Sonar o en el PR de configuración) que quedaron pendientes por esta decisión. */
       publicaciones: string[];
+      /** Dónde hay que publicar: el perfil de Sonar, el PR de configuración, los dos o ninguno. */
+      destinos: DestinoPublicacion[];
     }
   | { ok: false; tipo: "noEncontradas"; reglaIds: string[] }
   | { ok: false; tipo: "estadoCambio"; reglas: { id: string; esperado: Estado; actual: Estado }[] }
@@ -207,6 +209,7 @@ export async function aplicarTransicion(
         hacia: pedido.hacia,
       })),
       publicaciones: publicaciones.map((p) => p.id),
+      destinos: [...new Set(aPublicar.map((p) => p.destino))],
     };
   });
 }

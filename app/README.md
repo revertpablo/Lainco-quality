@@ -125,6 +125,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
 | `0006_reconciliacion` | Entrega 6.2, paso 5: `reconciliacion`, el log de cada corrida (estado, desvíos abiertos, nuevos y resueltos, advertencias). |
 | `0008_destino_de_publicacion` | Entrega 6.4, paso 4: `publicacion.destino` (perfil de Sonar o PR de configuración) y su tabla de referencia `destinoPublicacion`. Las publicaciones existentes quedan con el perfil de Sonar. |
+| `0009_pr_de_configuracion` | Entrega 6.4, paso 6: `publicacion.prNumero` y `prUrl`, el PR de configuración que llevó la regla al paquete. |
 | `0007_version_sincronizada` | Entrega 6.4, paso 3: `sincronizacion.version`, qué versión del paquete trajo una corrida de reglas propias (`Lainco.Analyzers 0.1.0`). |
 
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
@@ -689,6 +690,46 @@ arma el `.globalconfig` de `Lainco.Analyzers` desde el estado de la app, sin bas
 Sin fechas ni versiones: el mismo estado da siempre el mismo archivo. Lo usa el PR
 automático (paso 6), que lo compara con el de `main`.
 
+### El PR de configuración
+
+Entrega 6.4, paso 6 (decisiones R4 y R5). Lo que se decide sobre una regla propia llega al
+paquete por **un** PR que la app crea o actualiza (`src/paquete/publicar.ts`):
+
+1. Cada decisión que entra o sale de Incorporada deja una publicación pendiente con
+   destino "PR de configuración" (paso 4) y, **después de responder**, se intenta
+   publicar (`after()`, como en Sonar).
+2. La publicación toma **todas** las pendientes juntas, genera el `.globalconfig` con el
+   estado de todas las reglas Roslyn y lee de `main` el `.globalconfig`, el proyecto del
+   paquete y `AnalyzerReleases`.
+3. Si `main` ya tiene ese `.globalconfig`, no hace falta PR: quedan publicadas y, si había
+   un PR abierto, se cierra.
+4. Si no, arma un commit sobre `main` (con la API de Git, sin clonar) que cambia el
+   `.globalconfig`, sube el parche de la versión y mueve las reglas de
+   `AnalyzerReleases.Unshipped.md` a Shipped bajo la versión nueva; mueve la rama
+   `catalogo/globalconfig` a ese commit (forzando: el PR es siempre un commit sobre el
+   `main` del momento) y crea el PR o le actualiza título y descripción. La descripción
+   tiene una fila por regla que cambia, con la decisión que la explica (estado, autor,
+   fecha y justificación).
+5. Al mergearlo, el workflow `publicar-analyzers.yml` publica la versión; la sincronización
+   de Roslyn la trae.
+
+Las publicaciones quedan "publicadas" cuando el PR las contiene, con su número
+(`publicacion.prNumero`, `prUrl`); el seguimiento del merge y la versión es el paso 7. Si
+GitHub falla, se reintenta como en Sonar (esperas de 1, 5, 30 y 120 minutos; al quinto
+intento, fallida); lo que hay en `main` que no permite armar el PR (una versión con sufijo,
+un archivo que falta) falla enseguida, porque lo tiene que mirar una persona. Además del
+`after()`: el cron `GET /api/cron/publicar-paquete` a las 10:30 UTC y el botón **Publicar en
+el paquete** del detalle de la regla.
+
+El detalle de una regla propia muestra, en "En el paquete", si está incluida en el PR (con
+el link) o pendiente, con el error si falló.
+
+Hace falta que el token (`LAINCO_GITHUB_TOKEN`) tenga lectura y escritura en *Contents* y
+*Pull requests*. `GITHUB_RAMA_BASE` cambia la rama base (por defecto, `main`).
+
+**Antes de mergear el primer PR**, LAIN004 y LAIN005 tienen que estar incorporadas en la
+app: si no, el PR las apaga.
+
 ### GitHub
 
 Cliente en `src/github/cliente.ts` (último release y descarga de assets, con reintentos y
@@ -832,7 +873,9 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/auth/` | Ingreso: alta, duplicados, ingresos simultáneos, bajas. | Base de pruebas. |
 | `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. La de Roslyn, con el catálogo del release v0.1.0 y versiones cambiadas a partir de él. | Base de pruebas. |
 | `tests/catalogo/` | El catálogo de reglas propias: qué se acepta y cómo se traduce para la sincronización. | Nada. |
-| `tests/paquete/` | El `.globalconfig` generado: con LAIN004 y LAIN005 incorporadas configura lo mismo que el mantenido a mano; orden, `none`, eliminadas, nunca `error`. | Nada. |
+| `tests/paquete/globalconfig.test.ts` | El `.globalconfig` generado: con LAIN004 y LAIN005 incorporadas configura lo mismo que el mantenido a mano; orden, `none`, eliminadas, nunca `error`. | Nada. |
+| `tests/paquete/pr.test.ts` | Lo que propone el PR sobre los archivos del paquete como estaban en `main` antes del primer PR de la app (`tests/fixtures/paquete/`, que no se actualizan): versión, `AnalyzerReleases`, cambios por regla, título y descripción. | Nada. |
+| `tests/paquete/publicar.test.ts` | El PR de configuración con un GitHub en memoria (`githubEnMemoria.ts`): incorporar abre el PR, otra decisión lo actualiza, después del merge abre otro, main ya igual lo cierra, reintentos y fallas. Cada test corre en una transacción que se descarta. | Base de pruebas. |
 | `tests/github/` | Cliente de GitHub: último release, descarga de assets, errores y reintentos; configuración. | Nada. |
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
 | `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
@@ -898,7 +941,7 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete y reconciliar-sonar. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
@@ -910,7 +953,7 @@ app/
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── catalogo/     # Formato del catálogo de reglas propias (docs/catalogo-de-reglas.md).
 │   ├── github/       # Cliente de la API de GitHub (releases) y su configuración.
-│   ├── paquete/      # El paquete de reglas propias: generar su .globalconfig.
+│   ├── paquete/      # El paquete de reglas propias: su .globalconfig, el PR de configuración (pr.ts, publicar.ts), su cron y su botón.
 │   ├── sincronizacion/  # Una corrida de sincronización (corrida.ts), los jobs de Sonar y Roslyn, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.

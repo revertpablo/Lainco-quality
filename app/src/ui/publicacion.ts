@@ -15,6 +15,9 @@ export interface UltimaPublicacion {
   ultimoError: string | null;
   proximoIntentoEn: Date;
   publicadaEn: Date | null;
+  /** El PR de configuración que la llevó al paquete (reglas propias). */
+  prNumero?: number | null;
+  prUrl?: string | null;
 }
 
 export interface EstadoEnSonar {
@@ -68,6 +71,8 @@ export interface EstadoEnElPaquete {
   tono: "normal" | "alerta" | "error";
   /** El último error, si viene al caso. */
   error: string | null;
+  /** El PR que la incluye, para el link. */
+  pr: { numero: number; url: string } | null;
 }
 
 /**
@@ -88,19 +93,37 @@ export function describirEstadoEnPaquete(
       : "En el .globalconfig va apagada (none).";
 
   if (!ultima) {
-    return { enElArchivo, pedido: null, tono: "normal", error: null };
+    return { enElArchivo, pedido: null, tono: "normal", error: null, pr: null };
   }
   switch (ultima.estado) {
     case EstadoPublicacion.Publicada:
-      return { enElArchivo, pedido: `Incluida en el PR de configuración el ${fecha(ultima.publicadaEn!)}`, tono: "normal", error: null };
+      return ultima.prNumero && ultima.prUrl
+        ? {
+            enElArchivo,
+            pedido: `Incluida en el PR #${ultima.prNumero} el ${fecha(ultima.publicadaEn!)}`,
+            tono: "normal",
+            error: null,
+            pr: { numero: ultima.prNumero, url: ultima.prUrl },
+          }
+        : { enElArchivo, pedido: `Sin PR: main ya la tenía así (${fecha(ultima.publicadaEn!)})`, tono: "normal", error: null, pr: null };
     case EstadoPublicacion.Pendiente:
-      return { enElArchivo, pedido: "Pendiente de pasar al PR de configuración.", tono: "alerta", error: ultima.ultimoError };
+      return {
+        enElArchivo,
+        pedido:
+          ultima.intentos === 0
+            ? "Pendiente de pasar al PR de configuración."
+            : `Pendiente de pasar al PR de configuración: ${ultima.intentos === 1 ? "falló 1 vez" : `falló ${ultima.intentos} veces`}, se reintenta el ${fecha(ultima.proximoIntentoEn)}`,
+        tono: "alerta",
+        error: ultima.ultimoError,
+        pr: null,
+      };
     default:
       return {
         enElArchivo,
         pedido: `No se pudo actualizar el PR de configuración (${ultima.intentos === 1 ? "1 intento" : `${ultima.intentos} intentos`}).`,
         tono: "error",
         error: ultima.ultimoError,
+        pr: null,
       };
   }
 }
