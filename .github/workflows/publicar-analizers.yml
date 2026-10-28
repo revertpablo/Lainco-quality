@@ -1,0 +1,139 @@
+# Fase 6, entrega 6.4, paso 2 (decisión R4): publicar Lainco.Analyzers.
+#
+# Al llegar a main un cambio de los analyzers, de lo que viaja en el paquete o de la
+# documentación de las reglas, se fija la versión del paquete (<Version> de
+# Lainco.Analyzers.Package.csproj). Si esa versión ya tiene su release, no hace nada: el
+# cambio sale en la próxima versión. Si no lo tiene:
+#
+#   1. verifica que AnalyzerReleases esté listo para esa versión y corre los tests;
+#   2. empaqueta (el build genera también el catálogo reglas-roslyn.json);
+#   3. publica el .nupkg en GitHub Packages;
+#   4. crea el release vX.Y.Z, con el .nupkg y el catálogo como assets. La app de
+#      catálogo lee el catálogo del último release (paso 3).
+#
+# Publicar es subir la versión: lo hace a mano quien cambia los analyzers, o el PR que
+# abre la app al incorporar una regla propia (pasos 5 y 6). Ver
+# docs/publicacion-de-paquetes.md.
+
+name: Publicar Lainco.Analyzers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/dotnet/**
+      - tools/sonar-sync/src/**
+      - tools/catalogo-reglas/src/**
+      - docs/rules/**
+      - .github/workflows/publicar-analyzers.yml
+      - .github/scripts/publicacion-analyzers.sh
+  # Para reintentar a mano una publicación que falló a mitad de camino.
+  workflow_dispatch:
+
+permissions:
+  contents: write   # crear el tag y el release
+  packages: write   # publicar en GitHub Packages
+
+# Dos pushes seguidos no publican en paralelo: el segundo espera y, si la versión es la
+# misma, ve el release del primero y no hace nada.
+concurrency:
+  group: publicar-analyzers
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Con bash: desde Windows el script llega a git sin permiso de ejecución.
+      SCRIPT: bash .github/scripts/publicacion-analyzers.sh
+      CARPETA: artifacts/nupkg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Versión del paquete
+        id: version
+        run: |
+          version="$(dotnet msbuild src/dotnet/Lainco.Analyzers.Package -getProperty:Version)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Versión del paquete: $version"
+
+      - name: ¿Ya está publicada?
+        id: pendiente
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="v$VERSION"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2> error.txt; then
+            echo "::notice::Lainco.Analyzers $VERSION ya está publicada: no hay nada que hacer. Para publicar estos cambios hay que subir la versión del paquete."
+            echo "publicar=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! grep -qi "release not found" error.txt; then
+            echo "::error::No se pudo consultar el release $tag: $(cat error.txt)"
+            exit 1
+          fi
+          # Un tag sin release es una publicación a medias o un tag puesto a mano: mejor
+          # que lo mire una persona antes de publicar sobre él.
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "::error::Existe el tag $tag pero no su release. Si es de una publicación que falló, borrar el tag y volver a correr el workflow."
+            exit 1
+          fi
+          echo "publicar=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verificar AnalyzerReleases
+        if: steps.pendiente.outputs.publicar == 'true'
+        run: $SCRIPT verificar-releases "${{ steps.version.outputs.version }}"
+
+      - name: Tests
+        if: steps.pendiente.outputs.publicar == 'true'
+        run: |
+          dotnet test src/dotnet/Lainco.Analyzers.sln -c Release
+          dotnet test tools/catalogo-reglas -c Release
+          dotnet test tools/sonar-sync -c Release
+
+      - name: Empaquetar
+        if: steps.pendiente.outputs.publicar == 'true'
+        run: |
+          dotnet pack src/dotnet/Lainco.Analyzers.Package -c Release -o "$CARPETA"
+          $SCRIPT verificar-catalogo "${{ steps.version.outputs.version }}" "$CARPETA/reglas-roslyn.json"
+
+      - name: Publicar en GitHub Packages
+        if: steps.pendiente.outputs.publicar == 'true'
+        # --skip-duplicate: si una corrida anterior publicó el paquete y falló al crear el
+        # release, la siguiente completa el release. Que la versión no se repita lo
+        # garantiza el paso "¿Ya está publicada?".
+        run: |
+          dotnet nuget push "$CARPETA/Lainco.Analyzers.${{ steps.version.outputs.version }}.nupkg" \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --api-key "$GH_TOKEN" \
+            --skip-duplicate
+
+      - name: Crear el release
+        if: steps.pendiente.outputs.publicar == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $SCRIPT notas "$VERSION" "$CARPETA/reglas-roslyn.json" > notas.md
+          # Una versión con sufijo (0.2.0-beta.1) es una versión previa: no pasa a ser la
+          # última, así la app no la toma.
+          previa=()
+          if [[ "$VERSION" == *-* ]]; then previa=(--prerelease); fi
+          gh release create "v$VERSION" \
+            "$CARPETA/Lainco.Analyzers.$VERSION.nupkg" \
+            "$CARPETA/reglas-roslyn.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Lainco.Analyzers $VERSION" \
+            --notes-file notas.md \
+            "${previa[@]}"
+          echo "::notice::Publicada Lainco.Analyzers $VERSION."
