@@ -484,3 +484,30 @@ describe("configuración desde el entorno", () => {
     expect(clienteSonarDesdeEntorno({ SONAR_ORGANIZACION: "revertpablo", LAINCO_SONAR_TOKEN: TOKEN })).toBeDefined();
   });
 });
+
+describe("motivo de una falla de red", async () => {
+  const { motivoDeLaFalla } = await import("@/sonar/http");
+
+  it.each<[string, unknown, string]>([
+    [
+      "el código de la causa, que el 'fetch failed' de Node esconde",
+      Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("connect ETIMEDOUT 18.2.3.4:443"), { code: "ETIMEDOUT" }) }),
+      "fetch failed (ETIMEDOUT: connect ETIMEDOUT 18.2.3.4:443)",
+    ],
+    ["una causa que es solo un código", Object.assign(new TypeError("fetch failed"), { cause: { code: "ECONNRESET" } }), "fetch failed (ECONNRESET)"],
+    ["sin causa, el mensaje tal cual", new TypeError("fetch failed"), "fetch failed"],
+    ["el tiempo máximo del pedido", Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" }), "SonarQube no respondió en 30 segundos"],
+    ["algo que no es un error", "se cortó", "se cortó"],
+  ])("%s", (_caso, error, texto) => {
+    expect(motivoDeLaFalla(error)).toBe(texto);
+  });
+
+  it("llega al mensaje del error que ve el usuario", async () => {
+    const fetch = (async () => {
+      throw Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("getaddrinfo ENOTFOUND sonarcloud.io"), { code: "ENOTFOUND" }) });
+    }) as unknown as typeof globalThis.fetch;
+    const cliente = crearClienteSonar({ url: "https://sonarcloud.io", organizacion: "x", token: TOKEN, fetch, esperar: async () => {} });
+
+    await expect(cliente.buscarPerfil("cs", "Lainco C#")).rejects.toThrow("fetch failed (ENOTFOUND: getaddrinfo ENOTFOUND sonarcloud.io)");
+  });
+});

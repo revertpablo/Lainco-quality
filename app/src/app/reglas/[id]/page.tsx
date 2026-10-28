@@ -6,13 +6,21 @@ import { z } from "zod";
 import { exigirUsuario } from "@/auth/sesion";
 import { obtenerDb } from "@/db/cliente";
 import { aParametros, leerFiltros } from "@/dominio/filtros";
+import { ORIGENES_EN_EL_PERFIL } from "@/dominio/publicacion";
 import { transicionesDisponibles } from "@/dominio/transiciones";
+import { Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
+import { publicarPendientesAhora } from "@/publicacion/acciones";
+import { desviosAbiertos, ultimaPublicacionDeRegla } from "@/publicacion/consultas";
+import { corregirDesvioAhora } from "@/reconciliacion/acciones";
 import { historialDeRegla, obtenerRegla } from "@/reglas/detalle";
+import { BotonAccion } from "@/ui/BotonAccion";
 import { CambiarEstado } from "@/ui/CambiarEstado";
+import { describirValor } from "@/ui/desvios";
 import { Encabezado } from "@/ui/Encabezado";
 import { COLOR_DE_ESTADO, textoDeSeveridad, textoDeTipo } from "@/ui/etiquetas";
 import { Historial } from "@/ui/Historial";
+import { describirEstadoEnSonar } from "@/ui/publicacion";
 
 /**
  * Detalle de una regla (entrega 6.1, paso 10): qué es, en qué estado está, cambiarle el
@@ -21,6 +29,12 @@ import { Historial } from "@/ui/Historial";
 
 // El botón de sincronizar del encabezado corre en esta página: hasta 5 minutos.
 export const maxDuration = 300;
+
+const fechaCorta = new Intl.DateTimeFormat("es-AR", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "America/Argentina/Buenos_Aires",
+});
 
 export default function Regla(props: PageProps<"/reglas/[id]">) {
   return (
@@ -38,7 +52,13 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
   }
 
   const db = obtenerDb();
-  const [regla, historial, opciones] = await Promise.all([obtenerRegla(db, id), historialDeRegla(db, id), opcionesDeFiltro(db)]);
+  const [regla, historial, opciones, publicada, desvios] = await Promise.all([
+    obtenerRegla(db, id),
+    historialDeRegla(db, id),
+    opcionesDeFiltro(db),
+    ultimaPublicacionDeRegla(db, id),
+    desviosAbiertos(db, id),
+  ]);
   if (!regla) {
     notFound();
   }
@@ -48,6 +68,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
   const filtrosDeVuelta = aParametros(leerFiltros(new URLSearchParams(typeof volver === "string" ? volver : "")));
   const estados = Object.fromEntries(opciones.estados.map((e) => [e.codigo, e.descripcion]));
   const disponibles = transicionesDisponibles(regla.estado, usuario.rol);
+  const enSonar = describirEstadoEnSonar(publicada, regla.estado, (d) => fechaCorta.format(d));
 
   return (
     <>
@@ -144,6 +165,45 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 parametros={regla.parametros}
               />
             </section>
+
+            {ORIGENES_EN_EL_PERFIL.includes(regla.origen) && (
+              <section
+                aria-labelledby="titulo-en-sonar"
+                className="flex flex-col gap-3 rounded-lg border border-linea bg-superficie p-4 text-sm"
+                data-seccion="en-sonar"
+              >
+                <h2 id="titulo-en-sonar" className="text-base font-medium">
+                  En Sonar
+                </h2>
+                <p className={enSonar.tono === "error" ? "text-error" : enSonar.tono === "alerta" ? "text-[var(--estado-revisar)]" : undefined}>
+                  {enSonar.texto}
+                </p>
+                {enSonar.error && <p className="text-tenue [overflow-wrap:anywhere]">{enSonar.error}</p>}
+                {publicada && publicada.estado !== "publicada" && (
+                  <BotonAccion accion={publicarPendientesAhora} texto="Publicar pendientes" enCurso="Publicando…" />
+                )}
+                {desvios.map((d) => (
+                  <div key={d.id} className="flex flex-col gap-1 border-t border-linea pt-3" data-desvio={d.tipo}>
+                    <p className="font-medium text-[var(--estado-revisar)]">{d.tipoDescripcion}</p>
+                    <p>
+                      <span className="text-tenue">La app: </span>
+                      {describirValor(d.detalle?.esperado)}
+                    </p>
+                    <p>
+                      <span className="text-tenue">Sonar: </span>
+                      {describirValor(d.detalle?.encontrado)}
+                    </p>
+                    {d.correccionEnCamino ? (
+                      <p className="text-tenue">Hay una publicación en camino.</p>
+                    ) : usuario.rol === Rol.Decisor ? (
+                      <BotonAccion accion={corregirDesvioAhora.bind(null, d.id)} texto="Corregir" enCurso="Corrigiendo…" />
+                    ) : (
+                      <p className="text-tenue">Lo corrige un decisor.</p>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
 
             <section aria-labelledby="titulo-historial" className="flex flex-col gap-3">
               <h2 id="titulo-historial" className="font-medium">

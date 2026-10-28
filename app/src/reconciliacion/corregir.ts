@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { desvio, publicacion } from "@/db/esquema";
@@ -71,6 +71,30 @@ export async function corregirDesvio(
       .returning({ id: publicacion.id });
     return { ok: true, publicacionId: encolada.id };
   });
+}
+
+/**
+ * "Corregir todos": corrige cada desvío abierto que se corrige desde la app. Lo que más lo
+ * necesita es la primera reconciliación, que marca como "Incorporada e inactiva" toda
+ * regla incorporada antes de publicar. Devuelve los ids de las publicaciones encoladas.
+ */
+export async function corregirTodos(db: Db, autor: { id: string; rol: TipoRol }): Promise<{ ok: true; publicaciones: string[] } | { ok: false; motivo: "sinPermiso" }> {
+  if (autor.rol !== Rol.Decisor) {
+    return { ok: false, motivo: "sinPermiso" };
+  }
+  const corregibles = await db
+    .select({ id: desvio.id })
+    .from(desvio)
+    .where(and(isNull(desvio.resueltoEn), isNotNull(desvio.reglaId), inArray(desvio.tipo, [...DESVIOS_QUE_SE_CORRIGEN_PUBLICANDO])))
+    .orderBy(asc(desvio.detectadoEn));
+
+  // Una regla puede tener dos desvíos (severidad y parámetros): una sola publicación.
+  const publicaciones = new Set<string>();
+  for (const { id } of corregibles) {
+    const resultado = await corregirDesvio(db, autor, id);
+    if (resultado.ok) publicaciones.add(resultado.publicacionId);
+  }
+  return { ok: true, publicaciones: [...publicaciones] };
 }
 
 /**

@@ -8,7 +8,7 @@ import { obtenerDb } from "@/db/cliente";
 import { publicarDespuesDeResponder } from "@/publicacion/segundoPlano";
 import { clienteSonarDesdeEntorno, perfilesDesdeEntorno } from "@/sonar/configuracion";
 
-import { corregirDesvio, MENSAJES_DE_CORRECCION } from "./corregir";
+import { corregirDesvio, corregirTodos, MENSAJES_DE_CORRECCION } from "./corregir";
 import { reconciliar } from "./reconciliar";
 import { describirReconciliacion } from "./resumen";
 
@@ -51,4 +51,21 @@ export async function corregirDesvioAhora(desvioId: unknown): Promise<ResultadoD
   publicarDespuesDeResponder([resultado.publicacionId]);
   refresh();
   return { ok: true, mensaje: "Se va a publicar en Sonar lo que dice la app." };
+}
+
+/** Botón "Corregir todos": solo un decisor (src/reconciliacion/corregir.ts). */
+export async function corregirTodosAhora(): Promise<ResultadoDeAccion> {
+  const usuario = await exigirUsuario();
+
+  const resultado = await corregirTodos(obtenerDb(), usuario);
+  if (!resultado.ok) {
+    return { ok: false, mensaje: MENSAJES_DE_CORRECCION[resultado.motivo] };
+  }
+  publicarDespuesDeResponder(resultado.publicaciones);
+  refresh();
+  const n = resultado.publicaciones.length;
+  return {
+    ok: true,
+    mensaje: n === 0 ? "No había nada para corregir desde la app." : `Se van a publicar ${n === 1 ? "1 regla" : `${n} reglas`} en Sonar como dice la app.`,
+  };
 }

@@ -81,7 +81,7 @@ describe.skipIf(!url)("reconciliación con Sonar", async () => {
   const { obtenerDb } = await import("@/db/cliente");
   const { desvio, estadoRegla, publicacion, reconciliacion, regla, usuario } = await import("@/db/esquema");
   const { reconciliar } = await import("@/reconciliacion/reconciliar");
-  const { corregirDesvio } = await import("@/reconciliacion/corregir");
+  const { corregirDesvio, corregirTodos } = await import("@/reconciliacion/corregir");
   const { publicarPendientes } = await import("@/publicacion/publicar");
 
   interface Contexto {
@@ -338,6 +338,33 @@ describe.skipIf(!url)("reconciliación con Sonar", async () => {
 
       expect(fuera).toMatchObject({ clave: `${PREFIJO}FUERA`, reglaId: null });
       expect(await corregirDesvio(c.tx, c.decisor, fuera.id)).toEqual({ ok: false, motivo: "fueraDelInventario" });
+    });
+
+    enTransaccion("corregir todos: una publicación por regla, y nada de lo que se corrige en Sonar", async (c) => {
+      const conDos = await c.regla(Estado.Incorporada, { severidad: "CRITICAL", parametros: { max: "5" } });
+      const inactiva = await c.regla(Estado.Incorporada);
+      c.falso.activarAMano(conDos.clave, [{ calidad: "MAINTAINABILITY", severidad: "LOW" }], { max: "9" });
+      c.falso.estado.esDefault = false;
+      await c.reconciliar();
+      expect((await c.abiertos()).map((d) => d.tipo).sort()).toEqual(
+        [TipoDesvio.IncorporadaInactiva, TipoDesvio.ParametrosDistintos, TipoDesvio.SeveridadDistinta].sort(),
+      );
+
+      expect(await corregirTodos(c.tx, c.analista)).toEqual({ ok: false, motivo: "sinPermiso" });
+      const resultado = await corregirTodos(c.tx, c.decisor);
+
+      expect(resultado.ok && resultado.publicaciones).toHaveLength(2);
+      const pendientes = await c.tx
+        .select({ reglaId: publicacion.reglaId })
+        .from(publicacion)
+        .where(eq(publicacion.estado, EstadoPublicacion.Pendiente));
+      expect(pendientes.map((p) => p.reglaId).filter((id) => id === conDos.id || id === inactiva.id).sort()).toEqual([conDos.id, inactiva.id].sort());
+
+      await publicarPendientes({ db: c.tx, sonar: c.falso.sonar, perfiles: PERFILES, ids: resultado.ok ? resultado.publicaciones : [] });
+      expect(await c.abiertos()).toEqual([]);
+      // El del perfil sigue: se corrige en Sonar.
+      const [delPerfil] = await c.tx.select({ tipo: desvio.tipo }).from(desvio).where(and(eq(desvio.tipo, TipoDesvio.PerfilNoEsDefault), isNull(desvio.resueltoEn)));
+      expect(delPerfil).toBeDefined();
     });
 
     enTransaccion("una publicación exitosa por una decisión también cierra los desvíos de la regla", async (c) => {

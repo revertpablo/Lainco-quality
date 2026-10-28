@@ -645,8 +645,8 @@ la publicación queda pendiente y la retoman:
 - el cron `GET /api/cron/publicar-sonar`, todos los días a las 10:00 UTC (después de la
   sincronización), con el mismo `CRON_SECRET`. El plan Hobby de Vercel solo permite crons
   diarios, con una precisión de ±59 minutos;
-- la acción `publicarPendientesAhora` (`src/publicacion/acciones.ts`), que además vuelve a
-  poner pendientes las fallidas. Su botón llega con la pantalla del paso 6.
+- el botón **Publicar pendientes** (pantalla Sonar o detalle de la regla; acción
+  `publicarPendientesAhora`), que además vuelve a poner pendientes las fallidas.
 
 **Cómo** (`src/publicacion/publicar.ts`). Cada publicación se toma en su transacción con
 la fila bloqueada (`FOR UPDATE SKIP LOCKED`), así dos corridas a la vez no publican la
@@ -660,6 +660,10 @@ regla: si cambió dos veces antes de publicarse, se publica una sola vez, lo úl
 | Sonar no responde, se corta la red | Se reintenta: espera 1, 5, 30 y 120 minutos. Al quinto intento queda **fallida**. |
 | El token no sirve o no tiene permiso, el perfil no existe | Igual: se arregla sin tocar la publicación. |
 | Sonar rechaza el pedido (un parámetro inválido, una regla que ya no existe), o el pedido no se puede armar (un valor con `;`) | **Fallida** enseguida: reintentar daría lo mismo. |
+
+Desactivar una regla que ya está inactiva no es un error para SonarQube Cloud (verificado el
+2026-10-28), así que publicar es idempotente en los dos sentidos. Si no se puede conectar, el
+error dice la causa (`fetch failed (ETIMEDOUT: ...)`), que el `fetch` de Node no muestra solo.
 
 Cada publicación guarda los intentos, el último error y lo que se mandó (acción, severidad,
 parámetros). Una fallida se reintenta a mano; si después hubo otra publicación de la misma
@@ -682,7 +686,7 @@ sola (decisión P1): un decisor decide.
 | Activa en Sonar sin estar Incorporada | Alguien la activó a mano. Si la regla no está en el inventario, el desvío queda sin regla. |
 | Incorporada e inactiva en Sonar | Alguien la desactivó a mano, o nunca se publicó. |
 | Otra severidad en Sonar | Algún impacto no tiene la severidad elegida, traducida. Sin severidad elegida no se compara. |
-| Otros parámetros en Sonar | Un parámetro elegido con otro valor, o uno no elegido distinto del valor por defecto de la regla. |
+| Otros parámetros en Sonar | Un parámetro elegido con otro valor, o uno no elegido distinto del valor por defecto de la regla. Al activar sin elegir parámetros, SonarQube Cloud completa los valores por defecto (verificado el 2026-10-28): no da falsas alarmas. |
 | El perfil hereda de otro | |
 | El perfil no es el default | Decisión P5. |
 | Un proyecto usa otro perfil | Por lenguaje; los otros lenguajes de Sonar no cuentan. |
@@ -699,18 +703,38 @@ los desvíos**: con una foto incompleta se cerrarían desvíos que siguen ahí. 
 queda en la tabla `reconciliacion`.
 
 **Cuándo.** El cron `GET /api/cron/reconciliar-sonar`, todos los días a las 11:00 UTC
-(después de publicar), con el mismo `CRON_SECRET`, y la acción `reconciliarAhora` (cualquier
-usuario). El botón llega con la pantalla del paso 6.
+(después de publicar), con el mismo `CRON_SECRET`, y el botón **Reconciliar ahora** de la
+pantalla Sonar (cualquier usuario).
 
-**Corregir** (`src/reconciliacion/corregir.ts`, acción `corregirDesvioAhora`; solo
-decisores). Un desvío de una regla se corrige publicándola otra vez: se encola una
+**Corregir** (`src/reconciliacion/corregir.ts`; botones **Corregir** y **Corregir todos**;
+solo decisores). Un desvío de una regla se corrige publicándola otra vez: se encola una
 publicación ligada al desvío, que lleva Sonar a lo que dice la app, y se publica después de
 responder. **Toda publicación exitosa de una regla cierra sus desvíos de regla**, venga de
 una corrección o de una decisión. Los desvíos del perfil o de un proyecto se corrigen en
 SonarQube.
 
 **La primera corrida** marca como "Incorporada e inactiva" toda regla incorporada antes de
-la 6.2, porque nunca se publicó: se corrigen con **Corregir**.
+la 6.2, porque nunca se publicó: se corrigen de una vez con **Corregir todos**.
+
+### Pantalla Sonar
+
+`/sonar` (entrega 6.2, paso 6; consultas en `src/publicacion/consultas.ts`):
+
+- **Reconciliación**: la última corrida (cuándo, quién, qué encontró, advertencias) y
+  **Reconciliar ahora**.
+- **Desvíos**: cada uno con lo que dice la app y lo que hay en Sonar. **Corregir** y
+  **Corregir todos** solo los ve un decisor; un analista ve "Lo corrige un decisor". Los
+  del perfil o de un proyecto dicen "Se corrige en SonarQube".
+- **Sin publicar**: las pendientes y las fallidas vigentes, con el último error de Sonar, y
+  **Publicar pendientes**.
+
+Además:
+
+- El encabezado muestra, al lado de **Sonar**, cuántos desvíos y publicaciones fallidas hay.
+- El detalle de una regla de Sonar tiene un recuadro **En Sonar**: qué publicó la app por
+  última vez (o que nunca la publicó), si está pendiente o falló y por qué, y sus desvíos
+  con **Corregir**.
+- El inventario marca las reglas "sin publicar en Sonar" y con "desvío en Sonar".
 
 ```powershell
 curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/reconciliar-sonar
@@ -744,6 +768,8 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/reconciliacion/reconciliar.test.ts` | La reconciliación con un Sonar falso: desvíos nuevos, que siguen y que se cierran solos, Sonar caído, publicaciones en camino, corregir. Cada test corre en una transacción que se descarta. | Base de pruebas. |
 | `tests/reconciliacion/resumen.test.ts` | El resultado de reconciliar, en una frase. | Nada. |
 | `tests/publicacion/publicar.test.ts` | Publicar lo pendiente con un Sonar falso: qué se activa o desactiva, reintentos, fallidas, perfiles, dos corridas a la vez, reintentar fallidas. | Base de pruebas. |
+| `tests/publicacion/consultas.test.ts` | Lo que muestran la pantalla Sonar y el inventario: sin publicar (fallidas vigentes), desvíos abiertos, última publicación de una regla. | Base de pruebas. |
+| `tests/ui/` | Textos de la pantalla: lo esperado y lo encontrado de un desvío, el estado de una regla en Sonar. | Nada. |
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
 
@@ -751,7 +777,7 @@ La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicad
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
 error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
 los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
-prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`) y los borran al terminar; los
+prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`, `PRUEBA-CON-`) y los borran al terminar; los
 que necesitan reglas de Sonar (`PRUEBA-ENC-`, `PRUEBA-REC-`) corren en una transacción que se
 descarta.
 
@@ -787,7 +813,7 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).

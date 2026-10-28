@@ -277,8 +277,19 @@ function Marcas({ fila }: { fila: FilaDeInventario }) {
     fila.modificada && "modificada en Sonar",
     fila.deprecada && "deprecada en Sonar",
   ].filter(Boolean);
-  if (marcas.length === 0) return null;
-  return <span className="ml-2 text-xs text-tenue">({marcas.join(", ")})</span>;
+  // Lo que hay que mirar en la sección Sonar, aparte y en otro color.
+  const alertas = [fila.sinPublicar && "sin publicar en Sonar", fila.conDesvio && "desvío en Sonar"].filter(Boolean);
+  if (marcas.length === 0 && alertas.length === 0) return null;
+  return (
+    <>
+      {marcas.length > 0 && <span className="ml-2 text-xs text-tenue">({marcas.join(", ")})</span>}
+      {alertas.length > 0 && (
+        <span className="ml-2 text-xs text-[var(--estado-revisar)]" data-alerta-sonar>
+          ({alertas.join(", ")})
+        </span>
+      )}
+    </>
+  );
 }
 
 function Tags({ tags }: { tags: string[] }) {

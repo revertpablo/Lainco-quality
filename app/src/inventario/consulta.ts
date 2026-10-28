@@ -17,7 +17,7 @@ import {
 } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
-import { estado, estadoRegla, lenguaje, origen, regla, sincronizacion } from "@/db/esquema";
+import { desvio, estado, estadoRegla, lenguaje, origen, publicacion, regla, sincronizacion } from "@/db/esquema";
 import type { Filtros } from "@/dominio/filtros";
 import { EstadoSincronizacion, Origen, type Estado, type Lenguaje, type Origen as TipoOrigen } from "@/dominio/valores";
 
@@ -43,6 +43,10 @@ export interface FilaDeInventario {
   nueva: boolean;
   /** Cambió en la última sincronización. */
   modificada: boolean;
+  /** Su última publicación en Sonar no salió (pendiente o fallida). */
+  sinPublicar: boolean;
+  /** Tiene un desvío abierto con Sonar. */
+  conDesvio: boolean;
 }
 
 /** Severidades de Sonar de mayor a menor, para ordenar. */
@@ -119,6 +123,15 @@ export async function buscarReglas(
       deprecada: sql<boolean>`${regla.deprecadaEn} is not null`,
       nueva,
       modificada,
+      // La última publicación decide: una fallida vieja con una publicada después ya no cuenta.
+      sinPublicar: sql<boolean>`coalesce((
+        select ${publicacion.estado} <> 'publicada' from ${publicacion}
+        where ${publicacion.reglaId} = ${regla.id}
+        order by ${publicacion.creadaEn} desc limit 1
+      ), false)`,
+      conDesvio: sql<boolean>`exists (
+        select 1 from ${desvio} where ${desvio.reglaId} = ${regla.id} and ${desvio.resueltoEn} is null
+      )`,
     })
     .from(regla)
     .innerJoin(estadoRegla, eq(estadoRegla.reglaId, regla.id))

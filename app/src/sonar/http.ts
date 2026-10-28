@@ -110,7 +110,7 @@ export function crearConexion(opciones: OpcionesDeConexion): Conexion {
         try {
           respuesta = await hacerFetch(url, { ...init, signal: AbortSignal.timeout(TIEMPO_MAXIMO_POR_PEDIDO_MS) });
         } catch (e) {
-          const motivo = e instanceof Error ? e.message : String(e);
+          const motivo = motivoDeLaFalla(e);
           ultimoError = new ErrorDeSonar(
             "red",
             sinToken(`No se pudo conectar con SonarQube para ${pedido.descripcion}: ${motivo}`),
@@ -170,6 +170,28 @@ async function errorHttp(respuesta: Response, pedido: Pedido, sinToken: (texto: 
 
   const mensaje = `${explicacion} (HTTP ${estado}${detalle ? `: ${detalle}` : ""})`;
   return new ErrorDeSonar(tipo, sinToken(mensaje), estado);
+}
+
+/**
+ * Por qué no se pudo conectar. El `fetch` de Node falla con un "fetch failed" que no dice
+ * nada: el motivo de verdad (ETIMEDOUT, ECONNRESET, ENOTFOUND...) está en `cause`. Pasó al
+ * probar la 6.2 contra SonarQube Cloud el 2026-10-28.
+ */
+export function motivoDeLaFalla(e: unknown): string {
+  if (!(e instanceof Error)) {
+    return String(e);
+  }
+  if (e.name === "TimeoutError") {
+    return `SonarQube no respondió en ${TIEMPO_MAXIMO_POR_PEDIDO_MS / 1000} segundos`;
+  }
+  const causa = (e as { cause?: unknown }).cause;
+  const detalle =
+    causa instanceof Error
+      ? [(causa as { code?: string }).code, causa.message].filter(Boolean).join(": ")
+      : typeof causa === "object" && causa !== null && "code" in causa
+        ? String((causa as { code: unknown }).code)
+        : "";
+  return detalle && !e.message.includes(detalle) ? `${e.message} (${detalle})` : e.message;
 }
 
 // ------------------------------------------------------------ lectura de las respuestas
