@@ -24,7 +24,9 @@ public sealed class InicializacionInlineDePropertyAnalyzer : DiagnosticAnalyzer
         messageFormat: "La property '{0}' no debe inicializarse en la declaración",
         category: Categorias.Diseno,
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        // Nace apagada (decisión R6, entrega 6.4): la enciende el .globalconfig del paquete
+        // cuando la regla se incorpora en la app de catálogo.
+        isEnabledByDefault: false,
         description: "El valor inicial de una property debe asignarse en el constructor, " +
                      "no en su declaración.",
         helpLinkUri: Ayuda.Para(Id));

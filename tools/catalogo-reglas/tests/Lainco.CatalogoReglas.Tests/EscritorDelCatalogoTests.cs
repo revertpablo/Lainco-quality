@@ -16,7 +16,7 @@ public class EscritorDelCatalogoTests
                 Descripcion: null,
                 Categoria: "Diseño",
                 SeveridadPorDefecto: "warning",
-                HabilitadaPorDefecto: true,
+                HabilitadaPorDefecto: false,
                 Ayuda: "https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules/LAIN005.md",
                 Documentacion: "# LAIN005 — Métodos estáticos\n\nUsa `static` y \"comillas\" <b>.\n"),
         });
@@ -40,7 +40,7 @@ public class EscritorDelCatalogoTests
             "      \"descripcion\": null,\n" +
             "      \"categoria\": \"Diseño\",\n" +
             "      \"severidadPorDefecto\": \"warning\",\n" +
-            "      \"habilitadaPorDefecto\": true,\n" +
+            "      \"habilitadaPorDefecto\": false,\n" +
             "      \"ayuda\": \"https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules/LAIN005.md\",\n" +
             "      \"documentacion\": \"# LAIN005 — Métodos estáticos\\n\\nUsa `static` y \\\"comillas\\\" <b>.\\n\"\n" +
             "    }\n" +

@@ -8,4 +8,11 @@
 ;
 ; Rule ID | Category | Severity | Notes
 ; --------|----------|----------|------
-; LAIN0XX | Diseño   | Warning  | Descripción corta.
+; LAIN0XX | Diseño   | Disabled | Descripción corta. (Nace apagada: CLAUDE.md, decisión R6.)
+
+### Changed Rules
+
+Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
+--------|--------------|--------------|--------------|--------------|-------------------------------------------------------
+LAIN004 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).
+LAIN005 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).

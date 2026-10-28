@@ -34,7 +34,7 @@ internal sealed record Catalogo(
 /// Con las palabras del <c>.globalconfig</c>: <c>silent</c>, <c>suggestion</c> o
 /// <c>warning</c>. Nunca <c>error</c> (convención de CLAUDE.md).
 /// </param>
-/// <param name="HabilitadaPorDefecto">Si la regla corre sin que nadie la configure.</param>
+/// <param name="HabilitadaPorDefecto">Si la regla corre sin que nadie la configure. En Roslyn, siempre false (decisión R6).</param>
 /// <param name="Ayuda">El <c>helpLinkUri</c>: la documentación publicada.</param>
 /// <param name="Documentacion">El markdown de <c>docs/rules/&lt;ID&gt;.md</c>, con finales de línea <c>\n</c>.</param>
 internal sealed record ReglaDelCatalogo(

@@ -58,8 +58,34 @@ internal static class Verificador<TAnalyzer>
         };
 
         test.TestState.OutputKind = tipoDeSalida;
+
+        // Las reglas LAIN nacen apagadas (decisión R6): las enciende el .globalconfig del
+        // paquete. El test las enciende igual, con un .globalconfig.
+        test.TestState.AnalyzerConfigFiles.Add(("/.globalconfig", Encendido.GlobalconfigPara(new TAnalyzer())));
+
         test.ExpectedDiagnostics.AddRange(esperados);
 
         await test.RunAsync();
+    }
+}
+
+/// <summary>
+/// Las reglas LAIN nacen apagadas (decisión R6 de la entrega 6.4): las enciende el
+/// .globalconfig del paquete cuando se incorporan en la app de catálogo. Los tests las
+/// encienden de la misma forma.
+/// </summary>
+internal static class Encendido
+{
+    /// <summary>Un .globalconfig que enciende las reglas de los analyzers con su severidad por defecto.</summary>
+    public static string GlobalconfigPara(params DiagnosticAnalyzer[] analyzers)
+    {
+        System.Text.StringBuilder configuracion = new("is_global = true\n");
+        foreach (DiagnosticDescriptor descriptor in analyzers.SelectMany(a => a.SupportedDiagnostics))
+        {
+            configuracion.Append("dotnet_diagnostic.").Append(descriptor.Id).Append(".severity = ")
+                .Append(descriptor.DefaultSeverity == DiagnosticSeverity.Warning ? "warning" : "suggestion").Append('\n');
+        }
+
+        return configuracion.ToString();
     }
 }

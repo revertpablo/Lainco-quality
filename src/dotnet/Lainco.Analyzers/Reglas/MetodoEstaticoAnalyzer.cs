@@ -35,7 +35,9 @@ public sealed class MetodoEstaticoAnalyzer : DiagnosticAnalyzer
         messageFormat: "Método estático '{0}' no permitido",
         category: Categorias.Diseno,
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        // Nace apagada (decisión R6, entrega 6.4): la enciende el .globalconfig del paquete
+        // cuando la regla se incorpora en la app de catálogo.
+        isEnabledByDefault: false,
         description: "Los métodos estáticos no se pueden sobrescribir ni reemplazar en un " +
                      "test, y atan a quien los llama a una implementación concreta. El " +
                      "comportamiento va en métodos de instancia. Se exceptúan los operators, " +

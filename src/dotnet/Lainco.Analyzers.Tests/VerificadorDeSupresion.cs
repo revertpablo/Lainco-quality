@@ -63,7 +63,10 @@ internal static class VerificadorDeSupresion
 
         // Las propiedades de MSBuild le llegan al suppressor como build_property.* de un
         // .globalconfig, que es lo que genera el SDK a partir de CompilerVisibleProperty.
-        string configuracion = "is_global = true\n";
+        // Además enciende las reglas LAIN, que nacen apagadas (decisión R6).
+        string configuracion = Encendido.GlobalconfigPara(
+            new InicializacionInlineDePropertyAnalyzer(),
+            new MetodoEstaticoAnalyzer());
 
         if (raiz != null)
         {

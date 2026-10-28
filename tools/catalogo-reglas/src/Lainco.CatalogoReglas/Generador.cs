@@ -93,6 +93,11 @@ internal static class Generador
             errores.Add($"{id}: la severidad por defecto es 'error'. Tiene que ser 'warning' o menos: el que bloquea es el quality gate (ver CLAUDE.md).");
         }
 
+        if (descriptor.IsEnabledByDefault)
+        {
+            errores.Add($"{id}: el descriptor viene habilitado por defecto. Las reglas propias nacen apagadas (isEnabledByDefault: false): las enciende el .globalconfig cuando se incorporan en la app (decisión R6).");
+        }
+
         string documento = $"docs/rules/{id}.md";
         if (!descriptor.HelpLinkUri.EndsWith("/" + documento, StringComparison.Ordinal))
         {

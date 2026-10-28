@@ -28,7 +28,7 @@ El formato es **común a Roslyn y ESLint**:
       "descripcion": "Los métodos estáticos no se pueden sobrescribir ni reemplazar en un test, ...",
       "categoria": "Diseño",
       "severidadPorDefecto": "warning",
-      "habilitadaPorDefecto": true,
+      "habilitadaPorDefecto": false,
       "ayuda": "https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules/LAIN005.md",
       "documentacion": "# LAIN005 — No se permiten métodos estáticos, salvo operators\n\n..."
     }
@@ -56,7 +56,7 @@ Cada regla:
 | `descripcion` | texto o `null` | La descripción corta, si la regla la tiene. |
 | `categoria` | texto | La categoría (`Diseño`, `Persistencia`...). |
 | `severidadPorDefecto` | `"silent"` \| `"suggestion"` \| `"warning"` | La severidad con la que se publica la regla al incorporarla (decisión R3), con las palabras del `.globalconfig`. **Nunca `error`**: el que bloquea es el quality gate (CLAUDE.md). En ESLint, `warn` es `warning`. |
-| `habilitadaPorDefecto` | booleano | Si la regla corre sin que nadie la configure. |
+| `habilitadaPorDefecto` | booleano | Si la regla corre sin que nadie la configure. En las reglas propias, siempre `false`: nacen apagadas y las enciende el `.globalconfig` cuando se incorporan (decisión R6). |
 | `ayuda` | texto | URL de la documentación publicada (`helpLinkUri` / `meta.docs.url`). |
 | `documentacion` | texto | El markdown de `docs/rules/<ID>.md`, con finales de línea `\n`. |
 
@@ -75,4 +75,5 @@ lista todas las que no cumplen:
 - la regla no está en `AnalyzerReleases.Shipped.md` ni en `AnalyzerReleases.Unshipped.md`
   (o figura como quitada);
 - la severidad por defecto es `error`;
+- la regla viene habilitada por defecto (`isEnabledByDefault` tiene que ser `false`);
 - el descriptor no tiene título, o dos descriptores distintos usan el mismo ID.

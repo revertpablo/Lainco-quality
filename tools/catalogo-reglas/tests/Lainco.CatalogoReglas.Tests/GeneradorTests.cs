@@ -28,7 +28,7 @@ public class GeneradorTests
             new[]
             {
                 Regla("LAIN005", titulo: "No se permiten métodos estáticos", descripcion: "Los estáticos atan.", categoria: "Diseño"),
-                Regla("LAIN004", titulo: "Sin inicialización inline", severidad: DiagnosticSeverity.Info, habilitada: false),
+                Regla("LAIN004", titulo: "Sin inicialización inline", severidad: DiagnosticSeverity.Info),
             },
             documentacion: new Dictionary<string, string>
             {
@@ -58,7 +58,7 @@ public class GeneradorTests
         Assert.Equal("Los estáticos atan.", lain005.Descripcion);
         Assert.Equal("Diseño", lain005.Categoria);
         Assert.Equal("warning", lain005.SeveridadPorDefecto);
-        Assert.True(lain005.HabilitadaPorDefecto);
+        Assert.False(lain005.HabilitadaPorDefecto);
         Assert.Equal("https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules/LAIN005.md", lain005.Ayuda);
     }
 
@@ -142,6 +142,17 @@ public class GeneradorTests
 
         Assert.Null(resultado.Catalogo);
         Assert.Contains(resultado.Errores, e => e.StartsWith("LAIN004:") && e.Contains("'error'"));
+    }
+
+    [Fact]
+    public void Una_regla_habilitada_por_defecto_falla()
+    {
+        // Decisión R6 (entrega 6.4): las reglas propias nacen apagadas; las enciende el
+        // .globalconfig cuando se incorporan en la app.
+        ResultadoDelCatalogo resultado = Generador.Generar(Entrada(new[] { Regla("LAIN004", habilitada: true) }));
+
+        Assert.Null(resultado.Catalogo);
+        Assert.Contains(resultado.Errores, e => e.StartsWith("LAIN004:") && e.Contains("isEnabledByDefault: false"));
     }
 
     [Theory]

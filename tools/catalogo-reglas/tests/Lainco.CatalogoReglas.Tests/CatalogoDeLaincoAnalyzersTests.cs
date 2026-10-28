@@ -41,6 +41,7 @@ public class CatalogoDeLaincoAnalyzersTests
         Assert.Contains("LAIN004", resultado.Catalogo!.Reglas.Select(r => r.Clave));
         Assert.Contains("LAIN005", resultado.Catalogo.Reglas.Select(r => r.Clave));
         Assert.All(resultado.Catalogo.Reglas, r => Assert.Equal("warning", r.SeveridadPorDefecto));
+        Assert.All(resultado.Catalogo.Reglas, r => Assert.False(r.HabilitadaPorDefecto));
     }
 
     [Fact]

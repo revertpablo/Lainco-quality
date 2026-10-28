@@ -675,6 +675,20 @@ La corrida termina con error, sin tocar nada, si el repositorio no tiene release
 último no trae el catálogo, si el catálogo no es válido (o tiene un formato que la app no
 conoce) o si su versión no es la del tag del release.
 
+### El `.globalconfig` del paquete
+
+Entrega 6.4, paso 5 (decisión R3). `generarGlobalconfig` (`src/paquete/globalconfig.ts`)
+arma el `.globalconfig` de `Lainco.Analyzers` desde el estado de la app, sin base ni red:
+
+- una regla por bloque, ordenadas por clave, con un comentario con su título;
+- Incorporada: la severidad por defecto de su descriptor (`warning`);
+- cualquier otro estado: `none` (las reglas nacen apagadas, decisión R6: es explícito, no hace falta);
+- las eliminadas del paquete (deprecadas en el inventario) no se configuran;
+- nunca `error`: si una Incorporada lo trae, no genera nada.
+
+Sin fechas ni versiones: el mismo estado da siempre el mismo archivo. Lo usa el PR
+automático (paso 6), que lo compara con el de `main`.
+
 ### GitHub
 
 Cliente en `src/github/cliente.ts` (último release y descarga de assets, con reintentos y
@@ -818,6 +832,7 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/auth/` | Ingreso: alta, duplicados, ingresos simultáneos, bajas. | Base de pruebas. |
 | `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. La de Roslyn, con el catálogo del release v0.1.0 y versiones cambiadas a partir de él. | Base de pruebas. |
 | `tests/catalogo/` | El catálogo de reglas propias: qué se acepta y cómo se traduce para la sincronización. | Nada. |
+| `tests/paquete/` | El `.globalconfig` generado: con LAIN004 y LAIN005 incorporadas configura lo mismo que el mantenido a mano; orden, `none`, eliminadas, nunca `error`. | Nada. |
 | `tests/github/` | Cliente de GitHub: último release, descarga de assets, errores y reintentos; configuración. | Nada. |
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
 | `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
@@ -895,6 +910,7 @@ app/
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
 │   ├── catalogo/     # Formato del catálogo de reglas propias (docs/catalogo-de-reglas.md).
 │   ├── github/       # Cliente de la API de GitHub (releases) y su configuración.
+│   ├── paquete/      # El paquete de reglas propias: generar su .globalconfig.
 │   ├── sincronizacion/  # Una corrida de sincronización (corrida.ts), los jobs de Sonar y Roslyn, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.

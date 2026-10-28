@@ -11,7 +11,7 @@ internal static class Descriptores
         string descripcion = "Descripción de la regla.",
         string categoria = "Diseño",
         DiagnosticSeverity severidad = DiagnosticSeverity.Warning,
-        bool habilitada = true,
+        bool habilitada = false,
         string? ayuda = null)
     {
         return new DiagnosticDescriptor(
