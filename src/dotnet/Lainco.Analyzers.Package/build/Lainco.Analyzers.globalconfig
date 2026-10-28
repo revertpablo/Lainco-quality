@@ -1,18 +1,21 @@
 # Severidades de las reglas LAIN.
 #
+# Lo genera la app de catálogo de reglas a partir de las decisiones registradas
+# (entrega 6.4): no editar a mano. Para cambiar la severidad de una regla, se decide en
+# la app, que abre el PR con este archivo.
+#
 # Este archivo viaja dentro del paquete NuGet: cambiar una severidad acá y publicar una
 # versión nueva cambia lo que ven todos los repositorios, sin tocar ningún .editorconfig.
 #
-# A partir de la Fase 6 lo genera la app de catálogo a partir de las decisiones
-# registradas. Hasta entonces se mantiene a mano.
-#
-# Nunca poner 'error': el que bloquea es el quality gate de SonarQube, y el suppressor
-# de la Fase 4 necesita poder actuar sobre el diagnóstico (ver CLAUDE.md).
+# Las reglas LAIN nacen apagadas (decisión R6): este archivo enciende las Incorporadas,
+# con la severidad por defecto de su descriptor, y deja en 'none' las demás. Nunca
+# 'error': el que bloquea es el quality gate de SonarQube, y el suppressor de la Fase 4
+# necesita poder actuar sobre el diagnóstico (ver CLAUDE.md).
 
 is_global = true
 
 # LAIN004 — No se permite inicialización inline de properties
 dotnet_diagnostic.LAIN004.severity = warning
 
-# LAIN005 — No se permiten métodos estáticos, salvo operators
+# LAIN005 — No se permiten métodos estáticos
 dotnet_diagnostic.LAIN005.severity = warning
