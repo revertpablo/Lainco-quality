@@ -17,6 +17,7 @@ import {
 
 import type {
   AccionPublicacion,
+  DestinoPublicacion,
   Estado,
   EstadoPublicacion,
   EstadoSincronizacion,
@@ -76,6 +77,7 @@ export const estadoSincronizacion = tablaDeReferencia<EstadoSincronizacion>("est
 export const motivoAviso = tablaDeReferencia<MotivoAviso>("motivoAviso");
 export const estadoPublicacion = tablaDeReferencia<EstadoPublicacion>("estadoPublicacion");
 export const accionPublicacion = tablaDeReferencia<AccionPublicacion>("accionPublicacion");
+export const destinoPublicacion = tablaDeReferencia<DestinoPublicacion>("destinoPublicacion");
 export const tipoDesvio = tablaDeReferencia<TipoDesvio>("tipoDesvio");
 
 // ---------------------------------------------------------------------- usuario
@@ -367,6 +369,11 @@ export const publicacion = pgTable(
   {
     id: uuid().notNull().defaultRandom(),
     reglaId: uuid().notNull(),
+    /**
+     * Dónde se publica: el perfil de Sonar o el PR de configuración del paquete de reglas
+     * propias (entrega 6.4, paso 4). Lo decide el origen de la regla.
+     */
+    destino: text().$type<DestinoPublicacion>().notNull().default("perfilSonar"),
     estado: text().$type<EstadoPublicacion>().notNull().default("pendiente"),
     decisionId: uuid(),
     desvioId: uuid(),
@@ -389,6 +396,7 @@ export const publicacion = pgTable(
     foreignKey({ name: "publicacionDesvio", columns: [t.desvioId], foreignColumns: [desvio.id] }),
     foreignKey({ name: "publicacionPedidaPor", columns: [t.pedidaPorId], foreignColumns: [usuario.id] }),
     foreignKey({ name: "publicacionAccion", columns: [t.accion], foreignColumns: [accionPublicacion.codigo] }),
+    foreignKey({ name: "publicacionDestino", columns: [t.destino], foreignColumns: [destinoPublicacion.codigo] }),
     // Una sola pendiente por regla: encolar otra vez la misma regla no duplica.
     uniqueIndex("publicacionPendienteUnica")
       .on(t.reglaId)

@@ -5,7 +5,7 @@ import type { Db } from "@/db/cliente";
 import { estadoRegla, publicacion, regla } from "@/db/esquema";
 import { accionEnSonar, despuesDeFallar, type TipoDeFalla } from "@/dominio/publicacion";
 import { impactosParaPublicar } from "@/dominio/severidad";
-import { AccionPublicacion, EstadoPublicacion, type Lenguaje } from "@/dominio/valores";
+import { AccionPublicacion, DestinoPublicacion, EstadoPublicacion, type Lenguaje } from "@/dominio/valores";
 import type { ClienteSonar } from "@/sonar/cliente";
 import { cerrarDesviosDeLaRegla } from "@/reconciliacion/corregir";
 import { ErrorDeSonar } from "@/sonar/http";
@@ -66,6 +66,8 @@ export async function publicarPendientes(opciones: OpcionesDePublicacion): Promi
     .where(
       and(
         eq(publicacion.estado, EstadoPublicacion.Pendiente),
+        // Las del PR de configuración (reglas propias) las publica el paso 6 de la 6.4.
+        eq(publicacion.destino, DestinoPublicacion.PerfilSonar),
         opciones.ids ? inArray(publicacion.id, [...opciones.ids]) : undefined,
         opciones.sinEsperar ? undefined : lte(publicacion.proximoIntentoEn, sql`now()`),
       ),
@@ -171,6 +173,7 @@ export async function reintentarFallidas(db: Db, ids?: readonly string[]): Promi
     .where(
       and(
         eq(publicacion.estado, EstadoPublicacion.Fallida),
+        eq(publicacion.destino, DestinoPublicacion.PerfilSonar),
         ids ? inArray(publicacion.id, [...ids]) : undefined,
         notExists(
           db

@@ -124,6 +124,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
 | `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
 | `0006_reconciliacion` | Entrega 6.2, paso 5: `reconciliacion`, el log de cada corrida (estado, desvíos abiertos, nuevos y resueltos, advertencias). |
+| `0008_destino_de_publicacion` | Entrega 6.4, paso 4: `publicacion.destino` (perfil de Sonar o PR de configuración) y su tabla de referencia `destinoPublicacion`. Las publicaciones existentes quedan con el perfil de Sonar. |
 | `0007_version_sincronizada` | Entrega 6.4, paso 3: `sincronizacion.version`, qué versión del paquete trajo una corrida de reglas propias (`Lainco.Analyzers 0.1.0`). |
 
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
@@ -182,13 +183,19 @@ Es la única función que escribe `estadoRegla`, y en la misma transacción escr
 4. Escribe el estado nuevo y una decisión por regla, con autor, justificación y, al
    incorporar, severidad y parámetros. Al salir de Incorporada se borran la severidad y los
    parámetros asignados; el historial los conserva.
-5. Si una regla de Sonar entra a Incorporada o sale, deja pendiente su publicación en el
-   perfil de Sonar (tabla `publicacion`; `src/dominio/publicacion.ts`). Solo Incorporada
-   está activa en Sonar, así que las demás transiciones no publican nada, y las reglas
-   propias (Roslyn, ESLint) se publican por otro lado (entrega 6.4). Una regla tiene a lo
-   sumo una publicación pendiente: si se vuelve a decidir antes de publicarse, la pendiente
-   pasa a ser de la nueva decisión y se intenta de nuevo enseguida; al publicar se lee el
-   estado de ese momento, así que se publica lo último.
+5. Si una regla entra a Incorporada o sale, deja pendiente su publicación (tabla
+   `publicacion`; `src/dominio/publicacion.ts`), con su **destino**: las de Sonar, en el
+   perfil de Sonar; las propias (Roslyn, ESLint), en el PR que actualiza el `.globalconfig`
+   del paquete (entrega 6.4; ese PR lo arma el paso 6). Las normas de IA no se publican.
+   Solo Incorporada está activa, así que las demás transiciones no publican nada. Una regla
+   tiene a lo sumo una publicación pendiente: si se vuelve a decidir antes de publicarse,
+   la pendiente pasa a ser de la nueva decisión y se intenta de nuevo enseguida; al
+   publicar se lee el estado de ese momento, así que se publica lo último.
+
+**Reglas propias** (entrega 6.4, decisión R3): se incorporan **sin elegir severidad**. Van
+con la severidad por defecto de su descriptor (`warning`), que queda en el estado y en la
+decisión para el historial; si el pedido trae una severidad, se rechaza
+(`severidadNoSeElige`). Tampoco tienen parámetros.
 
 **Todo o nada**: en una operación masiva, si una regla no puede, no cambia ninguna, y la
 respuesta dice cuál y por qué. Las decisiones de una masiva comparten `loteId` y
@@ -265,15 +272,20 @@ vuelve a la búsqueda de la que se vino.
 
 - **Qué es**: clave, nombre, estado, lenguaje, origen, tipo, severidad por defecto, tags, la
   descripción de Sonar y sus parámetros (con el valor elegido, si está incorporada). La
-  descripción es HTML de Sonar: se muestra después de sanearla con una lista cerrada de
-  etiquetas (`src/reglas/descripcion.ts`, con `sanitize-html`); nada de scripts, estilos ni
-  imágenes. Los ejemplos de código se colorean en el servidor con `highlight.js`, con la
+  descripción es HTML de Sonar (en una regla propia, su documentación de `docs/rules/` en
+  markdown, convertida con `marked` y sin el título): se muestra después de sanearla con
+  una lista cerrada de etiquetas (`src/reglas/descripcion.ts`, con `sanitize-html`); nada
+  de scripts, estilos ni imágenes. Los ejemplos de código se colorean en el servidor con `highlight.js`, con la
   gramática del lenguaje de la regla, y se rotulan "No cumple" / "Cumple" según la marca de
   Sonar.
 - **Cambiar el estado**: los cambios que el rol permite desde el estado actual. Es **la
   única forma de incorporar** una regla: pide la severidad (propone la de Sonar), los
-  valores de los parámetros (vacío: el de Sonar) y la justificación. Pasa por
-  `aplicarTransicion`, como todo cambio.
+  valores de los parámetros (vacío: el de Sonar) y la justificación. Una regla propia no
+  pide severidad: dice con cuál se incorpora. Pasa por `aplicarTransicion`, como todo
+  cambio.
+- **En Sonar** (reglas de Sonar) o **En el paquete** (reglas propias): cómo queda la regla
+  donde se publica. En el paquete: cómo va en el `.globalconfig` (con su severidad, o
+  `none`) y en qué está el pedido al PR de configuración.
 - **Historial**, de lo más nuevo a lo más viejo: cada decisión con el cambio de estado,
   autor, fecha y justificación, la severidad y los parámetros elegidos, y si fue parte de una
   operación masiva (de cuántas reglas). También cuándo llegó al inventario, si el origen la
@@ -685,7 +697,9 @@ vercel env add LAINCO_GITHUB_TOKEN production
 
 ## Publicación en Sonar
 
-Entrega 6.2. Lo que se decide en la app se publica en el Quality Profile de cada lenguaje
+Entrega 6.2. Solo las publicaciones con destino "perfil de Sonar": las del PR de
+configuración de las reglas propias no se publican acá ni aparecen en la pantalla Sonar.
+Lo que se decide en la app se publica en el Quality Profile de cada lenguaje
 (`SONAR_PERFIL_CS`, `SONAR_PERFIL_TS`): Incorporada queda activa con la severidad y los
 parámetros elegidos; cualquier otro estado, inactiva.
 

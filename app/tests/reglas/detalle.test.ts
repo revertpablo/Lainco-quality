@@ -8,7 +8,8 @@ import { Estado, Origen, Rol } from "@/dominio/valores";
  *
  * Criterio del paso: "El historial muestra autor, fecha y justificación de cada decisión."
  *
- * Necesita DATABASE_URL_PRUEBAS. Usa reglas `PRUEBA-DET-` (origen eslint, que ningún test sincroniza) y usuarios
+ * Necesita DATABASE_URL_PRUEBAS. Usa reglas `PRUEBA-DET-` (origen normaIa: ningún test lo
+ * sincroniza y, como en Sonar, al incorporar se elige la severidad) y usuarios
  * `prueba-det-`, y los borra al terminar.
  */
 
@@ -43,7 +44,7 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
     const [r] = await db()
       .insert(regla)
       .values({
-        origen: Origen.Eslint,
+        origen: Origen.NormaIa,
         clave: `${PREFIJO}${clave}`,
         lenguaje: "cs",
         nombre: `Regla ${clave}`,
@@ -77,7 +78,7 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
     decisor = d;
     const [s] = await db()
       .insert(sincronizacion)
-      .values({ origen: Origen.Eslint, error: "prueba-detalle" })
+      .values({ origen: Origen.NormaIa, error: "prueba-detalle" })
       .returning({ id: sincronizacion.id });
     corrida = s.id;
 
@@ -176,7 +177,7 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
       id: principal,
       clave: `${PREFIJO}PRINCIPAL`,
       nombre: "Regla PRINCIPAL",
-      origenDescripcion: "ESLint (regla propia)",
+      origenDescripcion: "Norma de IA",
       lenguajeDescripcion: "C#",
       tipo: "CODE_SMELL",
       severidadDefault: "MAJOR",

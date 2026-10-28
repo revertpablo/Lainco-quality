@@ -278,8 +278,12 @@ function Marcas({ fila }: { fila: FilaDeInventario }) {
     // Las reglas propias no se deprecan: si ya no están en el paquete, se eliminaron.
     fila.deprecada && (fila.origen === Origen.Sonar ? "deprecada en Sonar" : "eliminada del paquete"),
   ].filter(Boolean);
-  // Lo que hay que mirar en la sección Sonar, aparte y en otro color.
-  const alertas = [fila.sinPublicar && "sin publicar en Sonar", fila.conDesvio && "desvío en Sonar"].filter(Boolean);
+  // Lo que todavía no llegó a donde se publica (Sonar o, si es propia, el paquete) y los
+  // desvíos, aparte y en otro color.
+  const alertas = [
+    fila.sinPublicar && (fila.origen === Origen.Sonar ? "sin publicar en Sonar" : "sin pasar al paquete"),
+    fila.conDesvio && "desvío en Sonar",
+  ].filter(Boolean);
   if (marcas.length === 0 && alertas.length === 0) return null;
   return (
     <>

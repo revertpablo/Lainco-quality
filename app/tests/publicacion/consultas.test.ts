@@ -2,7 +2,7 @@ import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { FILTROS_POR_DEFECTO } from "@/dominio/filtros";
-import { EstadoPublicacion, Estado, Origen, Rol, TipoDesvio } from "@/dominio/valores";
+import { DestinoPublicacion, EstadoPublicacion, Estado, Origen, Rol, TipoDesvio } from "@/dominio/valores";
 
 /**
  * Lo que muestra la pantalla de Sonar y el inventario sobre la publicación (entrega 6.2,
@@ -102,6 +102,18 @@ describe.skipIf(!url)("consultas de la publicación en Sonar", async () => {
       [pendiente.clave, "pendiente"],
     ]);
     expect(filas[0]).toMatchObject({ estadoDescripcion: "Falló", intentos: 5, ultimoError: "Sonar no responde", pedidaPor: "Paula Consultas" });
+  });
+
+  it("las del PR de configuración (reglas propias) no son de la pantalla Sonar", async () => {
+    const propia = await nuevaRegla();
+    await publicada(propia.id, EstadoPublicacion.Pendiente, 1, { destino: DestinoPublicacion.PrConfiguracion });
+    const otra = await nuevaRegla();
+    await publicada(otra.id, EstadoPublicacion.Fallida, 2, { destino: DestinoPublicacion.PrConfiguracion, intentos: 5 });
+
+    // El aviso del encabezado cuenta las mismas fallidas que esta lista (fallidaVigente).
+    expect(await mias()).toEqual([]);
+    // El detalle de la regla sí la muestra: es su última publicación.
+    expect(await ultimaPublicacionDeRegla(db(), propia.id)).toMatchObject({ estado: "pendiente" });
   });
 
   it("la última publicación de una regla", async () => {

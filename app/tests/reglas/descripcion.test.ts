@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { readFileSync } from "node:fs";
+
 import { prepararDescripcion, resaltarCodigo, sanearDescripcion } from "@/reglas/descripcion";
+import { Origen } from "@/dominio/valores";
 
 /**
  * La descripción de una regla es HTML de Sonar: se muestra después de sanearla, con una
@@ -85,5 +88,39 @@ describe("ejemplos de código coloreados", () => {
     const html = "<p>Use <code>static</code> here.</p>";
 
     expect(resaltarCodigo(html, "cs")).toBe(html);
+  });
+});
+
+describe("documentación de una regla propia, en markdown (entrega 6.4, paso 4)", () => {
+  const catalogo = JSON.parse(readFileSync(new URL("../fixtures/roslyn/reglas-roslyn.json", import.meta.url), "utf8"));
+  const lain005: string = catalogo.reglas.find((r: { clave: string }) => r.clave === "LAIN005").documentacion;
+
+  it("convierte la documentación de LAIN005 a HTML, sin el título, que el detalle ya muestra", () => {
+    const html = prepararDescripcion(lain005, "cs", Origen.Roslyn);
+
+    expect(html).not.toContain("<h1");
+    expect(html).not.toContain("LAIN005 — ");
+    expect(html).toContain("<h2>Qué detecta</h2>");
+    expect(html).toContain("<table>");
+    expect(html).toContain("<strong>Categoría</strong>");
+  });
+
+  it("colorea los bloques de código con la gramática del lenguaje, y el código en línea queda como código", () => {
+    const html = prepararDescripcion("Usar `static`.\n\n```csharp\npublic static int X() => 1;\n```\n", "cs", Origen.Roslyn);
+
+    expect(html).toContain("<p>Usar <code>static</code>.</p>");
+    expect(html).toContain('<pre><code class="hljs language-csharp">');
+    expect(html).toContain('<span class="hljs-keyword">public</span>');
+  });
+
+  it("se sanea como la de Sonar: el HTML del markdown no puede meter scripts", () => {
+    const html = prepararDescripcion('Hola <script>alert(1)</script> <a href="javascript:x()">y</a>\n', "cs", Origen.Roslyn);
+
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("javascript:");
+  });
+
+  it("una regla de Sonar no se toma como markdown", () => {
+    expect(prepararDescripcion("# no es un título", "cs", Origen.Sonar)).toBe("# no es un título");
   });
 });

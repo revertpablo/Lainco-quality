@@ -16,6 +16,8 @@ interface Props {
   disponibles: Transicion[];
   estados: Record<string, string>;
   severidadDefault: string | null;
+  /** Falso en las reglas propias: se incorporan con la severidad de la regla (entrega 6.4, R3). */
+  seEligeSeveridad: boolean;
   parametros: { clave: string; descripcion?: string; valorDefault?: string }[];
 }
 
@@ -24,7 +26,7 @@ interface Props {
  * severidad y, al incorporar, los valores de los parámetros. La validación de verdad la
  * hace el servidor.
  */
-export function CambiarEstado({ reglaId, estado, disponibles, estados, severidadDefault, parametros }: Props) {
+export function CambiarEstado({ reglaId, estado, disponibles, estados, severidadDefault, seEligeSeveridad, parametros }: Props) {
   const [hacia, setHacia] = useState<Estado | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoDeCambio | null, FormData>(cambiarEstadoDeRegla, null);
   const elegida = disponibles.find((t) => t.hacia === hacia);
@@ -61,7 +63,13 @@ export function CambiarEstado({ reglaId, estado, disponibles, estados, severidad
 
       {elegida && (
         <>
-          {elegida.requiereSeveridad && (
+          {elegida.requiereSeveridad && !seEligeSeveridad && (
+            <p className="text-tenue" data-severidad-de-la-regla>
+              Se incorpora con la severidad de la regla{severidadDefault ? `: ${textoDeSeveridad(severidadDefault)}` : ""}.
+            </p>
+          )}
+
+          {elegida.requiereSeveridad && seEligeSeveridad && (
             <label className="flex flex-col gap-1">
               <span>Severidad con la que se incorpora</span>
               <select

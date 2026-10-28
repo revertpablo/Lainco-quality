@@ -7,6 +7,7 @@ import type { Db } from "@/db/cliente";
 import { desvio, estadoPublicacion, publicacion, reconciliacion, regla, tipoDesvio, usuario } from "@/db/esquema";
 import { DESVIOS_QUE_SE_CORRIGEN_PUBLICANDO } from "@/dominio/reconciliacion";
 import {
+  DestinoPublicacion,
   EstadoPublicacion,
   type AccionPublicacion,
   type EstadoPublicacion as TipoEstadoPublicacion,
@@ -17,7 +18,10 @@ import {
 
 /**
  * Lo que muestra la app sobre la publicación en Sonar (entrega 6.2, paso 6): la pantalla
- * Sonar, el recuadro del detalle de una regla y el aviso del encabezado.
+ * Sonar, el recuadro del detalle de una regla y el aviso del encabezado. Solo las
+ * publicaciones en el perfil de Sonar; las del PR de configuración de las reglas propias
+ * (entrega 6.4) tienen su seguimiento en el paso 7 de esa entrega. La última publicación de
+ * una regla sirve para los dos destinos: cada regla tiene uno solo.
  */
 
 /**
@@ -28,6 +32,7 @@ function fallidaVigente(db: Db) {
   const posterior = alias(publicacion, "posterior");
   return and(
     eq(publicacion.estado, EstadoPublicacion.Fallida),
+    eq(publicacion.destino, DestinoPublicacion.PerfilSonar),
     notExists(
       db
         .select({ uno: sql`1` })
@@ -88,7 +93,9 @@ export async function publicacionesSinPublicar(db: Db): Promise<PublicacionParaM
     .innerJoin(regla, eq(regla.id, publicacion.reglaId))
     .innerJoin(estadoPublicacion, eq(estadoPublicacion.codigo, publicacion.estado))
     .innerJoin(usuario, eq(usuario.id, publicacion.pedidaPorId))
-    .where(sql`(${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) or (${fallidaVigente(db)})`)
+    .where(
+      sql`((${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) and ${eq(publicacion.destino, DestinoPublicacion.PerfilSonar)}) or (${fallidaVigente(db)})`,
+    )
     .orderBy(desc(sql`${publicacion.estado} = 'fallida'`), asc(publicacion.creadaEn));
 }
 

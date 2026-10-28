@@ -4,8 +4,8 @@ import { asc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { decision, estadoRegla, publicacion, regla } from "@/db/esquema";
-import { cambiaElPerfil } from "@/dominio/publicacion";
-import { validarTransicion, type MotivoDeRechazo } from "@/dominio/transiciones";
+import { destinoDeLaDecision } from "@/dominio/publicacion";
+import { seEligeLaSeveridad, validarTransicion, type MotivoDeRechazo } from "@/dominio/transiciones";
 import { Estado, type Rol } from "@/dominio/valores";
 
 /**
@@ -21,9 +21,14 @@ import { Estado, type Rol } from "@/dominio/valores";
  *    justificación, severidad, operación masiva, parámetros.
  * 4. Si todas pasan, actualiza `estadoRegla` y escribe una `decision` por regla. En una
  *    operación masiva todas comparten el `loteId` y la justificación.
- * 5. Encola la publicación en Sonar de las reglas que entran a Incorporada o salen
- *    (src/dominio/publicacion.ts; entrega 6.2, paso 3). Va en la misma transacción: no
- *    puede quedar una decisión sin su publicación, ni una publicación sin su decisión.
+ * 5. Encola la publicación de las reglas que entran a Incorporada o salen
+ *    (src/dominio/publicacion.ts): en el perfil de Sonar (entrega 6.2, paso 3) o en el PR
+ *    de configuración, si es una regla propia (entrega 6.4, paso 4). Va en la misma
+ *    transacción: no puede quedar una decisión sin su publicación, ni una publicación sin
+ *    su decisión.
+ *
+ * Una regla propia se incorpora con la severidad por defecto de la regla, sin elegirla
+ * (decisión R3): queda registrada en la decisión y en el estado, para el historial.
  *
  * **Todo o nada**: si una sola regla no puede, no cambia ninguna, y la respuesta dice cuál
  * y por qué.
@@ -40,7 +45,7 @@ export interface PedidoDeTransicion {
   reglas: readonly { id: string; desde: Estado }[];
   hacia: Estado;
   justificacion?: string | null;
-  /** Severidad con la que se incorpora. Solo cuenta hacia Incorporada. */
+  /** Severidad con la que se incorpora. Solo cuenta hacia Incorporada, y no en las reglas propias. */
   severidad?: string | null;
   /** Valores de los parámetros de la regla. Solo cuentan hacia Incorporada. */
   parametros?: Readonly<Record<string, string>> | null;
@@ -54,7 +59,7 @@ export type ResultadoDeTransicion =
       /** Agrupa las decisiones de una operación masiva. `null` en una individual. */
       loteId: string | null;
       decisiones: { reglaId: string; decisionId: string; desde: Estado; hacia: Estado }[];
-      /** Las publicaciones en Sonar que quedaron pendientes por esta decisión. */
+      /** Las publicaciones (en Sonar o en el PR de configuración) que quedaron pendientes por esta decisión. */
       publicaciones: string[];
     }
   | { ok: false; tipo: "noEncontradas"; reglaIds: string[] }
@@ -84,7 +89,13 @@ export async function aplicarTransicion(
   return db.transaction(async (tx) => {
     // Bloqueo en orden de id: dos lotes que se superponen no se trancan entre sí.
     const actuales = await tx
-      .select({ id: estadoRegla.reglaId, estado: estadoRegla.estado, parametros: regla.parametros, origen: regla.origen })
+      .select({
+        id: estadoRegla.reglaId,
+        estado: estadoRegla.estado,
+        parametros: regla.parametros,
+        origen: regla.origen,
+        severidadDefault: regla.severidadDefault,
+      })
       .from(estadoRegla)
       .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
       .where(inArray(estadoRegla.reglaId, ids))
@@ -109,6 +120,7 @@ export async function aplicarTransicion(
         desde: r.desde,
         hacia: pedido.hacia,
         rol: autor.rol,
+        origen: porId.get(r.id)!.origen,
         justificacion,
         severidad,
         masiva: pedido.masiva,
@@ -123,12 +135,23 @@ export async function aplicarTransicion(
 
     const loteId = pedido.masiva ? randomUUID() : null;
 
+    // Con qué severidad queda cada regla: la elegida o, en una regla propia, la suya.
     // Fuera de Incorporada no hay severidad ni parámetros asignados; el historial conserva
     // con cuáles estuvo incorporada.
-    await tx
-      .update(estadoRegla)
-      .set({ estado: pedido.hacia, severidadAsignada: severidad, parametros, actualizadoEn: sql`now()` })
-      .where(inArray(estadoRegla.reglaId, ids));
+    const severidadDe = (id: string) => {
+      const actual = porId.get(id)!;
+      return haciaIncorporada && !seEligeLaSeveridad(actual.origen) ? actual.severidadDefault : severidad;
+    };
+    const porSeveridad = new Map<string | null, string[]>();
+    for (const id of ids) {
+      porSeveridad.set(severidadDe(id), [...(porSeveridad.get(severidadDe(id)) ?? []), id]);
+    }
+    for (const [severidadAsignada, deEsaSeveridad] of porSeveridad) {
+      await tx
+        .update(estadoRegla)
+        .set({ estado: pedido.hacia, severidadAsignada, parametros, actualizadoEn: sql`now()` })
+        .where(inArray(estadoRegla.reglaId, deEsaSeveridad));
+    }
 
     const escritas = await tx
       .insert(decision)
@@ -139,7 +162,7 @@ export async function aplicarTransicion(
           estadoNuevo: pedido.hacia,
           autorId: autor.id,
           justificacion,
-          severidad,
+          severidad: severidadDe(r.id),
           parametros,
           loteId,
         })),
@@ -150,13 +173,16 @@ export async function aplicarTransicion(
     // Una sola publicación pendiente por regla: si ya había una (la decisión anterior
     // todavía no se publicó), pasa a ser de esta decisión y vuelve a intentarse ya. Igual
     // se publica lo último, porque quien publica lee `estadoRegla` al publicar.
-    const aPublicar = pedido.reglas.filter((r) => cambiaElPerfil(porId.get(r.id)!.origen, r.desde, pedido.hacia));
+    const aPublicar = pedido.reglas.flatMap((r) => {
+      const destino = destinoDeLaDecision(porId.get(r.id)!.origen, r.desde, pedido.hacia);
+      return destino ? [{ reglaId: r.id, destino, decisionId: decisionDe.get(r.id)!, pedidaPorId: autor.id }] : [];
+    });
     const publicaciones =
       aPublicar.length === 0
         ? []
         : await tx
             .insert(publicacion)
-            .values(aPublicar.map((r) => ({ reglaId: r.id, decisionId: decisionDe.get(r.id)!, pedidaPorId: autor.id })))
+            .values(aPublicar)
             .onConflictDoUpdate({
               target: publicacion.reglaId,
               targetWhere: sql`${publicacion.estado} = 'pendiente'`,

@@ -6,9 +6,9 @@ import { z } from "zod";
 import { exigirUsuario } from "@/auth/sesion";
 import { obtenerDb } from "@/db/cliente";
 import { aParametros, leerFiltros } from "@/dominio/filtros";
-import { ORIGENES_EN_EL_PERFIL } from "@/dominio/publicacion";
-import { transicionesDisponibles } from "@/dominio/transiciones";
-import { Rol } from "@/dominio/valores";
+import { destinoDePublicacion } from "@/dominio/publicacion";
+import { seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
+import { DestinoPublicacion, Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
 import { publicarPendientesAhora } from "@/publicacion/acciones";
 import { desviosAbiertos, ultimaPublicacionDeRegla } from "@/publicacion/consultas";
@@ -20,7 +20,7 @@ import { describirValor } from "@/ui/desvios";
 import { Encabezado } from "@/ui/Encabezado";
 import { COLOR_DE_ESTADO, textoDeSeveridad, textoDeTipo } from "@/ui/etiquetas";
 import { Historial } from "@/ui/Historial";
-import { describirEstadoEnSonar } from "@/ui/publicacion";
+import { describirEstadoEnPaquete, describirEstadoEnSonar } from "@/ui/publicacion";
 
 /**
  * Detalle de una regla (entrega 6.1, paso 10): qué es, en qué estado está, cambiarle el
@@ -68,7 +68,15 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
   const filtrosDeVuelta = aParametros(leerFiltros(new URLSearchParams(typeof volver === "string" ? volver : "")));
   const estados = Object.fromEntries(opciones.estados.map((e) => [e.codigo, e.descripcion]));
   const disponibles = transicionesDisponibles(regla.estado, usuario.rol);
+  const destino = destinoDePublicacion(regla.origen);
   const enSonar = describirEstadoEnSonar(publicada, regla.estado, (d) => fechaCorta.format(d));
+  // Reglas propias (entrega 6.4): la severidad con la que va al .globalconfig es la de la regla.
+  const enElPaquete = describirEstadoEnPaquete(
+    publicada,
+    regla.estado,
+    regla.severidadAsignada ?? regla.severidadDefault,
+    (d) => fechaCorta.format(d),
+  );
 
   return (
     <>
@@ -162,11 +170,31 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 disponibles={disponibles}
                 estados={estados}
                 severidadDefault={regla.severidadDefault}
+                seEligeSeveridad={seEligeLaSeveridad(regla.origen)}
                 parametros={regla.parametros}
               />
             </section>
 
-            {ORIGENES_EN_EL_PERFIL.includes(regla.origen) && (
+            {destino === DestinoPublicacion.PrConfiguracion && (
+              <section
+                aria-labelledby="titulo-en-el-paquete"
+                className="flex flex-col gap-3 rounded-lg border border-linea bg-superficie p-4 text-sm"
+                data-seccion="en-el-paquete"
+              >
+                <h2 id="titulo-en-el-paquete" className="text-base font-medium">
+                  En el paquete
+                </h2>
+                <p>{enElPaquete.enElArchivo}</p>
+                {enElPaquete.pedido && (
+                  <p className={enElPaquete.tono === "error" ? "text-error" : enElPaquete.tono === "alerta" ? "text-[var(--estado-revisar)]" : undefined}>
+                    {enElPaquete.pedido}
+                  </p>
+                )}
+                {enElPaquete.error && <p className="text-tenue [overflow-wrap:anywhere]">{enElPaquete.error}</p>}
+              </section>
+            )}
+
+            {destino === DestinoPublicacion.PerfilSonar && (
               <section
                 aria-labelledby="titulo-en-sonar"
                 className="flex flex-col gap-3 rounded-lg border border-linea bg-superficie p-4 text-sm"

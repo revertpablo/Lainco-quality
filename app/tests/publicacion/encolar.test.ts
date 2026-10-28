@@ -2,12 +2,13 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import type { Db } from "@/db/cliente";
-import { EstadoPublicacion, Estado, Origen, Rol, TipoDesvio, type Estado as TipoEstado } from "@/dominio/valores";
+import { DestinoPublicacion, EstadoPublicacion, Estado, Origen, Rol, TipoDesvio, type Estado as TipoEstado } from "@/dominio/valores";
 
 /**
  * Encolar la publicación al decidir (entrega 6.2, paso 3): `aplicarTransicion` agrega la
- * fila de `publicacion` en la misma transacción que la decisión, solo cuando una regla de
- * Sonar entra a Incorporada o sale.
+ * fila de `publicacion` en la misma transacción que la decisión, solo cuando una regla
+ * entra a Incorporada o sale: las de Sonar, al perfil; las propias, al PR de configuración
+ * (entrega 6.4, paso 4).
  *
  * Criterio del paso: "Incorporar crea una publicación pendiente; retirar también; un
  * descarte masivo desde Pendiente no crea ninguna; si la transición falla, no queda nada
@@ -62,7 +63,15 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
           async regla(estado, origen = Origen.Sonar) {
             const [creada] = await tx
               .insert(regla)
-              .values({ origen, clave: `${PREFIJO}${++numero}`, lenguaje: "cs", nombre: "x", hashDescripcion: "x" })
+              .values({
+                origen,
+                clave: `${PREFIJO}${++numero}`,
+                lenguaje: "cs",
+                nombre: "x",
+                hashDescripcion: "x",
+                // Las propias traen la severidad del descriptor (entrega 6.4, R3).
+                severidadDefault: origen === Origen.Sonar ? "MAJOR" : "warning",
+              })
               .returning({ id: regla.id });
             await tx.insert(estadoRegla).values({ reglaId: creada.id, estado });
             return creada.id;
@@ -167,8 +176,51 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
       expect(await c.publicacionesDe(id)).toEqual([]);
     });
 
-    enTransaccion("una regla que no es de Sonar no se publica en el perfil", async (c) => {
+    enTransaccion("las reglas de Sonar se publican en el perfil", async (c) => {
+      const id = await c.regla(Estado.ARevisar);
+
+      await incorporar(c, id);
+
+      expect((await c.publicacionesDe(id)).map((p) => p.destino)).toEqual([DestinoPublicacion.PerfilSonar]);
+    });
+
+    enTransaccion("una regla propia se incorpora con su severidad y encola el PR de configuración (entrega 6.4)", async (c) => {
       const id = await c.regla(Estado.ARevisar, Origen.Roslyn);
+
+      const resultado = await aplicarTransicion(c.tx, c.decisor, {
+        reglas: [{ id, desde: Estado.ARevisar }],
+        hacia: Estado.Incorporada,
+        justificacion: "La queremos",
+        masiva: false,
+      });
+
+      expect(resultado.ok).toBe(true);
+      if (!resultado.ok) return;
+      const [pub] = await c.publicacionesDe(id);
+      expect(pub).toMatchObject({
+        destino: DestinoPublicacion.PrConfiguracion,
+        estado: EstadoPublicacion.Pendiente,
+        decisionId: resultado.decisiones[0].decisionId,
+      });
+      expect(resultado.publicaciones).toEqual([pub.id]);
+      // La severidad es la de la regla, y queda en el estado y en la decisión.
+      const [actual] = await c.tx.select().from(estadoRegla).where(eq(estadoRegla.reglaId, id));
+      expect(actual.severidadAsignada).toBe("warning");
+      const [registrada] = await c.tx.select().from(decision).where(eq(decision.reglaId, id));
+      expect(registrada.severidad).toBe("warning");
+    });
+
+    enTransaccion("a una regla propia no se le elige la severidad", async (c) => {
+      const id = await c.regla(Estado.ARevisar, Origen.Roslyn);
+
+      const resultado = await incorporar(c, id);
+
+      expect(resultado).toMatchObject({ ok: false, tipo: "rechazada", rechazos: [{ reglaId: id, motivos: ["severidadNoSeElige"] }] });
+      expect(await c.publicacionesDe(id)).toEqual([]);
+    });
+
+    enTransaccion("una norma de IA no se publica en ningún lado", async (c) => {
+      const id = await c.regla(Estado.ARevisar, Origen.NormaIa);
 
       const resultado = await incorporar(c, id);
 
@@ -176,19 +228,25 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
       expect(await c.publicacionesDe(id)).toEqual([]);
     });
 
-    enTransaccion("en un retiro masivo, una publicación por cada regla de Sonar", async (c) => {
+    enTransaccion("en un retiro masivo, una publicación por regla, cada una en su destino", async (c) => {
       const deSonar = [await c.regla(Estado.Incorporada), await c.regla(Estado.Incorporada)];
       const propia = await c.regla(Estado.Incorporada, Origen.Roslyn);
+      const norma = await c.regla(Estado.Incorporada, Origen.NormaIa);
 
       const resultado = await aplicarTransicion(c.tx, c.decisor, {
-        reglas: [...deSonar, propia].map((id) => ({ id, desde: Estado.Incorporada })),
+        reglas: [...deSonar, propia, norma].map((id) => ({ id, desde: Estado.Incorporada })),
         hacia: Estado.Descartada,
         justificacion: "Retiro en lote",
         masiva: true,
       });
 
-      expect(resultado.ok && resultado.publicaciones).toHaveLength(2);
-      expect((await c.publicacionesDe(...deSonar, propia)).map((p) => p.reglaId).sort()).toEqual([...deSonar].sort());
+      expect(resultado.ok && resultado.publicaciones).toHaveLength(3);
+      const publicaciones = await c.publicacionesDe(...deSonar, propia, norma);
+      expect(Object.fromEntries(publicaciones.map((p) => [p.reglaId, p.destino]))).toEqual({
+        [deSonar[0]]: DestinoPublicacion.PerfilSonar,
+        [deSonar[1]]: DestinoPublicacion.PerfilSonar,
+        [propia]: DestinoPublicacion.PrConfiguracion,
+      });
     });
   });
 

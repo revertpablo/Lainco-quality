@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Estado } from "@/dominio/valores";
-import { describirEstadoEnSonar, type UltimaPublicacion } from "@/ui/publicacion";
+import { describirEstadoEnPaquete, describirEstadoEnSonar, type UltimaPublicacion } from "@/ui/publicacion";
 
 /** En qué está una regla en Sonar, para su detalle (entrega 6.2, paso 6). */
 
@@ -39,5 +39,38 @@ describe("estado de una regla en Sonar", () => {
     ],
   ])("%#", (ultima, estado, texto, tono, error) => {
     expect(describirEstadoEnSonar(ultima, estado as Estado, fecha)).toEqual({ texto, tono, error });
+  });
+});
+
+describe("estado de una regla propia en el paquete (entrega 6.4, paso 4)", () => {
+  it.each<[UltimaPublicacion | null, Estado, string | null, string, string | null, string]>([
+    [null, Estado.Incorporada, "warning", "En el .globalconfig va con severidad Warning.", null, "normal"],
+    [null, Estado.ARevisar, null, "En el .globalconfig va apagada (none).", null, "normal"],
+    [
+      publicacion({ estado: "pendiente", intentos: 0, publicadaEn: null }),
+      Estado.Incorporada,
+      "warning",
+      "En el .globalconfig va con severidad Warning.",
+      "Pendiente de pasar al PR de configuración.",
+      "alerta",
+    ],
+    [
+      publicacion({ accion: "desactivar" }),
+      Estado.Descartada,
+      null,
+      "En el .globalconfig va apagada (none).",
+      "Incluida en el PR de configuración el 2026-10-20",
+      "normal",
+    ],
+    [
+      publicacion({ estado: "fallida", intentos: 5, publicadaEn: null }),
+      Estado.Incorporada,
+      "warning",
+      "En el .globalconfig va con severidad Warning.",
+      "No se pudo actualizar el PR de configuración (5 intentos).",
+      "error",
+    ],
+  ])("%#", (ultima, estado, severidad, enElArchivo, pedido, tono) => {
+    expect(describirEstadoEnPaquete(ultima, estado, severidad, fecha)).toEqual({ enElArchivo, pedido, tono, error: null });
   });
 });

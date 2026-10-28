@@ -10,8 +10,9 @@ import { Estado, Origen, Rol, type Estado as TipoEstado } from "@/dominio/valore
  *
  * Criterio del paso: "Un intento de incorporación masiva se rechaza."
  *
- * Necesita DATABASE_URL_PRUEBAS (ver tests/auth/usuarios.test.ts). Usa reglas propias con
- * clave `PRUEBA-TRANS-` y un analista `prueba-trans-`; los borra al empezar y al terminar.
+ * Necesita DATABASE_URL_PRUEBAS (ver tests/auth/usuarios.test.ts). Usa reglas de origen
+ * normaIa (ningún test lo sincroniza y, como en Sonar, al incorporar se elige la severidad)
+ * con clave `PRUEBA-TRANS-` y un analista `prueba-trans-`; los borra al empezar y al terminar.
  */
 
 const url = process.env.DATABASE_URL_PRUEBAS;
@@ -44,7 +45,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
       const [creada] = await db()
         .insert(regla)
         .values({
-          origen: Origen.Eslint,
+          origen: Origen.NormaIa,
           clave: `${PREFIJO}${i}`,
           lenguaje: "cs",
           nombre: `Regla de prueba ${i}`,

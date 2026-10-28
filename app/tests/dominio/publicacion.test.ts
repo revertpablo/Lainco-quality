@@ -1,27 +1,39 @@
 import { describe, expect, it } from "vitest";
 
-import { accionEnSonar, cambiaElPerfil, despuesDeFallar, MAXIMO_DE_INTENTOS } from "@/dominio/publicacion";
+import { accionEnSonar, despuesDeFallar, destinoDeLaDecision, destinoDePublicacion, MAXIMO_DE_INTENTOS } from "@/dominio/publicacion";
 import { TRANSICIONES } from "@/dominio/transiciones";
-import { Estado, Origen } from "@/dominio/valores";
+import { DestinoPublicacion, Estado, Origen } from "@/dominio/valores";
 
 /**
- * Qué decisiones se publican en el Quality Profile de Sonar (entrega 6.2, paso 3).
- * Se recorre la tabla de transiciones entera, como en los tests del ciclo de vida.
+ * Qué decisiones se publican y dónde: las reglas de Sonar en el Quality Profile (entrega
+ * 6.2, paso 3) y las propias en el PR de configuración (entrega 6.4, paso 4). Se recorre
+ * la tabla de transiciones entera, como en los tests del ciclo de vida.
  */
 
 const { Incorporada } = Estado;
 
-describe("qué decisiones cambian el perfil de Sonar", () => {
-  it.each(TRANSICIONES.map((t) => [t.desde, t.hacia] as const))(
-    "%s → %s de una regla de Sonar",
-    (desde, hacia) => {
-      const esperado = desde === Incorporada || hacia === Incorporada;
-      expect(cambiaElPerfil(Origen.Sonar, desde, hacia)).toBe(esperado);
-    },
-  );
+describe("dónde se publica cada origen", () => {
+  it.each([
+    [Origen.Sonar, DestinoPublicacion.PerfilSonar],
+    [Origen.Roslyn, DestinoPublicacion.PrConfiguracion],
+    [Origen.Eslint, DestinoPublicacion.PrConfiguracion],
+    // Las normas de IA no se publican en ningún lado: las aplica el revisor IA (Fase 7).
+    [Origen.NormaIa, null],
+  ])("%s → %s", (origen, destino) => {
+    expect(destinoDePublicacion(origen)).toBe(destino);
+  });
+});
+
+describe("qué decisiones se publican", () => {
+  it.each(TRANSICIONES.map((t) => [t.desde, t.hacia] as const))("%s → %s", (desde, hacia) => {
+    const publica = desde === Incorporada || hacia === Incorporada;
+    expect(destinoDeLaDecision(Origen.Sonar, desde, hacia)).toBe(publica ? DestinoPublicacion.PerfilSonar : null);
+    expect(destinoDeLaDecision(Origen.Roslyn, desde, hacia)).toBe(publica ? DestinoPublicacion.PrConfiguracion : null);
+    expect(destinoDeLaDecision(Origen.NormaIa, desde, hacia)).toBeNull();
+  });
 
   it("de las 12 transiciones de la tabla, publican las 4 que entran a Incorporada o salen", () => {
-    const publican = TRANSICIONES.filter((t) => cambiaElPerfil(Origen.Sonar, t.desde, t.hacia)).map((t) => `${t.desde} → ${t.hacia}`);
+    const publican = TRANSICIONES.filter((t) => destinoDeLaDecision(Origen.Sonar, t.desde, t.hacia)).map((t) => `${t.desde} → ${t.hacia}`);
 
     expect(TRANSICIONES).toHaveLength(12);
     expect(publican).toEqual([
@@ -31,15 +43,6 @@ describe("qué decisiones cambian el perfil de Sonar", () => {
       "incorporada → enPrueba",
     ]);
   });
-
-  it.each([Origen.Roslyn, Origen.Eslint, Origen.NormaIa])(
-    "las reglas de %s no se publican en el perfil, aunque entren a Incorporada",
-    (origen) => {
-      for (const t of TRANSICIONES) {
-        expect(cambiaElPerfil(origen, t.desde, t.hacia)).toBe(false);
-      }
-    },
-  );
 });
 
 describe("qué se le pide a Sonar", () => {

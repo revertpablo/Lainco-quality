@@ -1,4 +1,4 @@
-import { Estado, Rol } from "./valores";
+import { Estado, Origen, Rol } from "./valores";
 
 /**
  * Máquina de estados del ciclo de vida de una regla (docs/FASE-6.md, sección 4).
@@ -160,7 +160,8 @@ export type MotivoDeRechazo =
   | "faltaSeveridad"
   | "faltanResultadosDePrueba"
   | "noAdmiteOperacionMasiva"
-  | "parametroDesconocido";
+  | "parametroDesconocido"
+  | "severidadNoSeElige";
 
 /** Texto para el usuario de cada motivo de rechazo. */
 export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
@@ -171,13 +172,27 @@ export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
   faltanResultadosDePrueba: "La regla todavía no tiene resultados de prueba.",
   noAdmiteOperacionMasiva: "Este cambio de estado se hace de a una regla, no en una operación masiva.",
   parametroDesconocido: "Se eligió un valor para un parámetro que la regla no tiene.",
+  severidadNoSeElige: "La severidad de una regla propia la fija la regla: no se elige al incorporarla.",
 };
+
+/**
+ * Orígenes cuyas reglas traen su severidad (entrega 6.4, decisión R3): las reglas propias
+ * se incorporan con la severidad por defecto de su descriptor, sin elegirla.
+ */
+export const ORIGENES_CON_SEVERIDAD_DE_LA_REGLA: readonly Origen[] = [Origen.Roslyn, Origen.Eslint];
+
+/** Al incorporar una regla de este origen, ¿se elige la severidad? */
+export function seEligeLaSeveridad(origen: Origen): boolean {
+  return !ORIGENES_CON_SEVERIDAD_DE_LA_REGLA.includes(origen);
+}
 
 export interface SolicitudDeTransicion {
   desde: Estado;
   hacia: Estado;
   /** Rol de quien pide el cambio. */
   rol: Rol;
+  /** Origen de la regla. Sin valor, se valida como una de Sonar. */
+  origen?: Origen;
   justificacion?: string | null;
   severidad?: string | null;
   /** Es parte de una operación masiva. */
@@ -263,8 +278,13 @@ export function validarTransicion(solicitud: SolicitudDeTransicion): ResultadoDe
     motivos.push("faltaJustificacion");
   }
 
-  if (transicion.requiereSeveridad && !tieneTexto(solicitud.severidad)) {
-    motivos.push("faltaSeveridad");
+  if (transicion.requiereSeveridad) {
+    const seElige = seEligeLaSeveridad(solicitud.origen ?? Origen.Sonar);
+    if (seElige && !tieneTexto(solicitud.severidad)) {
+      motivos.push("faltaSeveridad");
+    } else if (!seElige && tieneTexto(solicitud.severidad)) {
+      motivos.push("severidadNoSeElige");
+    }
   }
 
   if (transicion.requiereResultadosDePrueba && !solicitud.resultadosDePruebaDisponibles) {

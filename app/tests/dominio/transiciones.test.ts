@@ -7,7 +7,7 @@ import {
   type MotivoDeRechazo,
   type SolicitudDeTransicion,
 } from "@/dominio/transiciones";
-import { Estado, Rol } from "@/dominio/valores";
+import { Estado, Origen, Rol } from "@/dominio/valores";
 
 /**
  * Máquina de estados del ciclo de vida de una regla (entrega 6.1, paso 3).
@@ -235,6 +235,24 @@ describe("parámetros", () => {
   });
 });
 
+describe("reglas propias: la severidad la dice la regla (entrega 6.4, decisión R3)", () => {
+  it.each([Origen.Roslyn, Origen.Eslint])("una regla de %s se incorpora sin elegir severidad", (origen) => {
+    expect(completa(ARevisar, Incorporada, { origen, severidad: null }).valida).toBe(true);
+  });
+
+  it.each([Origen.Roslyn, Origen.Eslint])("en una regla de %s no se puede elegir severidad", (origen) => {
+    expect(motivos(completa(ARevisar, Incorporada, { origen, severidad: "MAJOR" }))).toEqual(["severidadNoSeElige"]);
+  });
+
+  it("una regla de Sonar sigue necesitando la severidad", () => {
+    expect(motivos(completa(ARevisar, Incorporada, { origen: Origen.Sonar, severidad: null }))).toEqual(["faltaSeveridad"]);
+  });
+
+  it("fuera de Incorporada la severidad no cuenta", () => {
+    expect(completa(ARevisar, Descartada, { origen: Origen.Roslyn, severidad: null }).valida).toBe(true);
+  });
+});
+
 describe("rechazos", () => {
   it("informan todos los motivos juntos, no solo el primero", () => {
     const resultado = validarTransicion({
@@ -264,6 +282,7 @@ describe("rechazos", () => {
       "faltanResultadosDePrueba",
       "noAdmiteOperacionMasiva",
       "parametroDesconocido",
+      "severidadNoSeElige",
     ];
 
     for (const motivo of todos) {

@@ -1,7 +1,7 @@
 import { eq, inArray, like, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import { EstadoPublicacion, Estado, Origen, Rol, type Estado as TipoEstado, type Lenguaje } from "@/dominio/valores";
+import { DestinoPublicacion, EstadoPublicacion, Estado, Origen, Rol, type Estado as TipoEstado, type Lenguaje } from "@/dominio/valores";
 import { ErrorDeSonar } from "@/sonar/http";
 import type { Activacion, PerfilDeSonar } from "@/sonar/perfiles";
 
@@ -241,6 +241,18 @@ describe.skipIf(!url)("publicar en Sonar lo pendiente", async () => {
       expect((await fila(otra.publicacionId)).estado).toBe(EstadoPublicacion.Pendiente);
     });
 
+    it("las del PR de configuración (reglas propias, entrega 6.4) no se publican en Sonar", async () => {
+      const p = await pendiente(Estado.Incorporada);
+      await db().update(publicacion).set({ destino: DestinoPublicacion.PrConfiguracion }).where(eq(publicacion.id, p.publicacionId));
+      const { sonar, llamadas } = sonarFalso();
+
+      const resumen = await publicar(sonar, [p.publicacionId], { sinEsperar: true });
+
+      expect(resumen).toMatchObject({ publicadas: 0, fallidas: 0, reprogramadas: 0 });
+      expect(llamadas).toEqual([]);
+      expect((await fila(p.publicacionId)).estado).toBe(EstadoPublicacion.Pendiente);
+    });
+
     it("una ya publicada no se vuelve a publicar", async () => {
       const p = await pendiente(Estado.Incorporada);
       const { sonar, llamadas } = sonarFalso();
@@ -385,6 +397,13 @@ describe.skipIf(!url)("publicar en Sonar lo pendiente", async () => {
 
       expect(await reintentarFallidas(db(), [p.publicacionId])).toEqual([]);
       expect((await fila(p.publicacionId)).estado).toBe(EstadoPublicacion.Fallida);
+    });
+
+    it("no toca las del PR de configuración: esas se reintentan con su PR (entrega 6.4)", async () => {
+      const p = await fallida();
+      await db().update(publicacion).set({ destino: DestinoPublicacion.PrConfiguracion }).where(eq(publicacion.id, p.publicacionId));
+
+      expect(await reintentarFallidas(db(), [p.publicacionId])).toEqual([]);
     });
 
     it("solo las pedidas, y nunca una que no esté fallida", async () => {

@@ -70,6 +70,18 @@ export const EstadoPublicacion = {
 } as const;
 export type EstadoPublicacion = (typeof EstadoPublicacion)[keyof typeof EstadoPublicacion];
 
+/**
+ * Dónde se publica una decisión (entrega 6.4, paso 4). Lo decide el origen de la regla
+ * (src/dominio/publicacion.ts).
+ */
+export const DestinoPublicacion = {
+  /** El Quality Profile de Sonar del lenguaje (entrega 6.2). */
+  PerfilSonar: "perfilSonar",
+  /** El PR que actualiza el `.globalconfig` del paquete de reglas propias (decisiones R4 y R5). */
+  PrConfiguracion: "prConfiguracion",
+} as const;
+export type DestinoPublicacion = (typeof DestinoPublicacion)[keyof typeof DestinoPublicacion];
+
 /** Qué se le pide a Sonar al publicar: la regla queda como dice la app. */
 export const AccionPublicacion = {
   /** Incorporada: activa en el perfil, con la severidad y los parámetros decididos. */

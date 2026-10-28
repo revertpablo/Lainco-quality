@@ -81,7 +81,7 @@ export async function obtenerRegla(db: Db, id: string): Promise<DetalleDeRegla |
     ...fila,
     impactos: fila.impactos ?? [],
     parametros: fila.parametros ?? [],
-    descripcion: prepararDescripcion(fila.descripcion, fila.lenguaje),
+    descripcion: prepararDescripcion(fila.descripcion, fila.lenguaje, fila.origen),
     avisosPendientes,
   };
 }
