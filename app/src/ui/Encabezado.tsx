@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { signOut } from "@/auth";
 import type { UsuarioActual } from "@/auth/sesion";
-import { obtenerDb } from "@/db/cliente";
-import { aviso, estadoSincronizacion, sincronizacion, usuario as tablaUsuario } from "@/db/esquema";
+import { obtenerDb, type Db } from "@/db/cliente";
+import { aviso, sincronizacion, usuario as tablaUsuario } from "@/db/esquema";
 import { Origen } from "@/dominio/valores";
 import { pendientesDeAtencion } from "@/publicacion/consultas";
 import { sincronizarAhora } from "@/sincronizacion/acciones";
@@ -26,30 +26,41 @@ const SECCIONES = [
 ] as const;
 export type Seccion = (typeof SECCIONES)[number]["codigo"];
 
+/** Los orígenes que se sincronizan, en el orden en que se muestran. */
+const ORIGENES_SINCRONIZADOS = [
+  { origen: Origen.Sonar, nombre: "Sonar" },
+  { origen: Origen.Roslyn, nombre: "Roslyn" },
+] as const;
+
+/** La última corrida de un origen, termine bien o no. */
+async function ultimaSincronizacion(db: Db, origen: Origen) {
+  const [ultima] = await db
+    .select({
+      iniciadaEn: sincronizacion.iniciadaEn,
+      estado: sincronizacion.estado,
+      nuevas: sincronizacion.nuevas,
+      modificadas: sincronizacion.modificadas,
+      deprecadas: sincronizacion.deprecadas,
+      error: sincronizacion.error,
+      version: sincronizacion.version,
+      disparadaPor: tablaUsuario.nombre,
+    })
+    .from(sincronizacion)
+    .leftJoin(tablaUsuario, eq(tablaUsuario.id, sincronizacion.disparadaPorId))
+    .where(eq(sincronizacion.origen, origen))
+    .orderBy(desc(sincronizacion.iniciadaEn))
+    .limit(1);
+  return ultima ?? null;
+}
+
 /**
  * Encabezado de las pantallas con sesión: las secciones, quién entró, la sincronización
- * con Sonar y salir.
+ * de cada origen (Sonar y Roslyn) y salir.
  */
 export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual; seccion: Seccion }) {
   const db = obtenerDb();
-  const [[ultima], [{ avisos }], atencion] = await Promise.all([
-    db
-      .select({
-        iniciadaEn: sincronizacion.iniciadaEn,
-        estado: sincronizacion.estado,
-        estadoDescripcion: estadoSincronizacion.descripcion,
-        nuevas: sincronizacion.nuevas,
-        modificadas: sincronizacion.modificadas,
-        deprecadas: sincronizacion.deprecadas,
-        error: sincronizacion.error,
-        disparadaPor: tablaUsuario.nombre,
-      })
-      .from(sincronizacion)
-      .innerJoin(estadoSincronizacion, eq(estadoSincronizacion.codigo, sincronizacion.estado))
-      .leftJoin(tablaUsuario, eq(tablaUsuario.id, sincronizacion.disparadaPorId))
-      .where(eq(sincronizacion.origen, Origen.Sonar))
-      .orderBy(desc(sincronizacion.iniciadaEn))
-      .limit(1),
+  const [ultimas, [{ avisos }], atencion] = await Promise.all([
+    Promise.all(ORIGENES_SINCRONIZADOS.map(({ origen }) => ultimaSincronizacion(db, origen))),
     db.select({ avisos: count() }).from(aviso).where(and(isNull(aviso.resueltoEn))),
     pendientesDeAtencion(db),
   ]);
@@ -98,19 +109,27 @@ export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual;
         </div>
 
         <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tenue" data-seccion="sincronizacion">
-          <span data-ultima={ultima?.estado}>
-            {ultima ? (
-              <>
-                Sonar sincronizado el {fecha.format(ultima.iniciadaEn)}
-                {ultima.disparadaPor ? ` por ${ultima.disparadaPor}` : ""}:{" "}
-                <span className={ultima.estado === "error" ? "text-error" : undefined}>
-                  {ultima.estado === "ok" ? conMinuscula(describirResumen(ultima)) : describirResumen(ultima)}
-                </span>
-              </>
-            ) : (
-              "Sonar todavía no se sincronizó."
-            )}
-          </span>
+          {ORIGENES_SINCRONIZADOS.map(({ origen, nombre }, i) => {
+            const ultima = ultimas[i];
+            return (
+              <span key={origen} data-origen={origen} data-ultima={ultima?.estado}>
+                {ultima ? (
+                  <>
+                    {nombre}
+                    {ultima.version ? ` (${ultima.version})` : ""} sincronizado el {fecha.format(ultima.iniciadaEn)}
+                    {ultima.disparadaPor ? ` por ${ultima.disparadaPor}` : ""}:{" "}
+                    <span className={ultima.estado === "error" ? "text-error" : undefined}>
+                      {ultima.estado === "ok"
+                        ? conMinuscula(describirResumen(ultima, nombre))
+                        : describirResumen(ultima, nombre)}
+                    </span>
+                  </>
+                ) : (
+                  `${nombre} todavía no se sincronizó.`
+                )}
+              </span>
+            );
+          })}
           {avisos > 0 && <span>{avisos === 1 ? "1 aviso sin resolver" : `${avisos} avisos sin resolver`}</span>}
           <BotonSincronizar accion={sincronizarAhora} />
         </div>

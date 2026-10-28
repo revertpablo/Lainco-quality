@@ -15,7 +15,7 @@ import {
  * `publicacion` y los desvíos. Lo que se prueba son las restricciones de la base, que
  * cuidan los datos aunque el código tenga un error.
  *
- * Necesita DATABASE_URL_PRUEBAS. Usa reglas `PRUEBA-PUB-` (origen roslyn) y el usuario
+ * Necesita DATABASE_URL_PRUEBAS. Usa reglas `PRUEBA-PUB-` (origen eslint, que ningún test sincroniza) y el usuario
  * `prueba-pub-`, y los borra al terminar.
  */
 
@@ -74,7 +74,7 @@ describe.skipIf(!url)("tablas de la publicación a Sonar", async () => {
     for (const clave of ["R1", "R2"]) {
       const [creada] = await db()
         .insert(regla)
-        .values({ origen: Origen.Roslyn, clave: `${PREFIJO}${clave}`, nombre: clave, lenguaje: "cs", hashDescripcion: "x" })
+        .values({ origen: Origen.Eslint, clave: `${PREFIJO}${clave}`, nombre: clave, lenguaje: "cs", hashDescripcion: "x" })
         .returning({ id: regla.id });
       await db().insert(estadoRegla).values({ reglaId: creada.id, estado: Estado.ARevisar });
       ids.push(creada.id);
@@ -158,7 +158,7 @@ describe.skipIf(!url)("tablas de la publicación a Sonar", async () => {
     it("se borra con su regla", async () => {
       const [creada] = await db()
         .insert(regla)
-        .values({ origen: Origen.Roslyn, clave: `${PREFIJO}BORRAR`, nombre: "x", lenguaje: "cs", hashDescripcion: "x" })
+        .values({ origen: Origen.Eslint, clave: `${PREFIJO}BORRAR`, nombre: "x", lenguaje: "cs", hashDescripcion: "x" })
         .returning({ id: regla.id });
       const [d] = await db()
         .insert(desvio)

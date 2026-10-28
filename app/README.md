@@ -124,6 +124,7 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
 | `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
 | `0006_reconciliacion` | Entrega 6.2, paso 5: `reconciliacion`, el log de cada corrida (estado, desvíos abiertos, nuevos y resueltos, advertencias). |
+| `0007_version_sincronizada` | Entrega 6.4, paso 3: `sincronizacion.version`, qué versión del paquete trajo una corrida de reglas propias (`Lainco.Analyzers 0.1.0`). |
 
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
 agregan con su propia migración cuando se implementan.
@@ -631,6 +632,57 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 Si la función se corta a mitad de camino (por ejemplo, por el límite de tiempo), la
 corrida queda "En curso" para siempre en `sincronizacion`; la siguiente corre igual.
 
+## Sincronización de las reglas Roslyn
+
+Entrega 6.4, paso 3. Las reglas propias de `Lainco.Analyzers` llegan al inventario solas:
+el workflow `publicar-analyzers.yml` adjunta a cada release el catálogo
+`reglas-roslyn.json` (formato en `docs/catalogo-de-reglas.md`), y el job
+`sincronizar-roslyn` (`src/sincronizacion/sincronizarRoslyn.ts`) lo lee del **último
+release** (el último publicado que no es versión previa) y lo sincroniza con la misma
+comparación y la misma escritura que Sonar (`src/sincronizacion/corrida.ts`):
+
+| Caso | Qué hace |
+|---|---|
+| Una versión trae una regla nueva | La crea en **Pendiente de analizar**. |
+| Cambió la documentación (`docs/rules/<ID>.md`) o la severidad por defecto | La marca **modificada** (y avisa si estaba Incorporada o En prueba). |
+| Cambió el título o la categoría | La actualiza, sin marcarla. |
+| La regla ya no está en el catálogo | Se eliminó del paquete: queda **deprecada** (y avisa si estaba Incorporada). Si vuelve, se reactiva. |
+
+Cada regla Roslyn queda con el título como nombre, la documentación completa (markdown)
+como descripción, la severidad del descriptor con las palabras del `.globalconfig`
+(`warning`) y la categoría como tag (`diseño`); sin tipo, impactos ni parámetros, que son
+de Sonar. La corrida guarda qué versión trajo (`sincronizacion.version`), y el encabezado
+la muestra.
+
+Corre todos los días a las 9:30 UTC (`GET /api/cron/sincronizar-roslyn`, con el mismo
+`CRON_SECRET`) y con **Sincronizar ahora**, que sincroniza Sonar y Roslyn a la vez: si
+falta la configuración de uno, ese dice por qué y el otro se sincroniza igual. Cada origen
+tiene su propio lock.
+
+La corrida termina con error, sin tocar nada, si el repositorio no tiene releases, si el
+último no trae el catálogo, si el catálogo no es válido (o tiene un formato que la app no
+conoce) o si su versión no es la del tag del release.
+
+### GitHub
+
+Cliente en `src/github/cliente.ts` (último release y descarga de assets, con reintentos y
+sin el token en los mensajes); configuración en `src/github/configuracion.ts`:
+
+| Variable | Qué es |
+|---|---|
+| `GITHUB_REPOSITORIO` | `revertpablo/Lainco-quality`. |
+| `LAINCO_GITHUB_TOKEN` | Token **fine-grained** (decisión R2), limitado a ese repositorio. Para sincronizar alcanza con *Contents: Read-only*; el PR automático (paso 6) va a necesitar *Contents* y *Pull requests* de lectura y escritura, así que conviene crearlo ya con esos permisos. Vence (máximo un año). Secreto. |
+| `GITHUB_API_URL` | Opcional. Por defecto, `https://api.github.com`. |
+
+Crearlo: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained
+tokens → *Generate new token*; *Repository access: Only select repositories* →
+`Lainco-quality`.
+
+```powershell
+vercel env add GITHUB_REPOSITORIO production
+vercel env add LAINCO_GITHUB_TOKEN production
+```
+
 ## Publicación en Sonar
 
 Entrega 6.2. Lo que se decide en la app se publica en el Quality Profile de cada lenguaje
@@ -750,7 +802,9 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/sonar/` | Cliente de Sonar, con respuestas armadas y con la grabación real. | Nada. |
 | `tests/transiciones/api.test.ts` | Forma de los pedidos y respuestas de la API. | Nada. |
 | `tests/auth/` | Ingreso: alta, duplicados, ingresos simultáneos, bajas. | Base de pruebas. |
-| `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. | Base de pruebas. |
+| `tests/sincronizacion/` | Sincronización completa con la grabación: la primera corrida carga las 1.123 reglas, la segunda no cambia nada, cambios y avisos, corridas simultáneas. La de Roslyn, con el catálogo del release v0.1.0 y versiones cambiadas a partir de él. | Base de pruebas. |
+| `tests/catalogo/` | El catálogo de reglas propias: qué se acepta y cómo se traduce para la sincronización. | Nada. |
+| `tests/github/` | Cliente de GitHub: último release, descarga de assets, errores y reintentos; configuración. | Nada. |
 | `tests/transiciones/aplicarTransicion.test.ts` | Cambios de estado individuales y masivos, todo o nada, estado cambiado, concurrencia. | Base de pruebas. |
 | `tests/inventario/` | Filtros y orden del inventario. | Base de pruebas. |
 | `tests/vistas/` | Vistas guardadas: guardar y recuperar, actualizar, compartir, borrar. | Base de pruebas. |
@@ -775,8 +829,10 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por
-error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar,
-los avisos y las sincronizaciones de esa base**. Los demás crean sus propios datos (con
+error en la base de desarrollo: **los de sincronización borran todas las reglas de Sonar y
+de Roslyn, sus avisos y sus sincronizaciones de esa base**. Por eso los demás usan reglas
+de origen ESLint, que ningún test sincroniza todavía (cuando exista la sincronización de
+ESLint, en la Fase 5, habrá que revisarlo). Crean sus propios datos (con
 prefijos `prueba-ingreso-`, `PRUEBA-TRANS-`, `PRUEBA-INV-`, `prueba-vistas-`, `PRUEBA-DET-`, `PRUEBA-TAB-`, `PRUEBA-PUB-`, `PRUEBA-PUBL-`, `PRUEBA-CON-`) y los borran al terminar; los
 que necesitan reglas de Sonar (`PRUEBA-ENC-`, `PRUEBA-REC-`) corren en una transacción que se
 descarta.
@@ -813,7 +869,7 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar y reconciliar-sonar. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
@@ -823,16 +879,18 @@ app/
 │   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
 │   ├── reconciliacion/  # Reconciliar el perfil de Sonar con la app, corregir desvíos y sus acciones.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.
-│   ├── sincronizacion/  # Job de sincronización con Sonar, acción del botón y resumen para el usuario.
+│   ├── catalogo/     # Formato del catálogo de reglas propias (docs/catalogo-de-reglas.md).
+│   ├── github/       # Cliente de la API de GitHub (releases) y su configuración.
+│   ├── sincronizacion/  # Una corrida de sincronización (corrida.ts), los jobs de Sonar y Roslyn, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
 │   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva, barra de estados del tablero.
 │   └── proxy.ts      # Sin sesión, a /ingresar.
 ├── scripts/          # grabar-respuestas-sonar.mts y grabar-perfiles-sonar.mts: graban respuestas reales para los tests.
 ├── tests/            # Tests (Vitest). Ver "Tests".
-│   └── fixtures/     # sonar/ y sonar-perfiles/: respuestas grabadas de SonarQube Cloud. Se commitean.
+│   └── fixtures/     # sonar/ y sonar-perfiles/: respuestas grabadas de SonarQube Cloud. roslyn/: el catálogo del release v0.1.0. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.
 ├── drizzle.config.ts
-├── vercel.json       # Cron de la sincronización.
+├── vercel.json       # Crons: sincronización, publicación y reconciliación.
 └── .env.example
 ```

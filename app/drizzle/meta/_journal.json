@@ -50,6 +50,13 @@
       "when": 1792500678929,
       "tag": "0006_reconciliacion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793213909762,
+      "tag": "0007_version_sincronizada",
+      "breakpoints": true
     }
   ]
 }

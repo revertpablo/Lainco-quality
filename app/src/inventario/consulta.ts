@@ -19,7 +19,7 @@ import {
 import type { Db } from "@/db/cliente";
 import { desvio, estado, estadoRegla, lenguaje, origen, publicacion, regla, sincronizacion } from "@/db/esquema";
 import type { Filtros } from "@/dominio/filtros";
-import { EstadoSincronizacion, Origen, type Estado, type Lenguaje, type Origen as TipoOrigen } from "@/dominio/valores";
+import { EstadoSincronizacion, type Estado, type Lenguaje, type Origen as TipoOrigen } from "@/dominio/valores";
 
 /**
  * Consultas del inventario de reglas (paso 8). Se traen todas las reglas que cumplen los
@@ -52,28 +52,33 @@ export interface FilaDeInventario {
 /** Severidades de Sonar de mayor a menor, para ordenar. */
 const SEVERIDADES_EN_ORDEN = ["BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO"];
 
-/** La última sincronización con Sonar que terminó bien: define qué es "nueva" y "modificada". */
-export async function ultimaSincronizacionOk(db: Db): Promise<string | null> {
-  const [ultima] = await db
-    .select({ id: sincronizacion.id })
+/**
+ * La última sincronización que terminó bien de cada origen (Sonar, Roslyn...): definen
+ * qué es "nueva" y "modificada". Una regla de Roslyn es nueva si llegó en la última
+ * sincronización de Roslyn, aunque después se haya sincronizado Sonar.
+ */
+export async function ultimasSincronizacionesOk(db: Db): Promise<string[]> {
+  const ultimas = await db
+    .selectDistinctOn([sincronizacion.origen], { id: sincronizacion.id })
     .from(sincronizacion)
-    .where(and(eq(sincronizacion.origen, Origen.Sonar), eq(sincronizacion.estado, EstadoSincronizacion.Ok)))
-    .orderBy(desc(sincronizacion.iniciadaEn))
-    .limit(1);
-  return ultima?.id ?? null;
+    .where(eq(sincronizacion.estado, EstadoSincronizacion.Ok))
+    .orderBy(sincronizacion.origen, desc(sincronizacion.iniciadaEn));
+  return ultimas.map((u) => u.id);
 }
 
 export async function buscarReglas(
   db: Db,
   filtros: Filtros,
-  ultimaSincronizacionId: string | null,
+  ultimasSincronizaciones: readonly string[],
 ): Promise<FilaDeInventario[]> {
-  const nueva = ultimaSincronizacionId
-    ? sql<boolean>`coalesce(${regla.altaEnSincronizacionId} = ${ultimaSincronizacionId}, false)`
-    : sql<boolean>`false`;
-  const modificada = ultimaSincronizacionId
-    ? sql<boolean>`coalesce(${regla.modificadaEnSincronizacionId} = ${ultimaSincronizacionId}, false)`
-    : sql<boolean>`false`;
+  const nueva =
+    ultimasSincronizaciones.length > 0
+      ? sql<boolean>`coalesce(${inArray(regla.altaEnSincronizacionId, [...ultimasSincronizaciones])}, false)`
+      : sql<boolean>`false`;
+  const modificada =
+    ultimasSincronizaciones.length > 0
+      ? sql<boolean>`coalesce(${inArray(regla.modificadaEnSincronizacionId, [...ultimasSincronizaciones])}, false)`
+      : sql<boolean>`false`;
 
   const condiciones: (SQL | undefined)[] = [];
 

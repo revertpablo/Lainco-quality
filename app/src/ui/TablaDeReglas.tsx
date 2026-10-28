@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { destinosMasivos } from "@/dominio/transiciones";
-import type { Estado, Rol } from "@/dominio/valores";
+import { Origen, type Estado, type Rol } from "@/dominio/valores";
 import type { ResultadoDeOperacion } from "@/inventario/acciones";
 import type { FilaDeInventario } from "@/inventario/consulta";
 
@@ -274,8 +274,9 @@ function Encabezado({ columna }: { columna: Columna }) {
 function Marcas({ fila }: { fila: FilaDeInventario }) {
   const marcas = [
     fila.nueva && "nueva",
-    fila.modificada && "modificada en Sonar",
-    fila.deprecada && "deprecada en Sonar",
+    fila.modificada && (fila.origen === Origen.Sonar ? "modificada en Sonar" : "modificada en el paquete"),
+    // Las reglas propias no se deprecan: si ya no están en el paquete, se eliminaron.
+    fila.deprecada && (fila.origen === Origen.Sonar ? "deprecada en Sonar" : "eliminada del paquete"),
   ].filter(Boolean);
   // Lo que hay que mirar en la sección Sonar, aparte y en otro color.
   const alertas = [fila.sinPublicar && "sin publicar en Sonar", fila.conDesvio && "desvío en Sonar"].filter(Boolean);

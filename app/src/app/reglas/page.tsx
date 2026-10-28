@@ -4,7 +4,7 @@ import { exigirUsuario } from "@/auth/sesion";
 import { obtenerDb } from "@/db/cliente";
 import { aParametros, leerFiltros, type CampoDeOrden, type Filtros } from "@/dominio/filtros";
 import { aplicarOperacionMasiva } from "@/inventario/acciones";
-import { buscarReglas, opcionesDeFiltro, ultimaSincronizacionOk } from "@/inventario/consulta";
+import { buscarReglas, opcionesDeFiltro, ultimasSincronizacionesOk } from "@/inventario/consulta";
 import { Encabezado } from "@/ui/Encabezado";
 import { FormularioDeFiltros } from "@/ui/FormularioDeFiltros";
 import { PanelDeFiltros } from "@/ui/PanelDeFiltros";
@@ -35,9 +35,9 @@ async function Inventario({ searchParams }: Pick<PageProps<"/reglas">, "searchPa
   // proxy.ts ya dejó la URL en su forma canónica.
 
   const db = obtenerDb();
-  const ultima = await ultimaSincronizacionOk(db);
+  const ultimas = await ultimasSincronizacionesOk(db);
   const [filas, opciones, vistas] = await Promise.all([
-    buscarReglas(db, filtros, ultima),
+    buscarReglas(db, filtros, ultimas),
     opcionesDeFiltro(db),
     listarVistas(db, usuario.id),
   ]);

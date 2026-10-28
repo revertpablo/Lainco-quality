@@ -14,7 +14,7 @@ import type { Activacion, PerfilDeSonar } from "@/sonar/perfiles";
  * pendiente y el reintento la publica."
  *
  * Necesita DATABASE_URL_PRUEBAS. La publicación no mira el origen de la regla (eso lo
- * decide el encolado, paso 3), así que acá se usan reglas Roslyn `PRUEBA-PUBL-`, que los
+ * decide el encolado, paso 3), así que acá se usan reglas ESLint `PRUEBA-PUBL-`, que los
  * tests de sincronización no tocan, con sus publicaciones escritas directamente. Siempre
  * se publica por id, para no tomar las de otros tests que corren en paralelo.
  */
@@ -100,7 +100,7 @@ describe.skipIf(!url)("publicar en Sonar lo pendiente", async () => {
     const [r] = await db()
       .insert(regla)
       .values({
-        origen: Origen.Roslyn,
+        origen: Origen.Eslint,
         clave,
         lenguaje: opciones.lenguaje ?? "cs",
         nombre: clave,

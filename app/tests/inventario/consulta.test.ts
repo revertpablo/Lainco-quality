@@ -6,8 +6,8 @@ import { Estado, Origen } from "@/dominio/valores";
 
 /**
  * Consulta del inventario contra una base real (paso 8). Usa reglas propias con clave
- * `PRUEBA-INV-` (origen roslyn, para no chocar con los tests de sincronización, que
- * borran las de Sonar) y siempre filtra por ese texto, porque la base la comparten otros
+ * `PRUEBA-INV-` (origen eslint, para no chocar con los tests de sincronización, que tocan
+ * las de Sonar y Roslyn) y siempre filtra por ese texto, porque la base la comparten otros
  * tests en paralelo.
  */
 
@@ -42,7 +42,7 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
     await limpiar();
     const [corrida] = await db()
       .insert(sincronizacion)
-      .values({ origen: Origen.Sonar, error: "prueba-inventario" })
+      .values({ origen: Origen.Eslint, error: "prueba-inventario" })
       .returning({ id: sincronizacion.id });
     corridaId = corrida.id;
 
@@ -50,7 +50,7 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
       const [creada] = await db()
         .insert(regla)
         .values({
-          origen: Origen.Roslyn,
+          origen: Origen.Eslint,
           clave: `${PREFIJO}${r.clave}`,
           nombre: r.nombre,
           lenguaje: r.lenguaje,
@@ -72,8 +72,8 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
     await db().$client.end();
   });
 
-  async function claves(cambios: Partial<Filtros>, ultima: string | null = corridaId) {
-    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO, ...cambios }, ultima);
+  async function claves(cambios: Partial<Filtros>, ultimas: string[] = [corridaId]) {
+    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO, ...cambios }, ultimas);
     return filas.map((f) => f.clave.slice(PREFIJO.length));
   }
 
@@ -111,7 +111,14 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
   });
 
   it("sin sincronización previa, nada es nuevo ni modificado", async () => {
-    expect(await claves({ novedad: "nuevas" }, null)).toEqual([]);
+    expect(await claves({ novedad: "nuevas" }, [])).toEqual([]);
+  });
+
+  it("con la última sincronización de cada origen, es nueva la que llegó en cualquiera de ellas", async () => {
+    const deOtroOrigen = crypto.randomUUID();
+
+    expect(await claves({ novedad: "nuevas" }, [deOtroOrigen, corridaId])).toEqual(await claves({ novedad: "nuevas" }));
+    expect(await claves({ novedad: "nuevas" }, [deOtroOrigen])).toEqual([]);
   });
 
   it.each<[Partial<Filtros>, string[]]>([
@@ -127,12 +134,12 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
   });
 
   it("cada fila trae lo que muestra la tabla", async () => {
-    const [fila] = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: `${PREFIJO}A5` }, corridaId);
+    const [fila] = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: `${PREFIJO}A5` }, [corridaId]);
 
     expect(fila).toMatchObject({
       clave: `${PREFIJO}A5`,
       nombre: "Hotspot",
-      origen: "roslyn",
+      origen: "eslint",
       lenguaje: "ts",
       tipo: "SECURITY_HOTSPOT",
       severidad: "MAJOR",
@@ -159,7 +166,7 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
   });
 
   it("los ids sirven para operar sobre las reglas", async () => {
-    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO, tags: ["react"] }, corridaId);
+    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO, tags: ["react"] }, [corridaId]);
     const estados = await db()
       .select({ estado: estadoRegla.estado })
       .from(estadoRegla)

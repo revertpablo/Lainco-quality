@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describirResumen } from "@/sincronizacion/resumen";
+import { describirResumen, describirResumenes } from "@/sincronizacion/resumen";
 
 describe("resumen de una corrida para el usuario", () => {
   const ok = { estado: "ok", nuevas: 0, modificadas: 0, deprecadas: 0 };
@@ -19,5 +19,18 @@ describe("resumen de una corrida para el usuario", () => {
     expect(describirResumen({ ...ok, estado: "error", error: "Token vencido." })).toBe(
       "La sincronización falló: Token vencido.",
     );
+  });
+
+  it("sin cambios, nombra el origen", () => {
+    expect(describirResumen(ok, "Roslyn")).toBe("Sin cambios en Roslyn.");
+  });
+
+  it("el botón resume cada origen", () => {
+    expect(
+      describirResumenes([
+        { origen: "Sonar", resumen: { ...ok, nuevas: 3 } },
+        { origen: "Roslyn", resumen: { ...ok, estado: "error", error: "Faltan variables de entorno para GitHub." } },
+      ]),
+    ).toBe("Sonar: 3 reglas nuevas. Roslyn: la sincronización falló: Faltan variables de entorno para GitHub.");
   });
 });

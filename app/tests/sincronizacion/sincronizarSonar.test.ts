@@ -16,7 +16,7 @@ import { hayGrabacion, reglasGrabadas } from "../sonar/grabacion";
  * segunda no cambia nada."
  *
  * Necesita DATABASE_URL_PRUEBAS (ver tests/auth/usuarios.test.ts). **Borra todas las
- * reglas de Sonar, los avisos y las sincronizaciones de esa base.**
+ * reglas de Sonar, sus avisos y las sincronizaciones de Sonar de esa base.**
  */
 
 const url = process.env.DATABASE_URL_PRUEBAS;
@@ -40,15 +40,16 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
   }
 
   async function limpiar() {
-    await db().delete(aviso);
-    // Solo lo de reglas de Sonar: otros tests usan la misma base en paralelo. Primero las
-    // publicaciones, que apuntan a las decisiones y a los desvíos (entrega 6.2).
+    // Solo lo de Sonar: otros tests usan la misma base en paralelo (entre ellos, el de la
+    // sincronización de Roslyn). Primero las publicaciones, que apuntan a las decisiones y a
+    // los desvíos (entrega 6.2).
     const deSonar = db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Sonar));
+    await db().delete(aviso).where(inArray(aviso.reglaId, deSonar));
     await db().delete(publicacion).where(inArray(publicacion.reglaId, deSonar));
     await db().delete(desvio).where(inArray(desvio.reglaId, deSonar));
     await db().delete(decision).where(inArray(decision.reglaId, deSonar));
     await db().delete(regla).where(eq(regla.origen, Origen.Sonar));
-    await db().delete(sincronizacion);
+    await db().delete(sincronizacion).where(eq(sincronizacion.origen, Origen.Sonar));
   }
 
   /** Todo lo que la sincronización escribe, para comparar antes y después. */
@@ -61,7 +62,11 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
         .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
         .where(eq(regla.origen, Origen.Sonar))
         .orderBy(asc(estadoRegla.reglaId)),
-      avisos: await db().select().from(aviso).orderBy(asc(aviso.id)),
+      avisos: await db()
+        .select()
+        .from(aviso)
+        .where(inArray(aviso.reglaId, db().select({ id: regla.id }).from(regla).where(eq(regla.origen, Origen.Sonar))))
+        .orderBy(asc(aviso.id)),
     };
   }
 
@@ -157,7 +162,7 @@ describe.skipIf(!url || !hayGrabacion)("sincronización con Sonar contra la base
     expect(resumen).toMatchObject({ estado: "ok", nuevas: 0, modificadas: 0, deprecadas: 0, actualizadas: 0, avisos: 0 });
     expect(await foto()).toEqual(antes);
     // La corrida sí queda registrada.
-    expect(await db().select({ id: sincronizacion.id }).from(sincronizacion)).toHaveLength(2);
+    expect(await db().select({ id: sincronizacion.id }).from(sincronizacion).where(eq(sincronizacion.origen, Origen.Sonar))).toHaveLength(2);
   });
 
   it("aplica los cambios de Sonar y avisa por las reglas en uso", async () => {

@@ -114,7 +114,7 @@ export function FormularioDeFiltros({ filtros, opciones }: { filtros: Filtros; o
       </fieldset>
 
       <fieldset className="flex flex-col gap-1">
-        <legend className="mb-1 font-medium">Deprecadas en Sonar</legend>
+        <legend className="mb-1 font-medium">Deprecadas o eliminadas</legend>
         <Opcion nombre="deprecadas" valor="incluir" marcada={filtros.deprecadas === "incluir"}>
           Incluirlas
         </Opcion>

@@ -11,12 +11,12 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | Fase | Estado |
 |---|---|
 | 0 — Setup | ✅ Completa |
-| 1 — Primera regla y empaquetado | ✅ Completa, salvo publicar el paquete al feed |
+| 1 — Primera regla y empaquetado | ✅ Completa. El paquete se publica en GitHub Packages desde la 6.4 (0.1.0, 2026-10-28) |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 terminada (2026-10-28): los 7 pasos (tablas `publicacion` y `desvio`, cliente de perfiles, encolar al decidir, publicar con reintentos, reconciliación y desvíos, pantalla Sonar, prueba contra SonarQube Cloud), con sus dos criterios de aceptación verificados contra los perfiles reales. Plan y decisiones P1–P5 en `FASE-6-APP.md`, sección 8 bis. Entrega 6.4 (reglas propias, parte Roslyn), adelantada a la 6.3 porque esta espera D6.2 y D6.3: plan en 8 pasos y decisiones R1–R5 en `FASE-6-APP.md`, sección 8 ter; pasos 1 y 2 hechos (2026-10-28): el catálogo `reglas-roslyn.json` con su generador `tools/catalogo-reglas`, enganchado al build del paquete, y el workflow que publica el paquete y crea el release al subir la versión; falta ver la primera publicación (0.1.0). Ver `app/README.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 terminada (2026-10-28): los 7 pasos (tablas `publicacion` y `desvio`, cliente de perfiles, encolar al decidir, publicar con reintentos, reconciliación y desvíos, pantalla Sonar, prueba contra SonarQube Cloud), con sus dos criterios de aceptación verificados contra los perfiles reales. Plan y decisiones P1–P5 en `FASE-6-APP.md`, sección 8 bis. Entrega 6.4 (reglas propias, parte Roslyn), adelantada a la 6.3 porque esta espera D6.2 y D6.3: plan en 8 pasos y decisiones R1–R5 en `FASE-6-APP.md`, sección 8 ter; pasos 1 a 3 hechos (2026-10-28): el catálogo `reglas-roslyn.json` con su generador `tools/catalogo-reglas`, enganchado al build del paquete; el workflow que publica el paquete y crea el release al subir la versión, verificado con la publicación de la 0.1.0; y la sincronización de las reglas Roslyn desde el último release, verificada contra GitHub: el primer criterio de la 6.4 se cumple. Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 
@@ -86,7 +86,6 @@ el diseño de las fases 4 y 7.
 |---|---|---|
 | **Branch protection sobre `main`** | GitHub → Settings → Branches | Hoy el check de SonarCloud falla pero GitHub deja mergear igual. Requerir el check `SonarCloud Code Analysis` convierte el aviso en bloqueo. |
 | **Descartar la rama `prueba/quality-gate` y el PR #1** | GitHub | Son temporales, de la prueba del gate. **No se mergean.** Cerrar el PR y borrar la rama cuando la prueba de persistencia esté hecha (el issue de ese PR sirve si se quiere probar sobre el PR en vez de `main`). |
-| **Publicar el paquete en GitHub Packages** | Ver `publicacion-de-paquetes.md` | Último punto de la Fase 1. Desde la 6.4 (paso 2) lo hace el workflow `publicar-analyzers.yml` al subir la versión, con el `GITHUB_TOKEN`; la 0.1.0 se publica con el push de ese paso. La sample sigue consumiendo el feed local. |
 | **Actualizar acciones deprecadas del workflow** | `.github/workflows/sonar.yml` | `setup-java@v4` y Node 20 avisan deprecación. No rompe nada todavía. |
 
 ---

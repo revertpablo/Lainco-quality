@@ -126,6 +126,11 @@ export const sincronizacion = pgTable("sincronizacion", {
   error: text(),
   /** Quién la disparó desde la app. Null si la disparó el cron. */
   disparadaPorId: uuid(),
+  /**
+   * Qué se sincronizó, en los orígenes con paquete propio: `Lainco.Analyzers 0.1.0`
+   * (entrega 6.4). Null en Sonar, y si la corrida falló antes de leer el catálogo.
+   */
+  version: text(),
 }, (t) => [
   primaryKey({ name: "sincronizacionPk", columns: [t.id] }),
     foreignKey({ name: "sincronizacionOrigen", columns: [t.origen], foreignColumns: [origen.codigo] }),

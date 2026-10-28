@@ -44,7 +44,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
       const [creada] = await db()
         .insert(regla)
         .values({
-          origen: Origen.Roslyn,
+          origen: Origen.Eslint,
           clave: `${PREFIJO}${i}`,
           lenguaje: "cs",
           nombre: `Regla de prueba ${i}`,

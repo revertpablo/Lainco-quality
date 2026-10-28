@@ -1,6 +1,7 @@
 /**
- * Textos para mostrar los códigos de Sonar que no tienen tabla de referencia. Los estados,
- * lenguajes y orígenes salen de sus tablas de referencia (`descripcion`).
+ * Textos para mostrar los códigos de Sonar (y las severidades de las reglas propias) que no
+ * tienen tabla de referencia. Los estados, lenguajes y orígenes salen de sus tablas de
+ * referencia (`descripcion`).
  */
 
 const TIPOS: Record<string, string> = {
@@ -16,6 +17,10 @@ const SEVERIDADES: Record<string, string> = {
   MAJOR: "Major",
   MINOR: "Minor",
   INFO: "Info",
+  // Reglas propias: las palabras del .globalconfig (entrega 6.4, decisión R3).
+  warning: "Warning",
+  suggestion: "Suggestion",
+  silent: "Silent",
 };
 
 export const textoDeTipo = (tipo: string | null) => (tipo ? (TIPOS[tipo] ?? tipo) : "");

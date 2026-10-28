@@ -8,7 +8,7 @@ import { EstadoPublicacion, Estado, Origen, Rol, TipoDesvio } from "@/dominio/va
  * Lo que muestra la pantalla de Sonar y el inventario sobre la publicación (entrega 6.2,
  * paso 6), contra una base real.
  *
- * Necesita DATABASE_URL_PRUEBAS. Usa reglas Roslyn `PRUEBA-CON-` y el usuario
+ * Necesita DATABASE_URL_PRUEBAS. Usa reglas ESLint `PRUEBA-CON-` (ningún test sincroniza ESLint) y el usuario
  * `prueba-con-`; las consultas que cuentan todo se miran filtradas por esas reglas, porque
  * la base la comparten otros tests en paralelo.
  */
@@ -53,7 +53,7 @@ describe.skipIf(!url)("consultas de la publicación en Sonar", async () => {
 
   async function nuevaRegla() {
     const clave = `${PREFIJO}${++numero}`;
-    const [r] = await db().insert(regla).values({ origen: Origen.Roslyn, clave, lenguaje: "cs", nombre: `Regla ${clave}`, hashDescripcion: "x" }).returning({ id: regla.id });
+    const [r] = await db().insert(regla).values({ origen: Origen.Eslint, clave, lenguaje: "cs", nombre: `Regla ${clave}`, hashDescripcion: "x" }).returning({ id: regla.id });
     await db().insert(estadoRegla).values({ reglaId: r.id, estado: Estado.Incorporada, severidadAsignada: "MAJOR" });
     return { id: r.id, clave };
   }
@@ -155,7 +155,7 @@ describe.skipIf(!url)("consultas de la publicación en Sonar", async () => {
     await publicada(enOrden.id, EstadoPublicacion.Publicada, 1);
     await db().insert(desvio).values({ tipo: TipoDesvio.SeveridadDistinta, lenguaje: "cs", clave: conDesvio.clave, reglaId: conDesvio.id });
 
-    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO }, null);
+    const filas = await buscarReglas(db(), { ...FILTROS_POR_DEFECTO, q: PREFIJO }, []);
 
     expect(Object.fromEntries(filas.map((f) => [f.clave, [f.sinPublicar, f.conDesvio]]))).toEqual({
       [sinPublicar.clave]: [true, false],
