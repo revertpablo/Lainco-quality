@@ -133,3 +133,13 @@ export const EstadoPr = {
   Cerrado: "cerrado",
 } as const;
 export type EstadoPr = (typeof EstadoPr)[keyof typeof EstadoPr];
+
+/**
+ * Para qué sirve un token de servicio (entrega 6.5, paso 1, decisión E5): cada ruta de
+ * /api/ci/ pide un alcance, y un token solo entra a las de su alcance.
+ */
+export const AlcanceToken = {
+  /** El job de prueba: pide la configuración y sube los resultados (entrega 6.5). */
+  Prueba: "prueba",
+} as const;
+export type AlcanceToken = (typeof AlcanceToken)[keyof typeof AlcanceToken];

@@ -124,13 +124,14 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0004_publicacion_y_desvios` | Entrega 6.2, paso 1: `publicacion` (la cola de lo que hay que publicar en Sonar: una sola pendiente por regla, pedida por una decisión o por la corrección de un desvío) y `desvio` (diferencias entre la app y el perfil de Sonar: uno abierto por tipo, lenguaje y clave). Tablas de referencia `estadoPublicacion`, `accionPublicacion` y `tipoDesvio`, con sus valores. |
 | `0005_perfil_no_es_default` | Entrega 6.2, paso 2: el tipo de desvío "el perfil no es el default". Solo datos. |
 | `0006_reconciliacion` | Entrega 6.2, paso 5: `reconciliacion`, el log de cada corrida (estado, desvíos abiertos, nuevos y resueltos, advertencias). |
-| `0008_destino_de_publicacion` | Entrega 6.4, paso 4: `publicacion.destino` (perfil de Sonar o PR de configuración) y su tabla de referencia `destinoPublicacion`. Las publicaciones existentes quedan con el perfil de Sonar. |
-| `0010_seguimiento_del_paquete` | Entrega 6.4, paso 7: `prConfiguracion` (los PRs de configuración y su estado en GitHub) con su tabla de referencia `estadoPr`, `revisionPaquete` (el log de cada revisión) y el tipo de desvío `globalconfigDistinto`. Registra como abiertos los PRs que ya figuraban en las publicaciones. |
-| `0009_pr_de_configuracion` | Entrega 6.4, paso 6: `publicacion.prNumero` y `prUrl`, el PR de configuración que llevó la regla al paquete. |
 | `0007_version_sincronizada` | Entrega 6.4, paso 3: `sincronizacion.version`, qué versión del paquete trajo una corrida de reglas propias (`Lainco.Analyzers 0.1.0`). |
+| `0008_destino_de_publicacion` | Entrega 6.4, paso 4: `publicacion.destino` (perfil de Sonar o PR de configuración) y su tabla de referencia `destinoPublicacion`. Las publicaciones existentes quedan con el perfil de Sonar. |
+| `0009_pr_de_configuracion` | Entrega 6.4, paso 6: `publicacion.prNumero` y `prUrl`, el PR de configuración que llevó la regla al paquete. |
+| `0010_seguimiento_del_paquete` | Entrega 6.4, paso 7: `prConfiguracion` (los PRs de configuración y su estado en GitHub) con su tabla de referencia `estadoPr`, `revisionPaquete` (el log de cada revisión) y el tipo de desvío `globalconfigDistinto`. Registra como abiertos los PRs que ya figuraban en las publicaciones. |
+| `0011_tokens_de_servicio` | Entrega 6.5, paso 1: `tokenServicio` (los tokens con los que los jobs de CI entran a `/api/ci/`: hash, prefijo, alcance, vencimiento, último uso y baja) y su tabla de referencia `alcanceToken`, con el alcance `prueba`. |
 
-Las tablas de las entregas siguientes (sugerencias de IA, relaciones, pruebas) se
-agregan con su propia migración cuando se implementan.
+Las tablas de las entregas siguientes (sugerencias de IA, relaciones, las corridas de
+prueba) se agregan con su propia migración cuando se implementan.
 
 `.env.example` lista las variables que hacen falta. Nunca se commitean valores reales.
 
@@ -148,6 +149,7 @@ agregan con su propia migración cuando se implementan.
 | `npm run db:migrate` | Aplica las migraciones pendientes. |
 | `npm run db:studio` | Drizzle Studio. |
 | `npm run sonar:grabar` | Graba respuestas reales de SonarQube Cloud para los tests (ver [SonarQube](#sonarqube)). |
+| `npm run token -- <crear\|listar\|revocar>` | Administra los tokens de servicio de los jobs de CI (ver [Tokens de servicio](#tokens-de-servicio)). |
 
 ## Ciclo de vida de las reglas
 
@@ -890,6 +892,33 @@ Además:
 curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/cron/reconciliar-sonar
 ```
 
+## Tokens de servicio
+
+Los jobs de CI (el de prueba de reglas, entrega 6.5) llaman a las rutas de `/api/ci/` con
+un **token de servicio** (decisión E5): no tienen sesión, y el proxy las deja pasar como a
+`/api/cron/`. Cada ruta pide un alcance (hoy hay uno, `prueba`) y valida el token con
+`autorizarServicio` (`src/servicio/autorizar.ts`): un token desconocido, vencido, dado de
+baja o de otro alcance recibe siempre el mismo `401`, sin decir por qué; el motivo queda en
+el log del servidor.
+
+El token tiene la forma `lqs_` + 43 caracteres. **La app no lo guarda**: guarda su SHA-256
+(la base rechaza cualquier otra cosa en esa columna), los primeros caracteres para
+reconocerlo en un listado y la fecha del último uso.
+
+```powershell
+npm run token -- crear --nombre job-de-prueba          # alcance prueba, vence en 365 días
+npm run token -- crear --nombre otro --dias 90
+npm run token -- listar                                # nombre, prefijo, alcance, estado, vencimiento, último uso
+npm run token -- revocar --nombre job-de-prueba
+```
+
+`crear` muestra el token **una sola vez**: se copia al secret del job y no se escribe en
+ningún otro lado. Vence entre 1 y 365 días después (como los tokens de GitHub, decisión
+R2). Para cambiarlo: crear otro con otro nombre, actualizar el secret y dar de baja el
+viejo. El script usa la `DATABASE_URL` de los archivos `.env` o de la consola: para crear
+el token de producción, se corre con la URL de producción (ver [Bases por
+entorno](#bases-por-entorno)).
+
 ## Tests
 
 `npm test` corre todos.
@@ -928,6 +957,8 @@ curl.exe -H "Authorization: Bearer $env:CRON_SECRET" http://localhost:3000/api/c
 | `tests/publicacion/consultas.test.ts` | Lo que muestran la pantalla Sonar y el inventario: sin publicar (fallidas vigentes), desvíos abiertos, última publicación de una regla. | Base de pruebas. |
 | `tests/ui/` | Textos de la pantalla: lo esperado y lo encontrado de un desvío, el estado de una regla en Sonar. | Nada. |
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
+| `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
+| `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
@@ -985,12 +1016,13 @@ app/
 │   ├── catalogo/     # Formato del catálogo de reglas propias (docs/catalogo-de-reglas.md).
 │   ├── github/       # Cliente de la API de GitHub (releases) y su configuración.
 │   ├── paquete/      # El paquete de reglas propias: su .globalconfig, el PR de configuración (pr.ts, publicar.ts), la revisión (revisar.ts), consultas y acciones.
+│   ├── servicio/     # Tokens de servicio de los jobs de CI: formato (token.ts), en la base (tokensDeServicio.ts) y la autorización de /api/ci/ (autorizar.ts).
 │   ├── sincronizacion/  # Una corrida de sincronización (corrida.ts), los jobs de Sonar y Roslyn, acción del botón y resumen para el usuario.
 │   ├── sonar/        # Cliente de la Web API de SonarQube: catálogo (cliente.ts), Quality Profiles (perfiles.ts), pedidos y errores (http.ts), configuración (configuracion.ts).
 │   ├── transiciones/ # aplicarTransicion (el único que cambia estados), forma de los pedidos y respuestas de la API.
 │   ├── ui/           # Componentes: encabezado, filtros, tabla con selección y barra de operación masiva, barra de estados del tablero.
-│   └── proxy.ts      # Sin sesión, a /ingresar.
-├── scripts/          # grabar-respuestas-sonar.mts y grabar-perfiles-sonar.mts: graban respuestas reales para los tests.
+│   └── proxy.ts      # Sin sesión, a /ingresar. Deja pasar /api/cron/ y /api/ci/, que se autentican por su cuenta.
+├── scripts/          # grabar-respuestas-sonar.mts y grabar-perfiles-sonar.mts: graban respuestas reales para los tests. token-servicio.ts: tokens de los jobs de CI (corre con tsx).
 ├── tests/            # Tests (Vitest). Ver "Tests".
 │   └── fixtures/     # sonar/ y sonar-perfiles/: respuestas grabadas de SonarQube Cloud. roslyn/: el catálogo del release v0.1.0. Se commitean.
 ├── drizzle/          # Migraciones versionadas. Se commitean.

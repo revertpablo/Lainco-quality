@@ -13,7 +13,8 @@
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "sonar:grabar": "node --experimental-strip-types scripts/grabar-respuestas-sonar.mts",
-    "sonar:grabar-perfiles": "node --experimental-strip-types scripts/grabar-perfiles-sonar.mts"
+    "sonar:grabar-perfiles": "node --experimental-strip-types scripts/grabar-perfiles-sonar.mts",
+    "token": "tsx scripts/token-servicio.ts"
   },
   "dependencies": {
     "@vercel/functions": "^3.10.1",
@@ -40,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.1",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.5"
   },

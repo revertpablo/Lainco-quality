@@ -12,7 +12,8 @@ import { aParametros, leerFiltros } from "@/dominio/filtros";
  * src/auth/sesion.ts, al lado de los datos.
  *
  * Quedan afuera (ver `matcher`): la pantalla de ingreso, las rutas de Auth.js, el chequeo
- * de salud, los jobs de cron (se autentican con CRON_SECRET) y los archivos estáticos.
+ * de salud, los jobs de cron (se autentican con CRON_SECRET), las rutas de los jobs de CI
+ * (/api/ci/, con un token de servicio: src/servicio/autorizar.ts) y los archivos estáticos.
  */
 const { auth } = NextAuth(configuracionBase);
 
@@ -52,5 +53,5 @@ function urlCanonicaDelInventario(url: URL): NextResponse | undefined {
 }
 
 export const config = {
-  matcher: ["/((?!ingresar|api/auth|api/salud|api/cron|_next/static|_next/image|favicon\\.ico).*)"],
+  matcher: ["/((?!ingresar|api/auth|api/salud|api/cron|api/ci/|_next/static|_next/image|favicon\\.ico).*)"],
 };

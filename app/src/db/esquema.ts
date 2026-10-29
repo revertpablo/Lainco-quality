@@ -17,6 +17,7 @@ import {
 
 import type {
   AccionPublicacion,
+  AlcanceToken,
   DestinoPublicacion,
   Estado,
   EstadoPr,
@@ -44,10 +45,11 @@ import type {
  *   `descripcion` (el texto que ve el usuario). Las columnas que los usan son claves
  *   foráneas a `codigo`.
  *
- * Están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6) y las de la
- * publicación a Sonar de la 6.2 (`publicacion` y `desvio`). Las de las entregas
- * siguientes (sugerencias de IA, relaciones, grupos de equivalencia, pruebas, tokens de
- * servicio) se agregan con su propia migración cuando se implementan.
+ * Están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6), las de la
+ * publicación a Sonar de la 6.2 (`publicacion` y `desvio`), las del paquete de reglas
+ * propias de la 6.4 y los tokens de servicio de la 6.5. Las de las entregas siguientes
+ * (sugerencias de IA, relaciones, grupos de equivalencia, pruebas) se agregan con su propia
+ * migración cuando se implementan.
  */
 
 const fechaDeAlta = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -81,6 +83,7 @@ export const accionPublicacion = tablaDeReferencia<AccionPublicacion>("accionPub
 export const destinoPublicacion = tablaDeReferencia<DestinoPublicacion>("destinoPublicacion");
 export const tipoDesvio = tablaDeReferencia<TipoDesvio>("tipoDesvio");
 export const estadoPr = tablaDeReferencia<EstadoPr>("estadoPr");
+export const alcanceToken = tablaDeReferencia<AlcanceToken>("alcanceToken");
 
 // ---------------------------------------------------------------------- usuario
 
@@ -501,5 +504,40 @@ export const revisionPaquete = pgTable(
     primaryKey({ name: "revisionPaquetePk", columns: [t.id] }),
     foreignKey({ name: "revisionPaqueteEstado", columns: [t.estado], foreignColumns: [estadoSincronizacion.codigo] }),
     foreignKey({ name: "revisionPaqueteDisparadaPor", columns: [t.disparadaPorId], foreignColumns: [usuario.id] }),
+  ],
+);
+
+// ---------------------------------------------------------------- tokens de servicio
+
+/**
+ * Tokens con los que los jobs de CI entran a /api/ci/ (entrega 6.5, paso 1, decisión E5).
+ * No entran por Auth.js: los valida el Route Handler (src/servicio/autorizar.ts).
+ *
+ * El token se muestra una sola vez, al crearlo (scripts/token-servicio.ts); acá queda su
+ * SHA-256, que alcanza para validarlo, y el prefijo, para reconocerlo en un listado.
+ */
+export const tokenServicio = pgTable(
+  "tokenServicio",
+  {
+    id: uuid().notNull().defaultRandom(),
+    /** Para qué es (ej. "job-de-prueba"); se usa para darlo de baja. */
+    nombre: text().notNull(),
+    alcance: text().$type<AlcanceToken>().notNull(),
+    hash: text().notNull(),
+    /** El comienzo del token ("lqs_" y unos caracteres): identifica al token sin revelarlo. */
+    prefijo: text().notNull(),
+    creadoEn: fechaDeAlta(),
+    expiraEn: timestamp({ withTimezone: true }).notNull(),
+    ultimoUsoEn: timestamp({ withTimezone: true }),
+    revocadoEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "tokenServicioPk", columns: [t.id] }),
+    foreignKey({ name: "tokenServicioAlcance", columns: [t.alcance], foreignColumns: [alcanceToken.codigo] }),
+    unique("tokenServicioNombre").on(t.nombre),
+    unique("tokenServicioHash").on(t.hash),
+    // Que nadie guarde el token en claro por error.
+    check("tokenServicioHashSha256", sql`${t.hash} ~ '^[0-9a-f]{64}$'`),
+    check("tokenServicioVenceDespuesDeCrearse", sql`${t.expiraEn} > ${t.creadoEn}`),
   ],
 );
