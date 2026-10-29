@@ -58,7 +58,7 @@ export async function abrirCorrida({
 
     await tx
       .update(corridaPrueba)
-      .set({ estado: EstadoCorrida.Fallida, terminadaEn: ahora, error: `No terminó: el job abrió otra corrida el ${ahora.toISOString()}.` })
+      .set({ estado: EstadoCorrida.Fallida, terminadaEn: ahora, error: "No terminó: el job abrió otra corrida antes de mandar todos los resultados." })
       .where(eq(corridaPrueba.estado, EstadoCorrida.EnCurso));
 
     const candidatas = await tx

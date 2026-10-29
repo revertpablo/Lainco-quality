@@ -928,6 +928,7 @@ de `/api/ci/prueba/`, con un token de servicio de alcance `prueba`.
 | Variable | Qué es |
 |---|---|
 | `PRUEBA_REPOSITORIOS` | Los repositorios donde corre el job (decisión E2), separados por coma. Cada uno es `owner/repo`, y si tiene más de una solución, `owner/repo:ruta/de/la.sln` (o `.slnx`): `revertpablo/Lainco-quality:samples/SampleSolution/SampleSolution.sln,lainco/dico`. Sin solución, el job compila la única que haya; si hay varias, el repositorio queda con un error que lo pide. El repositorio se guarda en minúsculas. Sin esta variable el job no puede abrir corridas (la ruta responde 500 y lo dice). |
+| `PRUEBA_CORRIDAS_MINIMAS` | Cuántas corridas necesita una regla En prueba, desde la última vez que entró, para poder incorporarse (decisión E3). Cuentan las terminadas con resultados de la regla. Por defecto, 5. Si el valor no es un entero mayor que cero, las pantallas lo avisan y usan 5. |
 
 ### Abrir una corrida
 
@@ -992,6 +993,21 @@ hasta 200 ubicaciones cada una, que no pueden ser más que la cantidad. La app
 | `409` | La corrida ya terminó o falló (por ejemplo, el job abrió otra). |
 | `422` | El repositorio no es de la corrida, o las reglas no son exactamente las de la corrida (dice cuáles faltan y cuáles sobran). |
 | `400`, `415`, `401` | El cuerpo no es JSON o no tiene la forma esperada (dice qué campo); sin token válido. |
+
+### Pantallas
+
+- **Prueba** (`/prueba`, en la navegación): las reglas En prueba de C# con sus issues en la
+  última corrida, cuántas corridas llevan sobre el mínimo y su tasa de falsos positivos; y
+  las últimas corridas, con las versiones de los analyzers, el link al workflow y lo que
+  pasó en cada repositorio (el error, si no compiló). La insignia de la sección avisa si la
+  última corrida falló o tuvo repositorios con error.
+- **Detalle de una regla**, sección **Prueba** (si está En prueba o alguna vez la probó el
+  job): cuánto le falta para el mínimo, los issues en la última corrida con resultados, una
+  tabla con los issues por repositorio en cada corrida, y las muestras de esa corrida con su
+  link al código en GitHub y los botones **Válida** y **Falso positivo** (cualquier usuario:
+  la evalúa el equipo; tocar de nuevo el elegido la deja sin evaluar). Debajo, la tasa de
+  falsos positivos sobre las evaluadas. Una regla que no está en SonarAnalyzer.CSharp lo
+  dice: puede incorporarse sin prueba desde A revisar.
 
 ### El job
 
@@ -1076,6 +1092,8 @@ artefacto de la corrida del workflow durante 14 días.
 | `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, solución opcional, minúsculas, repetidos, errores. | Nada. |
 | `tests/prueba/abrir.test.ts` | Abrir una corrida: qué reglas entran y cuáles no, repositorios pendientes, la corrida anterior en curso pasa a fallida; la ruta `POST /api/ci/prueba/corridas` con sus respuestas (201, 200, 401, 415, 400, 500). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/prueba/ingesta.test.ts` | Recibir resultados por la ruta, contra la base: cantidades con cero, reglas que el analyzer no trae, `probableLocalmente`, repositorios con error, fin de la corrida, envíos repetidos, hasta 20 muestras con las evaluadas primero y su evaluación conservada en la corrida siguiente, y los rechazos (401, 404, 409, 422, 400). Cada test en una transacción que se descarta. | Base de pruebas. |
+| `tests/prueba/consultas.test.ts` | Lo que muestran las pantallas de la prueba: corridas de una regla con el total y cada repositorio, corridas que cuentan para el mínimo, las muestras de la última corrida con resultados y la tasa, el panel, la insignia y evaluar una muestra. Cada test en una transacción que se descarta. | Base de pruebas. |
+| `tests/ui/prueba.test.ts` | Textos de la prueba: lo que falta para el mínimo, la tasa, cómo terminó una corrida. | Nada. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
 | `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
@@ -1125,14 +1143,14 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. paquete/: el paquete de reglas propias. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete, reconciliar-sonar y revisar-paquete. api/reglas: transiciones. api/ci/prueba: el job de prueba de reglas.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. paquete/: el paquete de reglas propias. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete, reconciliar-sonar y revisar-paquete. api/reglas: transiciones. prueba/: la prueba de reglas. api/ci/prueba: el job de prueba de reglas.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero), prueba.ts (el estado En prueba: configuración de prueba, muestras, tasa, corridas que cuentan).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.
-│   ├── prueba/       # El job de prueba de reglas: configuración (PRUEBA_REPOSITORIOS), abrir una corrida, recibir los resultados (ingesta.ts) y las rutas de /api/ci/prueba/ (http.ts).
+│   ├── prueba/       # El job de prueba de reglas: configuración (PRUEBA_REPOSITORIOS), abrir una corrida, recibir los resultados (ingesta.ts), las rutas de /api/ci/prueba/ (http.ts), las consultas de las pantallas y evaluar una muestra.
 │   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
 │   ├── reconciliacion/  # Reconciliar el perfil de Sonar con la app, corregir desvíos y sus acciones.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.

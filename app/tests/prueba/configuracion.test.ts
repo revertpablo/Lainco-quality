@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ErrorDeConfiguracionDePrueba, repositoriosDesdeEntorno } from "@/prueba/configuracion";
+import { corridasMinimasDesdeEntorno, ErrorDeConfiguracionDePrueba, minimoDeCorridas, repositoriosDesdeEntorno } from "@/prueba/configuracion";
 
 /**
  * La lista de repositorios del job de prueba (entrega 6.5, decisión E2): la variable
@@ -52,4 +52,30 @@ describe("repositoriosDesdeEntorno", () => {
       expect(() => con(entrada)).toThrow(/no es una solución/);
     },
   );
+});
+
+describe("corridasMinimasDesdeEntorno", () => {
+  it("son 5 si no se configura (decisión E3)", () => {
+    expect(corridasMinimasDesdeEntorno({})).toBe(5);
+    expect(corridasMinimasDesdeEntorno({ PRUEBA_CORRIDAS_MINIMAS: " " })).toBe(5);
+  });
+
+  it("lee PRUEBA_CORRIDAS_MINIMAS", () => {
+    expect(corridasMinimasDesdeEntorno({ PRUEBA_CORRIDAS_MINIMAS: "3" })).toBe(3);
+    expect(corridasMinimasDesdeEntorno({ PRUEBA_CORRIDAS_MINIMAS: " 10 " })).toBe(10);
+  });
+
+  it.each(["0", "-1", "2.5", "tres", "1e3"])("%s no es un mínimo válido", (valor) => {
+    expect(() => corridasMinimasDesdeEntorno({ PRUEBA_CORRIDAS_MINIMAS: valor })).toThrow(/PRUEBA_CORRIDAS_MINIMAS/);
+  });
+});
+
+describe("minimoDeCorridas", () => {
+  it("con un valor válido, sin error", () => {
+    expect(minimoDeCorridas({ PRUEBA_CORRIDAS_MINIMAS: "3" })).toEqual({ minimo: 3, error: null });
+  });
+
+  it("con un valor inválido, el de por defecto y el error para mostrar (la página no se rompe)", () => {
+    expect(minimoDeCorridas({ PRUEBA_CORRIDAS_MINIMAS: "tres" })).toEqual({ minimo: 5, error: expect.stringMatching(/PRUEBA_CORRIDAS_MINIMAS.*Se usa 5\./) });
+  });
 });

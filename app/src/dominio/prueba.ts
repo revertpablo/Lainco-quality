@@ -178,3 +178,16 @@ export function elegirMuestras<T extends { archivo: string; mensaje: string }>(
   const despues = todas.filter(([clave]) => !evaluadas.has(clave));
   return [...primero, ...despues].slice(0, maximo).map(([, u]) => u);
 }
+
+/** Si el job de prueba de C# puede correr la regla (alcance de la 6.5): de Sonar para C# o LAIN###. */
+export function seProbaConElJob(regla: ReglaAProbar): boolean {
+  try {
+    idDeDiagnostico(regla);
+    return true;
+  } catch (error) {
+    if (error instanceof ErrorDePrueba) {
+      return false;
+    }
+    throw error;
+  }
+}

@@ -8,6 +8,9 @@ import { ErrorDePrueba, normalizarArchivo } from "@/dominio/prueba";
  *                         solución, owner/repo:ruta/de/la.sln con la que hay que compilar:
  *                         revertpablo/Lainco-quality:samples/SampleSolution/SampleSolution.sln,lainco/dico
  *                         El repositorio se guarda en minúsculas, como lo compara GitHub.
+ *
+ *   PRUEBA_CORRIDAS_MINIMAS  Cuántas corridas necesita una regla En prueba, desde que entró,
+ *                         para poder incorporarse (decisión E3). Por defecto, 5.
  */
 
 export class ErrorDeConfiguracionDePrueba extends Error {}
@@ -64,4 +67,33 @@ export function repositoriosDesdeEntorno(entorno: Record<string, string | undefi
     repositorios.push({ repositorio, solucion });
   }
   return repositorios;
+}
+
+/** El mínimo de corridas si PRUEBA_CORRIDAS_MINIMAS no está (decisión E3). */
+export const CORRIDAS_MINIMAS_POR_DEFECTO = 5;
+
+export function corridasMinimasDesdeEntorno(entorno: Record<string, string | undefined> = process.env): number {
+  const valor = entorno.PRUEBA_CORRIDAS_MINIMAS?.trim();
+  if (!valor) {
+    return CORRIDAS_MINIMAS_POR_DEFECTO;
+  }
+  if (!/^\d+$/.test(valor) || Number(valor) < 1) {
+    throw new ErrorDeConfiguracionDePrueba(`PRUEBA_CORRIDAS_MINIMAS: "${valor}" no es un número entero de corridas mayor que cero.`);
+  }
+  return Number(valor);
+}
+
+/**
+ * El mínimo para las pantallas: si PRUEBA_CORRIDAS_MINIMAS está mal, usa el de por defecto
+ * y devuelve el error para mostrarlo, en lugar de romper la página.
+ */
+export function minimoDeCorridas(entorno: Record<string, string | undefined> = process.env): { minimo: number; error: string | null } {
+  try {
+    return { minimo: corridasMinimasDesdeEntorno(entorno), error: null };
+  } catch (e) {
+    if (e instanceof ErrorDeConfiguracionDePrueba) {
+      return { minimo: CORRIDAS_MINIMAS_POR_DEFECTO, error: `${e.message} Se usa ${CORRIDAS_MINIMAS_POR_DEFECTO}.` };
+    }
+    throw e;
+  }
 }

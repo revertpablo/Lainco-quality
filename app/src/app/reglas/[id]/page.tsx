@@ -6,11 +6,14 @@ import { z } from "zod";
 import { exigirUsuario } from "@/auth/sesion";
 import { obtenerDb } from "@/db/cliente";
 import { aParametros, leerFiltros } from "@/dominio/filtros";
+import { seProbaConElJob } from "@/dominio/prueba";
 import { destinoDePublicacion } from "@/dominio/publicacion";
 import { seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
-import { DestinoPublicacion, Rol } from "@/dominio/valores";
+import { DestinoPublicacion, Estado, Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
 import { publicarPaqueteAhora } from "@/paquete/acciones";
+import { minimoDeCorridas } from "@/prueba/configuracion";
+import { pruebaDeRegla } from "@/prueba/consultas";
 import { publicarPendientesAhora } from "@/publicacion/acciones";
 import { desviosAbiertos, ultimaPublicacionDeRegla } from "@/publicacion/consultas";
 import { corregirDesvioAhora } from "@/reconciliacion/acciones";
@@ -22,6 +25,7 @@ import { Encabezado } from "@/ui/Encabezado";
 import { COLOR_DE_ESTADO, textoDeSeveridad, textoDeTipo } from "@/ui/etiquetas";
 import { Historial } from "@/ui/Historial";
 import { describirEstadoEnPaquete, describirEstadoEnSonar } from "@/ui/publicacion";
+import { SeccionPrueba } from "@/ui/SeccionPrueba";
 
 /**
  * Detalle de una regla (entrega 6.1, paso 10): qué es, en qué estado está, cambiarle el
@@ -53,12 +57,14 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
   }
 
   const db = obtenerDb();
-  const [regla, historial, opciones, publicada, desvios] = await Promise.all([
+  const minimo = minimoDeCorridas();
+  const [regla, historial, opciones, publicada, desvios, prueba] = await Promise.all([
     obtenerRegla(db, id),
     historialDeRegla(db, id),
     opcionesDeFiltro(db),
     ultimaPublicacionDeRegla(db, id),
     desviosAbiertos(db, id),
+    pruebaDeRegla(db, id, { minimo: minimo.minimo }),
   ]);
   if (!regla) {
     notFound();
@@ -114,6 +120,17 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
 
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <div className="flex min-w-0 max-w-4xl flex-1 flex-col gap-6">
+            {(regla.estado === Estado.EnPrueba || prueba.corridas.length > 0) && (
+              <>
+                {minimo.error && (
+                  <p role="alert" className="text-sm text-error">
+                    {minimo.error}
+                  </p>
+                )}
+                <SeccionPrueba prueba={prueba} enPrueba={regla.estado === Estado.EnPrueba} seProbaConElJob={seProbaConElJob(regla)} />
+              </>
+            )}
+
             <section aria-labelledby="titulo-descripcion" className="rounded-lg border border-linea bg-superficie">
               <h2 id="titulo-descripcion" className="border-b border-linea px-5 py-3 font-medium lg:px-7">
                 Documentación de la regla

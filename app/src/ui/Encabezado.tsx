@@ -7,6 +7,7 @@ import { obtenerDb, type Db } from "@/db/cliente";
 import { aviso, sincronizacion, usuario as tablaUsuario } from "@/db/esquema";
 import { Origen } from "@/dominio/valores";
 import { atencionDelPaquete } from "@/paquete/consultas";
+import { atencionDePrueba } from "@/prueba/consultas";
 import { pendientesDeAtencion } from "@/publicacion/consultas";
 import { sincronizarAhora } from "@/sincronizacion/acciones";
 import { describirResumen } from "@/sincronizacion/resumen";
@@ -25,6 +26,7 @@ const SECCIONES = [
   { codigo: "progreso", texto: "Progreso", href: "/tablero" },
   { codigo: "sonar", texto: "Sonar", href: "/sonar" },
   { codigo: "paquete", texto: "Paquete", href: "/paquete" },
+  { codigo: "prueba", texto: "Prueba", href: "/prueba" },
 ] as const;
 export type Seccion = (typeof SECCIONES)[number]["codigo"];
 
@@ -61,16 +63,18 @@ async function ultimaSincronizacion(db: Db, origen: Origen) {
  */
 export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual; seccion: Seccion }) {
   const db = obtenerDb();
-  const [ultimas, [{ avisos }], atencion, delPaquete] = await Promise.all([
+  const [ultimas, [{ avisos }], atencion, delPaquete, deLaPrueba] = await Promise.all([
     Promise.all(ORIGENES_SINCRONIZADOS.map(({ origen }) => ultimaSincronizacion(db, origen))),
     db.select({ avisos: count() }).from(aviso).where(and(isNull(aviso.resueltoEn))),
     pendientesDeAtencion(db),
     atencionDelPaquete(db),
+    atencionDePrueba(db),
   ]);
   // Lo que alguien tiene que mirar en cada sección: desvíos y publicaciones fallidas.
   const insignias: Partial<Record<Seccion, { cantidad: number; detalle: string }>> = {
     sonar: insignia(atencion.desvios, atencion.fallidas),
     paquete: insignia(delPaquete.desvio ? 1 : 0, delPaquete.fallidas),
+    prueba: deLaPrueba,
   };
 
   return (
@@ -80,7 +84,7 @@ export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual;
           <Link href="/reglas" className="text-base font-semibold tracking-tight">
             Catálogo de reglas
           </Link>
-          <nav aria-label="Secciones" className="flex gap-x-4 text-sm">
+          <nav aria-label="Secciones" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             {SECCIONES.map((s) => (
               <Link
                 key={s.codigo}

@@ -11,6 +11,7 @@ import {
   identidadDeMuestra,
   linkDeMuestra,
   normalizarArchivo,
+  seProbaConElJob,
   tasaDeFalsosPositivos,
 } from "@/dominio/prueba";
 import { EstadoCorrida, EvaluacionMuestra, Origen } from "@/dominio/valores";
@@ -258,5 +259,15 @@ describe("elegirMuestras", () => {
     const ubicaciones = Array.from({ length: 50 }, (_, i) => ubicacion(`A${i}.cs`));
 
     expect(elegirMuestras(ubicaciones, { identidad, evaluadas: new Set() })).toHaveLength(20);
+  });
+});
+
+describe("seProbaConElJob", () => {
+  it("las de Sonar para C# y las LAIN, sí; las demás, no", () => {
+    expect(seProbaConElJob(sonar("S1118"))).toBe(true);
+    expect(seProbaConElJob(roslyn("LAIN001"))).toBe(true);
+    expect(seProbaConElJob({ origen: Origen.Sonar, clave: "typescript:S1118" })).toBe(false);
+    expect(seProbaConElJob({ origen: Origen.Eslint, clave: "lainco/no-algo" })).toBe(false);
+    expect(seProbaConElJob({ origen: Origen.NormaIa, clave: "LAIN-D012" })).toBe(false);
   });
 });
