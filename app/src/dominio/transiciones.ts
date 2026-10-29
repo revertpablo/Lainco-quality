@@ -97,10 +97,10 @@ export const TRANSICIONES: readonly Transicion[] = [
     requiereJustificacion: true,
     requiereSeveridad: true,
     requiereDecisor: true,
-    // FASE-6.md pide resultados de prueba disponibles, pero los resultados existen
-    // recién con la entrega 6.5. Hasta entonces no se verifica (decisión del
-    // 2026-10-16); en 6.5 se pasa a true.
-    requiereResultadosDePrueba: false,
+    // Resultados de prueba disponibles (FASE-6.md, sección 4): desde la entrega 6.5, el
+    // mínimo de corridas desde que entró en prueba (decisión E3). Lo calcula quien aplica
+    // la transición (src/transiciones/aplicarTransicion.ts).
+    requiereResultadosDePrueba: true,
     admiteMasiva: false,
   },
   {
@@ -161,7 +161,8 @@ export type MotivoDeRechazo =
   | "faltanResultadosDePrueba"
   | "noAdmiteOperacionMasiva"
   | "parametroDesconocido"
-  | "severidadNoSeElige";
+  | "severidadNoSeElige"
+  | "noSePuedeProbar";
 
 /** Texto para el usuario de cada motivo de rechazo. */
 export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
@@ -169,10 +170,11 @@ export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
   requiereRolDecisor: "Este cambio de estado solo lo puede hacer alguien con rol decisor.",
   faltaJustificacion: "Falta la justificación.",
   faltaSeveridad: "Falta elegir la severidad con la que se incorpora la regla.",
-  faltanResultadosDePrueba: "La regla todavía no tiene resultados de prueba.",
+  faltanResultadosDePrueba: "La regla todavía no tiene el mínimo de corridas de prueba: ver la sección Prueba.",
   noAdmiteOperacionMasiva: "Este cambio de estado se hace de a una regla, no en una operación masiva.",
   parametroDesconocido: "Se eligió un valor para un parámetro que la regla no tiene.",
   severidadNoSeElige: "La severidad de una regla propia la fija la regla: no se elige al incorporarla.",
+  noSePuedeProbar: "La regla no está en SonarAnalyzer.CSharp: el job de prueba no la puede correr. Puede incorporarse sin prueba desde A revisar.",
 };
 
 /**
@@ -197,7 +199,10 @@ export interface SolicitudDeTransicion {
   severidad?: string | null;
   /** Es parte de una operación masiva. */
   masiva?: boolean;
+  /** Cumple el mínimo de corridas de prueba (entrega 6.5, E3); lo exige En prueba → Incorporada. */
   resultadosDePruebaDisponibles?: boolean;
+  /** Si el job puede correr la regla (entrega 6.5, E7). False: no puede pasar a En prueba. */
+  probableLocalmente?: boolean | null;
   /** Valores elegidos para los parámetros de la regla (al incorporar). */
   parametros?: Readonly<Record<string, string>> | null;
   /** Claves de los parámetros que tiene la regla. */
@@ -289,6 +294,10 @@ export function validarTransicion(solicitud: SolicitudDeTransicion): ResultadoDe
 
   if (transicion.requiereResultadosDePrueba && !solicitud.resultadosDePruebaDisponibles) {
     motivos.push("faltanResultadosDePrueba");
+  }
+
+  if (transicion.hacia === EnPrueba && solicitud.probableLocalmente === false) {
+    motivos.push("noSePuedeProbar");
   }
 
   if (solicitud.masiva && !transicion.admiteMasiva) {

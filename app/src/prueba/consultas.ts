@@ -290,3 +290,19 @@ export async function atencionDePrueba(db: Db): Promise<{ cantidad: number; deta
     ? { cantidad: 0, detalle: "" }
     : { cantidad: conError, detalle: `${conError === 1 ? "1 repositorio" : `${conError} repositorios`} con error en la última corrida` };
 }
+
+/**
+ * Cuántas corridas cuentan para el mínimo de cada regla (decisión E3): terminadas, con
+ * resultados de la regla, desde la última vez que entró a En prueba. Lo usa el ciclo de vida
+ * para En prueba → Incorporada (src/transiciones/aplicarTransicion.ts).
+ */
+export async function corridasQueCuentanPorRegla(db: Db, reglaIds: string[]): Promise<Map<string, number>> {
+  const [entradas, corridas] = await Promise.all([entradasEnPrueba(db, reglaIds), corridasDeLasReglas(db, reglaIds)]);
+  return new Map(
+    reglaIds.map((id) => {
+      const entro = entradas.get(id);
+      const deLaRegla = corridas.filter((c) => c.reglaId === id).map((c) => ({ iniciadaEn: c.iniciadaEn, estado: c.estado, conResultados: c.resultados > 0 }));
+      return [id, entro ? corridasQueCuentan(deLaRegla, entro) : 0];
+    }),
+  );
+}

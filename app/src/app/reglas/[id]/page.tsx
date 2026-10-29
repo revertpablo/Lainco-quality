@@ -8,7 +8,7 @@ import { obtenerDb } from "@/db/cliente";
 import { aParametros, leerFiltros } from "@/dominio/filtros";
 import { seProbaConElJob } from "@/dominio/prueba";
 import { destinoDePublicacion } from "@/dominio/publicacion";
-import { seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
+import { MENSAJES_DE_RECHAZO, seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
 import { DestinoPublicacion, Estado, Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
 import { publicarPaqueteAhora } from "@/paquete/acciones";
@@ -25,6 +25,7 @@ import { Encabezado } from "@/ui/Encabezado";
 import { COLOR_DE_ESTADO, textoDeSeveridad, textoDeTipo } from "@/ui/etiquetas";
 import { Historial } from "@/ui/Historial";
 import { describirEstadoEnPaquete, describirEstadoEnSonar } from "@/ui/publicacion";
+import { describirMinimo } from "@/ui/prueba";
 import { SeccionPrueba } from "@/ui/SeccionPrueba";
 
 /**
@@ -84,6 +85,13 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
     regla.severidadAsignada ?? regla.severidadDefault,
     (d) => fechaCorta.format(d),
   );
+
+  // Lo que la prueba de reglas no deja hacer todavía (entrega 6.5): se avisa al elegirlo.
+  const minimoDeLaRegla = describirMinimo(prueba);
+  const avisos: Partial<Record<Estado, string>> = {
+    ...(regla.estado === Estado.EnPrueba && seProbaConElJob(regla) && !minimoDeLaRegla.cumple ? { [Estado.Incorporada]: minimoDeLaRegla.texto } : {}),
+    ...(prueba.probableLocalmente === false ? { [Estado.EnPrueba]: MENSAJES_DE_RECHAZO.noSePuedeProbar } : {}),
+  };
 
   return (
     <>
@@ -190,6 +198,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 severidadDefault={regla.severidadDefault}
                 seEligeSeveridad={seEligeLaSeveridad(regla.origen)}
                 parametros={regla.parametros}
+                avisos={avisos}
               />
             </section>
 

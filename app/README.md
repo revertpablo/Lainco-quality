@@ -162,7 +162,12 @@ existen y qué exige cada uno:
 | `requiereJustificacion` | Hace falta una justificación escrita (no vale solo espacios). |
 | `requiereSeveridad` | Hace falta elegir la severidad con la que se incorpora. |
 | `requiereDecisor` | Solo la puede hacer alguien con rol decisor. |
-| `requiereResultadosDePrueba` | Hacen falta resultados de prueba. Hoy en `false` en todas: se activa en En prueba → Incorporada con la entrega 6.5. |
+| `requiereResultadosDePrueba` | Hacen falta resultados de prueba: el mínimo de corridas desde que la regla entró en prueba (`PRUEBA_CORRIDAS_MINIMAS`, decisión E3). Solo En prueba → Incorporada (entrega 6.5). Lo cuenta `aplicarTransicion`; a las reglas que el job de C# no corre (TypeScript, normas de IA) no se les pide, porque no tienen cómo juntarlo. |
+
+Además, hacia En prueba se rechaza una regla de Sonar que no está en SonarAnalyzer.CSharp
+(`probableLocalmente` falso, decisión E7): el job no la puede correr. Puede incorporarse
+sin prueba desde A revisar. El formulario de cambio de estado lo avisa al elegir la opción,
+y en el detalle la sección Prueba dice cuántas corridas faltan.
 | `admiteMasiva` | Se puede aplicar a varias reglas a la vez. Hoy en `true` en toda transición que no va a Incorporada. |
 
 Para cambiar una regla del ciclo de vida se toca **solo su fila**. Los tests
@@ -1092,6 +1097,7 @@ artefacto de la corrida del workflow durante 14 días.
 | `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, solución opcional, minúsculas, repetidos, errores. | Nada. |
 | `tests/prueba/abrir.test.ts` | Abrir una corrida: qué reglas entran y cuáles no, repositorios pendientes, la corrida anterior en curso pasa a fallida; la ruta `POST /api/ci/prueba/corridas` con sus respuestas (201, 200, 401, 415, 400, 500). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/prueba/ingesta.test.ts` | Recibir resultados por la ruta, contra la base: cantidades con cero, reglas que el analyzer no trae, `probableLocalmente`, repositorios con error, fin de la corrida, envíos repetidos, hasta 20 muestras con las evaluadas primero y su evaluación conservada en la corrida siguiente, y los rechazos (401, 404, 409, 422, 400). Cada test en una transacción que se descarta. | Base de pruebas. |
+| `tests/prueba/ciclo.test.ts` | El ciclo de vida con la prueba: En prueba → Incorporada con y sin el mínimo de corridas (también con corridas de una vuelta anterior o fallidas), reglas que el job no corre, y una regla que no se puede probar hacia En prueba, sola y en una operación masiva. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/prueba/consultas.test.ts` | Lo que muestran las pantallas de la prueba: corridas de una regla con el total y cada repositorio, corridas que cuentan para el mínimo, las muestras de la última corrida con resultados y la tasa, el panel, la insignia y evaluar una muestra. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/ui/prueba.test.ts` | Textos de la prueba: lo que falta para el mínimo, la tasa, cómo terminó una corrida. | Nada. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |

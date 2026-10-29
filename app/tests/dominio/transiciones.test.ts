@@ -201,11 +201,41 @@ describe("operaciones masivas", () => {
   });
 });
 
-describe("En prueba → Incorporada", () => {
-  it("por ahora no exige resultados de prueba (se activa en la entrega 6.5)", () => {
-    const resultado = completa(EnPrueba, Incorporada, { resultadosDePruebaDisponibles: false });
+describe("En prueba → Incorporada (entrega 6.5, decisión E3)", () => {
+  it("exige haber cumplido el mínimo de corridas de prueba", () => {
+    expect(motivos(completa(EnPrueba, Incorporada, { resultadosDePruebaDisponibles: false }))).toEqual(["faltanResultadosDePrueba"]);
+    expect(completa(EnPrueba, Incorporada, { resultadosDePruebaDisponibles: true }).valida).toBe(true);
+  });
 
-    expect(resultado.valida).toBe(true);
+  it("es la única transición que lo exige: desde A revisar se incorpora sin prueba", () => {
+    const exigen = TRANSICIONES.filter((t) => t.requiereResultadosDePrueba).map((t) => nombre(t.desde, t.hacia));
+
+    expect(exigen).toEqual([nombre(EnPrueba, Incorporada)]);
+    expect(completa(ARevisar, Incorporada, { resultadosDePruebaDisponibles: false }).valida).toBe(true);
+  });
+});
+
+describe("hacia En prueba, una regla que no se puede probar (entrega 6.5, decisión E7)", () => {
+  const haciaEnPrueba = TRANSICIONES.filter((t) => t.hacia === EnPrueba);
+
+  it("se rechaza desde cualquier estado, también en una operación masiva", () => {
+    expect(haciaEnPrueba.length).toBeGreaterThan(0);
+    for (const t of haciaEnPrueba) {
+      expect(motivos(completa(t.desde, EnPrueba, { probableLocalmente: false })), nombre(t.desde, EnPrueba)).toEqual(["noSePuedeProbar"]);
+      expect(motivos(completa(t.desde, EnPrueba, { probableLocalmente: false, masiva: true }))).toContain("noSePuedeProbar");
+    }
+  });
+
+  it("si se puede, o todavía no se sabe, pasa", () => {
+    for (const t of haciaEnPrueba) {
+      expect(completa(t.desde, EnPrueba, { probableLocalmente: true }).valida).toBe(true);
+      expect(completa(t.desde, EnPrueba, { probableLocalmente: null }).valida).toBe(true);
+    }
+  });
+
+  it("no afecta a las demás transiciones", () => {
+    expect(completa(ARevisar, Incorporada, { probableLocalmente: false }).valida).toBe(true);
+    expect(completa(EnPrueba, ARevisar, { probableLocalmente: false }).valida).toBe(true);
   });
 });
 
@@ -283,6 +313,7 @@ describe("rechazos", () => {
       "noAdmiteOperacionMasiva",
       "parametroDesconocido",
       "severidadNoSeElige",
+      "noSePuedeProbar",
     ];
 
     for (const motivo of todos) {

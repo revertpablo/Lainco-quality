@@ -4,9 +4,12 @@ import { asc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { decision, estadoRegla, publicacion, regla } from "@/db/esquema";
+import { seProbaConElJob } from "@/dominio/prueba";
 import { destinoDeLaDecision } from "@/dominio/publicacion";
 import { seEligeLaSeveridad, validarTransicion, type MotivoDeRechazo } from "@/dominio/transiciones";
 import { Estado, type DestinoPublicacion, type Rol } from "@/dominio/valores";
+import { minimoDeCorridas } from "@/prueba/configuracion";
+import { corridasQueCuentanPorRegla } from "@/prueba/consultas";
 
 /**
  * `aplicarTransicion`: **la única función que cambia el estado de una regla**
@@ -18,7 +21,11 @@ import { Estado, type DestinoPublicacion, type Rol } from "@/dominio/valores";
  * 2. Verifica que cada regla siga en el estado que vio quien pide el cambio (`desde`). Si
  *    alguien la cambió mientras tanto, no se aplica nada.
  * 3. Valida cada regla con src/dominio/transiciones.ts: transición permitida, rol,
- *    justificación, severidad, operación masiva, parámetros.
+ *    justificación, severidad, operación masiva, parámetros; y lo que sale de la prueba de
+ *    reglas (entrega 6.5): de En prueba a Incorporada, el mínimo de corridas (decisión E3),
+ *    contado acá; hacia En prueba, que el job la pueda correr (decisión E7). A las reglas
+ *    que el job de C# no corre (TypeScript, normas de IA) no se les pide el mínimo: no
+ *    tienen cómo juntarlo.
  * 4. Si todas pasan, actualiza `estadoRegla` y escribe una `decision` por regla. En una
  *    operación masiva todas comparten el `loteId` y la justificación.
  * 5. Encola la publicación de las reglas que entran a Incorporada o salen
@@ -72,6 +79,7 @@ export async function aplicarTransicion(
   db: Db,
   autor: Autor,
   pedido: PedidoDeTransicion,
+  { minimoDeCorridas: minimo = minimoDeCorridas().minimo }: { minimoDeCorridas?: number } = {},
 ): Promise<ResultadoDeTransicion> {
   const ids = pedido.reglas.map((r) => r.id);
   if (ids.length === 0) {
@@ -96,7 +104,9 @@ export async function aplicarTransicion(
         estado: estadoRegla.estado,
         parametros: regla.parametros,
         origen: regla.origen,
+        clave: regla.clave,
         severidadDefault: regla.severidadDefault,
+        probableLocalmente: regla.probableLocalmente,
       })
       .from(estadoRegla)
       .innerJoin(regla, eq(regla.id, estadoRegla.reglaId))
@@ -117,6 +127,12 @@ export async function aplicarTransicion(
       return { ok: false, tipo: "estadoCambio", reglas: cambiadas };
     }
 
+    // El mínimo de corridas, para las que salen de En prueba hacia Incorporada y el job corre.
+    const aContar = haciaIncorporada
+      ? pedido.reglas.filter((r) => r.desde === Estado.EnPrueba && seProbaConElJob(porId.get(r.id)!)).map((r) => r.id)
+      : [];
+    const cuentan = aContar.length > 0 ? await corridasQueCuentanPorRegla(tx as unknown as Db, aContar) : new Map<string, number>();
+
     const rechazos = pedido.reglas.flatMap((r) => {
       const resultado = validarTransicion({
         desde: r.desde,
@@ -128,6 +144,8 @@ export async function aplicarTransicion(
         masiva: pedido.masiva,
         parametros,
         parametrosDeLaRegla: (porId.get(r.id)!.parametros ?? []).map((p) => p.clave),
+        resultadosDePruebaDisponibles: !cuentan.has(r.id) || cuentan.get(r.id)! >= minimo,
+        probableLocalmente: porId.get(r.id)!.probableLocalmente,
       });
       return resultado.valida ? [] : [{ reglaId: r.id, motivos: resultado.motivos }];
     });

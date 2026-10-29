@@ -89,7 +89,8 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 **Precisiones (2026-10-16), implementadas en `app/src/dominio/transiciones.ts`:**
 
 - **Operaciones masivas:** se admiten en toda transición permitida que no va hacia Incorporada (sección 5), con los mismos requisitos de rol y justificación que de a una. No solo en Pendiente → Descartada. Cuáles las admiten se configura en un único lugar: el campo `admiteMasiva` de cada transición.
-- **En prueba → Incorporada:** el requisito de resultados de prueba no se verifica hasta la entrega 6.5, que es la que produce esos resultados.
+- **En prueba → Incorporada:** "resultados de prueba disponibles" es, desde la entrega 6.5, haber cumplido el mínimo de corridas desde la última vez que la regla entró en prueba (decisión E3, `FASE-6-APP.md` sección 8 quater). Solo para las reglas que corre el job de prueba (de C#); a las demás no se les pide hasta que exista cómo probarlas.
+- **Hacia En prueba:** una regla que no se puede probar localmente (`probableLocalmente` falso, decisión E7) no entra; va de A revisar a Incorporada sin prueba (sección 8, "Mapeo de claves").
 
 ### Roles
 

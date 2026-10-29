@@ -19,6 +19,12 @@ interface Props {
   /** Falso en las reglas propias: se incorporan con la severidad de la regla (entrega 6.4, R3). */
   seEligeSeveridad: boolean;
   parametros: { clave: string; descripcion?: string; valorDefault?: string }[];
+  /**
+   * Por qué no se puede ir a un estado, aunque la transición exista (entrega 6.5): el
+   * mínimo de corridas para incorporar, una regla que no se puede probar. Se muestra al
+   * elegirlo; igual decide el servidor.
+   */
+  avisos?: Partial<Record<Estado, string>>;
 }
 
 /**
@@ -26,7 +32,7 @@ interface Props {
  * severidad y, al incorporar, los valores de los parámetros. La validación de verdad la
  * hace el servidor.
  */
-export function CambiarEstado({ reglaId, estado, disponibles, estados, severidadDefault, seEligeSeveridad, parametros }: Props) {
+export function CambiarEstado({ reglaId, estado, disponibles, estados, severidadDefault, seEligeSeveridad, parametros, avisos = {} }: Props) {
   const [hacia, setHacia] = useState<Estado | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoDeCambio | null, FormData>(cambiarEstadoDeRegla, null);
   const elegida = disponibles.find((t) => t.hacia === hacia);
@@ -63,6 +69,12 @@ export function CambiarEstado({ reglaId, estado, disponibles, estados, severidad
 
       {elegida && (
         <>
+          {avisos[elegida.hacia] && (
+            <p className="text-[var(--estado-revisar)]" data-aviso={elegida.hacia}>
+              {avisos[elegida.hacia]}
+            </p>
+          )}
+
           {elegida.requiereSeveridad && !seEligeSeveridad && (
             <p className="text-tenue" data-severidad-de-la-regla>
               Se incorpora con la severidad de la regla{severidadDefault ? `: ${textoDeSeveridad(severidadDefault)}` : ""}.
