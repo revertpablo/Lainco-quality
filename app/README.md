@@ -927,7 +927,7 @@ de `/api/ci/prueba/`, con un token de servicio de alcance `prueba`.
 
 | Variable | Qué es |
 |---|---|
-| `PRUEBA_REPOSITORIOS` | Los repositorios donde corre el job (decisión E2), como `owner/repo` separados por coma: `revertpablo/Lainco-quality,lainco/dico`. Se guardan en minúsculas. Sin esta variable el job no puede abrir corridas (la ruta responde 500 y lo dice). |
+| `PRUEBA_REPOSITORIOS` | Los repositorios donde corre el job (decisión E2), separados por coma. Cada uno es `owner/repo`, y si tiene más de una solución, `owner/repo:ruta/de/la.sln` (o `.slnx`): `revertpablo/Lainco-quality:samples/SampleSolution/SampleSolution.sln,lainco/dico`. Sin solución, el job compila la única que haya; si hay varias, el repositorio queda con un error que lo pide. El repositorio se guarda en minúsculas. Sin esta variable el job no puede abrir corridas (la ruta responde 500 y lo dice). |
 
 ### Abrir una corrida
 
@@ -945,7 +945,7 @@ esas reglas y los repositorios, y responde:
 
 | Respuesta | Cuándo |
 |---|---|
-| `201 { corrida: { id, iniciadaEn }, repositorios, reglas: [{ clave, diagnostico }], globalconfig }` | Hay reglas para probar. `globalconfig` es el archivo con el que compilar: apaga todos los analyzers y enciende las reglas En prueba (`src/dominio/prueba.ts`). |
+| `201 { corrida: { id, iniciadaEn }, repositorios: [{ repositorio, solucion }], reglas: [{ clave, diagnostico }], globalconfig }` | Hay reglas para probar. `globalconfig` es el archivo con el que compilar: apaga todos los analyzers y enciende las reglas En prueba (`src/dominio/prueba.ts`). |
 | `200 { corrida: null, mensaje }` | No hay reglas En prueba que el job pueda probar: no se abre corrida. |
 | `401` | Sin token válido de alcance `prueba`. |
 | `400`, `415` | El cuerpo no es JSON o no tiene la forma esperada. |
@@ -953,6 +953,46 @@ esas reglas y los repositorios, y responde:
 
 Si una corrida anterior sigue en curso, pasa a **fallida** ("No terminó: el job abrió otra
 corrida..."): el job que la abrió se cortó antes de mandar todos los resultados.
+
+### El job
+
+Es el workflow **Prueba de reglas** (`.github/workflows/prueba-reglas.yml`), todas las noches
+a las 06:00 UTC y a mano (*Run workflow*). Los pasos están en
+`.github/scripts/prueba-reglas.sh`; cada uno se puede correr suelto.
+
+1. Baja `SonarAnalyzer.CSharp` del release de `SonarSource/sonar-dotnet` en GitHub (no hace
+   falta NuGet) y `Lainco.Analyzers` del último release de este repositorio.
+2. Abre la corrida (arriba).
+3. Por cada repositorio: lo clona, lo compila y reduce los SARIF (`.github/prueba/`):
+   - **`Prueba.targets`** se importa en todos los proyectos con
+     `-p:CustomAfterMicrosoftCommonTargets`: saca las referencias del repositorio a
+     `Lainco.Analyzers` y `SonarAnalyzer.CSharp` (corren las del job, una sola vez, y no
+     hace falta restaurarlas: así compila la sample, que las toma de un feed local), agrega
+     los analyzers del job y el `.globalconfig`, y pide un SARIF por proyecto. El
+     `.globalconfig` entra como `EditorConfigFiles`, que es lo que lee el compilador.
+     El repositorio no se modifica.
+   - **`reducir-sarif.mjs`** cuenta los issues por regla (cero incluido), sin lo suprimido
+     en el código, lo que está fuera del repositorio ni los repetidos entre target
+     frameworks, y guarda hasta 200 ubicaciones por regla: archivo, línea, columna y mensaje,
+     nunca código (decisión E1). También informa qué reglas de Sonar y propias trae el
+     compilador, que el SARIF lista aunque no hayan disparado (decisión E7).
+   - Un repositorio que no se pudo clonar o no compiló, o con varias soluciones sin decir
+     cuál, se informa con su error y el job sigue con el próximo.
+4. Manda el resultado de cada repositorio a la app (`POST /api/ci/prueba/corridas/{id}/resultados`,
+   paso 5). Si la app no recibe alguno, el workflow falla; la corrida queda en curso y la
+   próxima la da por fallida.
+
+Configuración en GitHub (*Settings → Secrets and variables → Actions*):
+
+| Nombre | Tipo | Qué es |
+|---|---|---|
+| `LAINCO_APP_URL` | Variable | La URL de la app. |
+| `LAINCO_PRUEBA_TOKEN` | Secret | Un token de servicio de alcance `prueba` (`npm run token -- crear --nombre job-de-prueba`). |
+| `PRUEBA_GITHUB_TOKEN` | Secret, opcional | Token fine-grained con *Contents: Read-only* en los repositorios a probar. Sin él, el job usa el `GITHUB_TOKEN` del workflow, que solo lee este repositorio. |
+| `SONAR_ANALYZER_VERSION` | Variable, opcional | La versión de `SonarAnalyzer.CSharp` (el tag de `sonar-dotnet`, como `10.35.0.4138`). Conviene la que usa SonarQube Cloud. Sin ella, la última. |
+
+Los resultados (`resultado.json` de cada repositorio) y los logs de compilación quedan como
+artefacto de la corrida del workflow durante 14 días.
 
 ## Tests
 
@@ -994,11 +1034,14 @@ corrida..."): el job que la abrió se cortó antes de mandar todos los resultado
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
 | `tests/dominio/prueba.test.ts` | El estado En prueba sin base: el `.globalconfig` de prueba, IDs de diagnóstico y claves, rutas de archivo, identidad y link de una muestra, tasa de falsos positivos, corridas que cuentan para el mínimo. | Nada. |
 | `tests/prueba/esquema.test.ts` | Restricciones de las tablas de la prueba de reglas: corridas, repositorios, resultados (solo de un repositorio y una regla de la corrida) y muestras (una por identidad, sin código, evaluadas con autor). Cada test en una transacción que se descarta. | Base de pruebas. |
-| `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, minúsculas, repetidos, errores. | Nada. |
+| `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, solución opcional, minúsculas, repetidos, errores. | Nada. |
 | `tests/prueba/abrir.test.ts` | Abrir una corrida: qué reglas entran y cuáles no, repositorios pendientes, la corrida anterior en curso pasa a fallida; la ruta `POST /api/ci/prueba/corridas` con sus respuestas (201, 200, 401, 415, 400, 500). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
 | `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
+
+El reductor de SARIF del job de prueba tiene sus propios tests, sin dependencias, fuera de
+la app: `node --test .github/prueba/*.test.mjs` (desde la raíz del repositorio).
 
 La **base de pruebas** va en `DATABASE_URL_PRUEBAS`, con las migraciones aplicadas; sin esa
 variable, esos tests se saltean. No usan `DATABASE_URL` a propósito, para no escribir por

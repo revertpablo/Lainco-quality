@@ -18,7 +18,7 @@ const url = process.env.DATABASE_URL_PRUEBAS;
 class Descartada extends Error {}
 
 const AHORA = new Date("2026-10-29T03:00:00Z");
-const ENTORNO = { PRUEBA_REPOSITORIOS: "revertpablo/Lainco-quality, lainco/dico" };
+const ENTORNO = { PRUEBA_REPOSITORIOS: "revertpablo/Lainco-quality:samples/SampleSolution/SampleSolution.sln, lainco/dico" };
 
 describe.skipIf(!url)("abrir una corrida de prueba", async () => {
   if (url) {
@@ -73,7 +73,11 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
   }
 
   const abrir = (c: Contexto, cambios: Partial<Parameters<typeof abrirCorrida>[0]> = {}) =>
-    abrirCorrida({ db: c.tx, tokenId: c.tokenId, repositorios: ["revertpablo/lainco-quality", "lainco/dico"], ahora: AHORA, ...cambios });
+    abrirCorrida({ db: c.tx, tokenId: c.tokenId, repositorios: [
+        { repositorio: "revertpablo/lainco-quality", solucion: "samples/SampleSolution/SampleSolution.sln" },
+        { repositorio: "lainco/dico", solucion: null },
+      ],
+      ahora: AHORA, ...cambios });
 
   // ------------------------------------------------------------------- abrirCorrida
 
@@ -89,7 +93,10 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
       { id: lain, clave: "LAIN991", diagnostico: "LAIN991" },
       { id: s1118, clave: "csharpsquid:S1118", diagnostico: "S1118" },
     ]);
-    expect(abierta.repositorios).toEqual(["revertpablo/lainco-quality", "lainco/dico"]);
+    expect(abierta.repositorios).toEqual([
+      { repositorio: "revertpablo/lainco-quality", solucion: "samples/SampleSolution/SampleSolution.sln" },
+      { repositorio: "lainco/dico", solucion: null },
+    ]);
     expect(abierta.globalconfig).toContain("dotnet_diagnostic.S1118.severity = warning");
     expect(abierta.globalconfig).toContain("dotnet_diagnostic.LAIN991.severity = warning");
 
@@ -192,7 +199,10 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
     const cuerpo = await respuesta.json();
     expect(cuerpo).toMatchObject({
       corrida: { id: expect.any(String), iniciadaEn: AHORA.toISOString() },
-      repositorios: ["revertpablo/lainco-quality", "lainco/dico"],
+      repositorios: [
+        { repositorio: "revertpablo/lainco-quality", solucion: "samples/SampleSolution/SampleSolution.sln" },
+        { repositorio: "lainco/dico", solucion: null },
+      ],
       reglas: [{ clave: "LAIN991", diagnostico: "LAIN991" }],
       globalconfig: expect.stringContaining("dotnet_diagnostic.LAIN991.severity = warning"),
     });

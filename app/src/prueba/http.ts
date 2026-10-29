@@ -8,7 +8,7 @@ import { autorizarServicio } from "@/servicio/autorizar";
 import { error, pedidoInvalido } from "@/transiciones/respuestas";
 
 import { abrirCorrida } from "./abrir";
-import { ErrorDeConfiguracionDePrueba, repositoriosDesdeEntorno } from "./configuracion";
+import { ErrorDeConfiguracionDePrueba, repositoriosDesdeEntorno, type RepositorioAProbar } from "./configuracion";
 
 /**
  * Las rutas del job de prueba en /api/ci/prueba/ (entrega 6.5), sin la parte de Next: así
@@ -53,7 +53,7 @@ async function leerCuerpo<T>(pedido: Request, esquema: z.ZodType<T>): Promise<{ 
 /**
  * POST /api/ci/prueba/corridas: abre una corrida y devuelve lo que necesita el job:
  *
- *   201 { corrida: { id, iniciadaEn }, repositorios: ["owner/repo"],
+ *   201 { corrida: { id, iniciadaEn }, repositorios: [{ repositorio, solucion }],
  *         reglas: [{ clave, diagnostico }], globalconfig: "..." }
  *   200 { corrida: null, mensaje }   sin reglas En prueba que el job pueda correr
  */
@@ -68,7 +68,7 @@ export async function manejarAbrirCorrida(pedido: Request, { db = obtenerDb(), a
     return leido.respuesta;
   }
 
-  let repositorios: string[];
+  let repositorios: RepositorioAProbar[];
   try {
     repositorios = repositoriosDesdeEntorno(entorno);
   } catch (e) {

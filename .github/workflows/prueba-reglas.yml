@@ -1,0 +1,90 @@
+# Fase 6, entrega 6.5, paso 4 (decisión E4): prueba de reglas.
+#
+# Todas las noches compila los repositorios de PRUEBA_REPOSITORIOS (variable de la app) con
+# las reglas que están En prueba en la app de catálogo, y le manda los resultados a la app:
+# cuántos issues levanta cada regla en cada repositorio y dónde. **No se envía nada a
+# Sonar**: probar una regla no afecta el quality gate.
+#
+#   1. Baja SonarAnalyzer.CSharp (del release de SonarSource/sonar-dotnet) y el último
+#      Lainco.Analyzers (del release de este repositorio).
+#   2. Abre una corrida en la app: la app dice qué reglas probar, en qué repositorios, y da
+#      el .globalconfig. Sin reglas En prueba, termina acá.
+#   3. Por cada repositorio: lo clona, lo compila con .github/prueba/Prueba.targets (agrega
+#      los analyzers y el .globalconfig sin tocar el repositorio), reduce los SARIF y manda
+#      el resultado. Un repositorio que no compila queda con su error y sigue el próximo.
+#
+# Los pasos están en .github/scripts/prueba-reglas.sh. Configuración (app/README.md,
+# "Prueba de reglas"):
+#   vars.LAINCO_APP_URL            La URL de la app.
+#   vars.SONAR_ANALYZER_VERSION    Opcional: la versión de SonarAnalyzer.CSharp (conviene la
+#                                  de SonarQube Cloud). Si falta, la última.
+#   secrets.LAINCO_PRUEBA_TOKEN    Token de servicio de alcance "prueba" (npm run token).
+#   secrets.PRUEBA_GITHUB_TOKEN    Opcional: token fine-grained con lectura de Contents de
+#                                  los repositorios a probar. Sin él, solo se puede probar
+#                                  este repositorio.
+
+name: Prueba de reglas
+
+on:
+  schedule:
+    # 06:00 UTC, las 3 de la mañana en Buenos Aires: después de los crons de la app.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Una corrida a la vez: si una se estira, la del día siguiente espera.
+concurrency:
+  group: prueba-reglas
+  cancel-in-progress: false
+
+jobs:
+  probar:
+    name: Probar las reglas En prueba
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    env:
+      LAINCO_APP_URL: ${{ vars.LAINCO_APP_URL }}
+      SONAR_ANALYZER_VERSION: ${{ vars.SONAR_ANALYZER_VERSION }}
+      LAINCO_PRUEBA_TOKEN: ${{ secrets.LAINCO_PRUEBA_TOKEN }}
+      PRUEBA_GITHUB_TOKEN: ${{ secrets.PRUEBA_GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        # Varias versiones: cada repositorio compila con la que pida su global.json.
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Probar el reductor de SARIF
+        run: node --test .github/prueba/*.test.mjs
+
+      - name: Probar las reglas
+        # Con bash: desde Windows el script llega a git sin permiso de ejecución.
+        run: bash .github/scripts/prueba-reglas.sh todo "$RUNNER_TEMP/prueba"
+
+      - name: Guardar los logs de compilación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prueba-de-reglas
+          path: |
+            ${{ runner.temp }}/prueba/corrida.json
+            ${{ runner.temp }}/prueba/repos/*/resultado.json
+            ${{ runner.temp }}/prueba/repos/*/compilacion.log
+          if-no-files-found: ignore
+          retention-days: 14

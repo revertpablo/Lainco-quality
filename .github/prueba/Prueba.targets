@@ -1,0 +1,52 @@
+<Project>
+  <!--
+    Job de prueba de reglas (entrega 6.5, decisión E4): agrega a cada proyecto de un
+    repositorio los analyzers y el .globalconfig de prueba, sin tocar el repositorio.
+
+    Lo importa MSBuild en todos los proyectos, porque el job compila con
+      -p:CustomAfterMicrosoftCommonTargets=<este archivo>
+    y le pasa:
+      LaincoPruebaAnalyzers     Carpeta con los .dll de los analyzers a correr
+                                (SonarAnalyzer.CSharp y Lainco.Analyzers).
+      LaincoPruebaGlobalconfig  El .globalconfig que devolvió la app al abrir la corrida.
+      LaincoPruebaSarif         Carpeta donde dejar un SARIF por proyecto y target framework.
+
+    Lo que hace:
+    - Saca las referencias del repositorio a Lainco.Analyzers y SonarAnalyzer.CSharp, para
+      que corran las versiones del job y una sola vez. Sacarlas acá, al evaluar el proyecto,
+      también evita restaurarlas: un repositorio que las toma de un feed que no está (como
+      la sample, que usa artifacts/nupkg) restaura igual.
+    - Antes de compilar, agrega los analyzers del job y el .globalconfig, saca el
+      suppressor de issues aceptados (en el job cuenta todo) y pide el SARIF.
+
+    Ver .github/workflows/prueba-reglas.yml y app/README.md, "Prueba de reglas".
+  -->
+
+  <ItemGroup Condition="'$(LaincoPruebaAnalyzers)' != ''">
+    <PackageReference Remove="Lainco.Analyzers" />
+    <PackageReference Remove="SonarAnalyzer.CSharp" />
+  </ItemGroup>
+
+  <Target Name="LaincoPruebaConfigurarAnalisis"
+          BeforeTargets="CoreCompile"
+          Condition="'$(LaincoPruebaAnalyzers)' != '' and '$(Language)' == 'C#'">
+    <ItemGroup>
+      <!-- Los analyzers del job, y ninguna otra copia de ellos ni el suppressor. -->
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'Lainco.Analyzers' or '%(Filename)' == 'Lainco.Analyzers.Suppressor' or '%(Filename)' == 'SonarAnalyzer.CSharp'" />
+      <Analyzer Include="$(LaincoPruebaAnalyzers)/*.dll" />
+      <!--
+        Como EditorConfigFiles, que es lo que lee el compilador: los GlobalAnalyzerConfigFiles
+        se convierten en EditorConfigFiles al evaluar el proyecto, y en un target ya es tarde.
+      -->
+      <EditorConfigFiles Include="$(LaincoPruebaGlobalconfig)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_LaincoPruebaTf Condition="'$(TargetFramework)' != ''">-$(TargetFramework)</_LaincoPruebaTf>
+      <ErrorLog>$(LaincoPruebaSarif)/$(MSBuildProjectName)$(_LaincoPruebaTf).sarif,version=2.1</ErrorLog>
+      <RunAnalyzers>true</RunAnalyzers>
+      <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+      <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+      <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+    </PropertyGroup>
+  </Target>
+</Project>

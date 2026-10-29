@@ -5,6 +5,8 @@ import { corridaPrueba, estadoRegla, regla, reglaEnCorrida, repositorioEnCorrida
 import { ErrorDePrueba, generarGlobalconfigDePrueba, idDeDiagnostico } from "@/dominio/prueba";
 import { Estado, EstadoCorrida, Lenguaje, Origen } from "@/dominio/valores";
 
+import type { RepositorioAProbar } from "./configuracion";
+
 /**
  * Abrir una corrida del job de prueba (entrega 6.5, paso 3, decisión E4). El job la pide al
  * empezar; la app decide qué se prueba y dónde, y le devuelve el `.globalconfig` con el que
@@ -31,7 +33,7 @@ export interface ReglaDeLaCorrida {
 export interface CorridaAbierta {
   corrida: { id: string; iniciadaEn: Date } | null;
   reglas: ReglaDeLaCorrida[];
-  repositorios: string[];
+  repositorios: RepositorioAProbar[];
   globalconfig: string | null;
 }
 
@@ -45,8 +47,8 @@ export async function abrirCorrida({
 }: {
   db: Db;
   tokenId: string;
-  /** owner/repo en minúsculas (src/prueba/configuracion.ts). */
-  repositorios: readonly string[];
+  /** De PRUEBA_REPOSITORIOS (src/prueba/configuracion.ts). */
+  repositorios: readonly RepositorioAProbar[];
   workflowUrl?: string;
   versiones?: { sonarAnalyzer?: string; laincoAnalyzers?: string };
   ahora?: Date;
@@ -105,7 +107,7 @@ export async function abrirCorrida({
       })
       .returning({ id: corridaPrueba.id, iniciadaEn: corridaPrueba.iniciadaEn });
     await tx.insert(reglaEnCorrida).values(reglas.map((r) => ({ corridaId: corrida.id, reglaId: r.id })));
-    await tx.insert(repositorioEnCorrida).values(repositorios.map((repositorio) => ({ corridaId: corrida.id, repositorio })));
+    await tx.insert(repositorioEnCorrida).values(repositorios.map(({ repositorio }) => ({ corridaId: corrida.id, repositorio })));
 
     return {
       corrida,
