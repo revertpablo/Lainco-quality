@@ -4,6 +4,7 @@ import {
   claveDeDiagnostico,
   corridasQueCuentan,
   corridasQueFaltan,
+  elegirMuestras,
   ErrorDePrueba,
   generarGlobalconfigDePrueba,
   idDeDiagnostico,
@@ -215,5 +216,47 @@ describe("corridasQueFaltan", () => {
     expect(corridasQueFaltan(5, 2)).toBe(3);
     expect(corridasQueFaltan(5, 5)).toBe(0);
     expect(corridasQueFaltan(5, 8)).toBe(0);
+  });
+});
+
+describe("elegirMuestras", () => {
+  const ubicacion = (archivo: string, mensaje = `En ${archivo}`, linea = 1) => ({ archivo, linea, columna: 1, mensaje });
+  const identidad = (u: { archivo: string; mensaje: string }) =>
+    identidadDeMuestra({ reglaId: "r1", repositorio: "lainco/dico", archivo: u.archivo, mensaje: u.mensaje });
+
+  it("toma hasta el máximo, en el orden en que llegan", () => {
+    const ubicaciones = Array.from({ length: 30 }, (_, i) => ubicacion(`A${String(i).padStart(2, "0")}.cs`));
+
+    const elegidas = elegirMuestras(ubicaciones, { identidad, evaluadas: new Set(), maximo: 20 });
+
+    expect(elegidas.map((u) => u.archivo)).toEqual(ubicaciones.slice(0, 20).map((u) => u.archivo));
+  });
+
+  it("primero las ya evaluadas, aunque lleguen al final (E6)", () => {
+    const ubicaciones = Array.from({ length: 30 }, (_, i) => ubicacion(`A${String(i).padStart(2, "0")}.cs`));
+    const evaluadas = new Set([identidad(ubicaciones[28]), identidad(ubicaciones[25])]);
+
+    const elegidas = elegirMuestras(ubicaciones, { identidad, evaluadas, maximo: 5 });
+
+    expect(elegidas.map((u) => u.archivo)).toEqual(["A25.cs", "A28.cs", "A00.cs", "A01.cs", "A02.cs"]);
+  });
+
+  it("dos ubicaciones con la misma identidad son una muestra: queda la primera", () => {
+    const elegidas = elegirMuestras([ubicacion("A.cs", "igual", 3), ubicacion("A.cs", "igual", 9), ubicacion("B.cs")], {
+      identidad,
+      evaluadas: new Set(),
+      maximo: 20,
+    });
+
+    expect(elegidas.map((u) => [u.archivo, u.linea])).toEqual([
+      ["A.cs", 3],
+      ["B.cs", 1],
+    ]);
+  });
+
+  it("el máximo por defecto es 20", () => {
+    const ubicaciones = Array.from({ length: 50 }, (_, i) => ubicacion(`A${i}.cs`));
+
+    expect(elegirMuestras(ubicaciones, { identidad, evaluadas: new Set() })).toHaveLength(20);
   });
 });

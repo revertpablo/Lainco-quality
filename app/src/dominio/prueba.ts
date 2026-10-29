@@ -153,3 +153,28 @@ export function corridasQueCuentan(corridas: readonly CorridaDeLaRegla[], entroE
 export function corridasQueFaltan(minimo: number, cuentan: number): number {
   return Math.max(0, minimo - cuentan);
 }
+
+/** Cuántas muestras se guardan por regla y repositorio en cada corrida (decisión E6). */
+export const MUESTRAS_POR_REGLA_Y_REPOSITORIO = 20;
+
+/**
+ * Las ubicaciones que pasan a ser muestras (E6): primero las que el equipo ya evaluó (para
+ * que su evaluación siga a la vista), después las demás en el orden en que llegan, hasta el
+ * máximo. Dos ubicaciones con la misma identidad son la misma muestra: queda la primera.
+ */
+export function elegirMuestras<T extends { archivo: string; mensaje: string }>(
+  ubicaciones: readonly T[],
+  { identidad, evaluadas, maximo = MUESTRAS_POR_REGLA_Y_REPOSITORIO }: { identidad: (u: T) => string; evaluadas: ReadonlySet<string>; maximo?: number },
+): T[] {
+  const unicas = new Map<string, T>();
+  for (const u of ubicaciones) {
+    const clave = identidad(u);
+    if (!unicas.has(clave)) {
+      unicas.set(clave, u);
+    }
+  }
+  const todas = [...unicas.entries()];
+  const primero = todas.filter(([clave]) => evaluadas.has(clave));
+  const despues = todas.filter(([clave]) => !evaluadas.has(clave));
+  return [...primero, ...despues].slice(0, maximo).map(([, u]) => u);
+}

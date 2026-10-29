@@ -954,6 +954,45 @@ esas reglas y los repositorios, y responde:
 Si una corrida anterior sigue en curso, pasa a **fallida** ("No terminó: el job abrió otra
 corrida..."): el job que la abrió se cortó antes de mandar todos los resultados.
 
+### Recibir los resultados
+
+`POST /api/ci/prueba/corridas/{id}/resultados`, con el mismo token, una vez por repositorio.
+El cuerpo lo arma `.github/prueba/reducir-sarif.mjs`:
+
+```json
+{ "repositorio": "owner/repo", "commit": "0b83618...", "estado": "ok",
+  "diagnosticosDisponibles": ["LAIN001", "S100", "..."],
+  "reglas": [{ "diagnostico": "S1118", "cantidad": 3,
+               "ubicaciones": [{ "archivo": "src/A.cs", "linea": 18, "columna": 14, "mensaje": "..." }] }] }
+
+{ "repositorio": "owner/repo", "estado": "error", "error": "No compiló: ...", "commit": "0b83618..." }
+```
+
+Con `ok`, las reglas tienen que ser exactamente las de la corrida (todas, cero incluido) y
+hasta 200 ubicaciones cada una, que no pueden ser más que la cantidad. La app
+(`src/prueba/ingesta.ts`):
+
+- guarda la cantidad de cada regla en el repositorio; una regla cuyo ID no está en
+  `diagnosticosDisponibles` no tiene resultado, porque el compilador no la corrió;
+- marca `probableLocalmente` en **todas** las reglas de Sonar para C# del inventario, según
+  estén o no en `diagnosticosDisponibles` (decisión E7). Si la lista no trae ninguna regla de
+  Sonar no se marca nada: es un error del job, no que falten todas;
+- guarda hasta 20 muestras por regla (decisión E6): primero las que ya tienen una evaluación,
+  después las demás en el orden en que llegan. Una muestra es la misma mientras coincidan
+  regla, repositorio, archivo y mensaje: conserva su evaluación y toma la línea, el commit y
+  la corrida nuevos;
+- un envío repetido del mismo repositorio, mientras la corrida está en curso, reemplaza al
+  anterior;
+- cuando llegaron todos los repositorios, la corrida pasa a **terminada**.
+
+| Respuesta | Cuándo |
+|---|---|
+| `200 { corrida: { id, estado }, repositorio, estado, resultados, muestras, faltan }` | Recibido. `faltan`: los repositorios que todavía no mandaron nada. |
+| `404` | La corrida no existe. |
+| `409` | La corrida ya terminó o falló (por ejemplo, el job abrió otra). |
+| `422` | El repositorio no es de la corrida, o las reglas no son exactamente las de la corrida (dice cuáles faltan y cuáles sobran). |
+| `400`, `415`, `401` | El cuerpo no es JSON o no tiene la forma esperada (dice qué campo); sin token válido. |
+
 ### El job
 
 Es el workflow **Prueba de reglas** (`.github/workflows/prueba-reglas.yml`), todas las noches
@@ -1036,6 +1075,7 @@ artefacto de la corrida del workflow durante 14 días.
 | `tests/prueba/esquema.test.ts` | Restricciones de las tablas de la prueba de reglas: corridas, repositorios, resultados (solo de un repositorio y una regla de la corrida) y muestras (una por identidad, sin código, evaluadas con autor). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, solución opcional, minúsculas, repetidos, errores. | Nada. |
 | `tests/prueba/abrir.test.ts` | Abrir una corrida: qué reglas entran y cuáles no, repositorios pendientes, la corrida anterior en curso pasa a fallida; la ruta `POST /api/ci/prueba/corridas` con sus respuestas (201, 200, 401, 415, 400, 500). Cada test en una transacción que se descarta. | Base de pruebas. |
+| `tests/prueba/ingesta.test.ts` | Recibir resultados por la ruta, contra la base: cantidades con cero, reglas que el analyzer no trae, `probableLocalmente`, repositorios con error, fin de la corrida, envíos repetidos, hasta 20 muestras con las evaluadas primero y su evaluación conservada en la corrida siguiente, y los rechazos (401, 404, 409, 422, 400). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
 | `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
@@ -1092,7 +1132,7 @@ app/
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.
-│   ├── prueba/       # El job de prueba de reglas: configuración (PRUEBA_REPOSITORIOS), abrir una corrida y las rutas de /api/ci/prueba/ (http.ts).
+│   ├── prueba/       # El job de prueba de reglas: configuración (PRUEBA_REPOSITORIOS), abrir una corrida, recibir los resultados (ingesta.ts) y las rutas de /api/ci/prueba/ (http.ts).
 │   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
 │   ├── reconciliacion/  # Reconciliar el perfil de Sonar con la app, corregir desvíos y sus acciones.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.

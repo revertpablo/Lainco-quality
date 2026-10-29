@@ -3,12 +3,14 @@ import "server-only";
 import { z } from "zod";
 
 import { obtenerDb, type Db } from "@/db/cliente";
+import { ErrorDePrueba, normalizarArchivo } from "@/dominio/prueba";
 import { AlcanceToken } from "@/dominio/valores";
 import { autorizarServicio } from "@/servicio/autorizar";
 import { error, pedidoInvalido } from "@/transiciones/respuestas";
 
 import { abrirCorrida } from "./abrir";
 import { ErrorDeConfiguracionDePrueba, repositoriosDesdeEntorno, type RepositorioAProbar } from "./configuracion";
+import { registrarResultado } from "./ingesta";
 
 /**
  * Las rutas del job de prueba en /api/ci/prueba/ (entrega 6.5), sin la parte de Next: así
@@ -98,4 +100,89 @@ export async function manejarAbrirCorrida(pedido: Request, { db = obtenerDb(), a
     },
     { status: 201 },
   );
+}
+
+// ------------------------------------------------------------------------- resultados
+
+/** Hasta cuántas ubicaciones por regla manda el job (reducir-sarif.mjs). */
+export const UBICACIONES_POR_REGLA = 200;
+
+const repositorio = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/, "Tiene que ser owner/repo.");
+const commit = z.string().regex(/^[0-9a-f]{7,64}$/i, "Tiene que ser el SHA de un commit.");
+
+const ubicacion = z.strictObject({
+  archivo: z.string().transform((ruta, ctx) => {
+    try {
+      return normalizarArchivo(ruta);
+    } catch (e) {
+      if (!(e instanceof ErrorDePrueba)) {
+        throw e;
+      }
+      ctx.addIssue({ code: "custom", message: e.message });
+      return z.NEVER;
+    }
+  }),
+  linea: z.int().min(1),
+  columna: z.int().min(1),
+  mensaje: z.string().trim().min(1).max(2000),
+});
+
+const resultadoDeRegla = z
+  .strictObject({
+    diagnostico: z.string().regex(/^(S\d+|LAIN\d{3})$/, "Tiene que ser un ID de Sonar (S####) o propio (LAIN###)."),
+    cantidad: z.int().min(0),
+    ubicaciones: z.array(ubicacion).max(UBICACIONES_POR_REGLA),
+  })
+  .refine((r) => r.ubicaciones.length <= r.cantidad, { message: "Hay más ubicaciones que issues.", path: ["cantidad"] });
+
+/** Cuerpo de POST /api/ci/prueba/corridas/{id}/resultados (lo arma .github/prueba/reducir-sarif.mjs). */
+export const cuerpoDeResultado = z.discriminatedUnion("estado", [
+  z.strictObject({
+    repositorio,
+    commit,
+    estado: z.literal("ok"),
+    diagnosticosDisponibles: z.array(z.string().max(100)).max(10_000),
+    reglas: z.array(resultadoDeRegla).max(5_000),
+  }),
+  z.strictObject({
+    repositorio,
+    commit: commit.optional(),
+    estado: z.literal("error"),
+    error: z.string().trim().min(1).max(4000),
+  }),
+]);
+
+/**
+ * POST /api/ci/prueba/corridas/{id}/resultados: el resultado de un repositorio
+ * (src/prueba/ingesta.ts). Respuestas:
+ *
+ *   200 { corrida: { id, estado }, repositorio, estado, resultados, muestras, faltan }
+ *   404 la corrida no existe · 409 ya terminó o falló
+ *   422 el repositorio no es de la corrida, o las reglas no son las de la corrida
+ *   400, 415 el cuerpo no es JSON o no tiene la forma esperada · 401 sin token
+ */
+export async function manejarResultados(pedido: Request, corridaId: string, { db = obtenerDb(), ahora = new Date() }: Opciones = {}): Promise<Response> {
+  const autorizado = await autorizarServicio(pedido, AlcanceToken.Prueba, { db, ahora });
+  if (autorizado instanceof Response) {
+    return autorizado;
+  }
+  if (!z.uuid().safeParse(corridaId).success) {
+    return error(404, "corridaNoEncontrada", "No existe esa corrida.");
+  }
+
+  const leido = await leerCuerpo(pedido, cuerpoDeResultado);
+  if ("respuesta" in leido) {
+    return leido.respuesta;
+  }
+
+  const registrado = await registrarResultado({ db, corridaId, resultado: leido.cuerpo, ahora });
+  if (!registrado.ok) {
+    return error(registrado.status, registrado.error, registrado.mensaje, registrado.extra);
+  }
+  const { corrida, repositorio: delRepositorio, estado, resultados, muestras, faltan } = registrado;
+  return Response.json({ corrida, repositorio: delRepositorio, estado, resultados, muestras, faltan }, { status: 200 });
 }
