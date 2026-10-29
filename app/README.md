@@ -919,6 +919,41 @@ viejo. El script usa la `DATABASE_URL` de los archivos `.env` o de la consola: p
 el token de producción, se corre con la URL de producción (ver [Bases por
 entorno](#bases-por-entorno)).
 
+## Prueba de reglas
+
+El job de prueba (entrega 6.5) compila los repositorios con las reglas En prueba y le manda
+los resultados a la app; a Sonar no va nada (decisión E4). Habla con la app por las rutas
+de `/api/ci/prueba/`, con un token de servicio de alcance `prueba`.
+
+| Variable | Qué es |
+|---|---|
+| `PRUEBA_REPOSITORIOS` | Los repositorios donde corre el job (decisión E2), como `owner/repo` separados por coma: `revertpablo/Lainco-quality,lainco/dico`. Se guardan en minúsculas. Sin esta variable el job no puede abrir corridas (la ruta responde 500 y lo dice). |
+
+### Abrir una corrida
+
+`POST /api/ci/prueba/corridas`, con el token en `Authorization: Bearer lqs_...` y un cuerpo
+JSON (todo opcional):
+
+```json
+{ "workflowUrl": "https://github.com/revertpablo/Lainco-quality/actions/runs/123",
+  "versiones": { "sonarAnalyzer": "10.15.0", "laincoAnalyzers": "0.2.0" } }
+```
+
+La app toma las reglas En prueba que el job puede correr (de C#, no deprecadas, y de Sonar
+las que no se sabe que falten en `SonarAnalyzer.CSharp`, decisión E7), abre la corrida con
+esas reglas y los repositorios, y responde:
+
+| Respuesta | Cuándo |
+|---|---|
+| `201 { corrida: { id, iniciadaEn }, repositorios, reglas: [{ clave, diagnostico }], globalconfig }` | Hay reglas para probar. `globalconfig` es el archivo con el que compilar: apaga todos los analyzers y enciende las reglas En prueba (`src/dominio/prueba.ts`). |
+| `200 { corrida: null, mensaje }` | No hay reglas En prueba que el job pueda probar: no se abre corrida. |
+| `401` | Sin token válido de alcance `prueba`. |
+| `400`, `415` | El cuerpo no es JSON o no tiene la forma esperada. |
+| `500` | Falta o está mal `PRUEBA_REPOSITORIOS`. |
+
+Si una corrida anterior sigue en curso, pasa a **fallida** ("No terminó: el job abrió otra
+corrida..."): el job que la abrió se cortó antes de mandar todos los resultados.
+
 ## Tests
 
 `npm test` corre todos.
@@ -959,6 +994,8 @@ entorno](#bases-por-entorno)).
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
 | `tests/dominio/prueba.test.ts` | El estado En prueba sin base: el `.globalconfig` de prueba, IDs de diagnóstico y claves, rutas de archivo, identidad y link de una muestra, tasa de falsos positivos, corridas que cuentan para el mínimo. | Nada. |
 | `tests/prueba/esquema.test.ts` | Restricciones de las tablas de la prueba de reglas: corridas, repositorios, resultados (solo de un repositorio y una regla de la corrida) y muestras (una por identidad, sin código, evaluadas con autor). Cada test en una transacción que se descarta. | Base de pruebas. |
+| `tests/prueba/configuracion.test.ts` | `PRUEBA_REPOSITORIOS`: formato, minúsculas, repetidos, errores. | Nada. |
+| `tests/prueba/abrir.test.ts` | Abrir una corrida: qué reglas entran y cuáles no, repositorios pendientes, la corrida anterior en curso pasa a fallida; la ruta `POST /api/ci/prueba/corridas` con sus respuestas (201, 200, 401, 415, 400, 500). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
 | `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
@@ -1005,13 +1042,14 @@ despliegue.
 ```
 app/
 ├── src/
-│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. paquete/: el paquete de reglas propias. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete, reconciliar-sonar y revisar-paquete. api/reglas: transiciones.
+│   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. paquete/: el paquete de reglas propias. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete, reconciliar-sonar y revisar-paquete. api/reglas: transiciones. api/ci/prueba: el job de prueba de reglas.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
 │   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero), prueba.ts (el estado En prueba: configuración de prueba, muestras, tasa, corridas que cuentan).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.
+│   ├── prueba/       # El job de prueba de reglas: configuración (PRUEBA_REPOSITORIOS), abrir una corrida y las rutas de /api/ci/prueba/ (http.ts).
 │   ├── publicacion/  # Publicar en Sonar lo pendiente, después de responder, y la acción del botón.
 │   ├── reconciliacion/  # Reconciliar el perfil de Sonar con la app, corregir desvíos y sus acciones.
 │   ├── reglas/       # Detalle de una regla, historial, descripción saneada y el cambio de estado individual.

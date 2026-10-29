@@ -20,6 +20,7 @@ export const DIAS_MAXIMOS = 365;
 export class ErrorDeTokenServicio extends Error {}
 
 export interface TokenCreado {
+  id: string;
   /** El token: se muestra una sola vez y no se guarda. */
   token: string;
   nombre: string;
@@ -46,8 +47,11 @@ export async function crearTokenServicio(
 
   const { token, hash, prefijo } = generarToken();
   const expiraEn = new Date(ahora.getTime() + dias * 24 * 60 * 60 * 1000);
-  await db.insert(tokenServicio).values({ nombre: limpio, alcance, hash, prefijo, creadoEn: ahora, expiraEn });
-  return { token, nombre: limpio, prefijo, expiraEn };
+  const [creado] = await db
+    .insert(tokenServicio)
+    .values({ nombre: limpio, alcance, hash, prefijo, creadoEn: ahora, expiraEn })
+    .returning({ id: tokenServicio.id });
+  return { id: creado.id, token, nombre: limpio, prefijo, expiraEn };
 }
 
 /** Lo da de baja. Devuelve false si no existe o ya estaba dado de baja. */
