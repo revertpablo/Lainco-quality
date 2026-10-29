@@ -384,6 +384,6 @@ La app alerta cuando:
 | D6.1 | Quiénes tienen rol decisor | **Resuelta (2026-10-15)**: Federico Sánchez y Pablo Revert, cargados por seed. Los demás usuarios entran como analistas. |
 | D6.2 | Fuente de las normas de diseño para la pre-clasificación | Documentación existente del equipo (exportada y versionada) / archivo en el repo. |
 | D6.3 | Proveedor y modelo de IA | Compartir la decisión D7.1 de la Fase 7. |
-| D6.4 | Período mínimo de prueba | Ej.: dos semanas o N corridas. |
-| D6.5 | Repositorios incluidos en el job de prueba | Todos / selección. |
+| D6.4 | Período mínimo de prueba | **Resuelta (2026-10-29)**: N corridas, configurable. Ver `FASE-6-APP.md`, sección 8 quater (E3). |
+| D6.5 | Repositorios incluidos en el job de prueba | **Resuelta (2026-10-29)**: lista configurable en la app. Ver `FASE-6-APP.md`, sección 8 quater (E2). |
 | D6.6 | Frecuencia de sincronización con Sonar | Diaria / semanal. |
