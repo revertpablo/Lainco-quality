@@ -143,3 +143,30 @@ export const AlcanceToken = {
   Prueba: "prueba",
 } as const;
 export type AlcanceToken = (typeof AlcanceToken)[keyof typeof AlcanceToken];
+
+/** En qué está una corrida del job de prueba (entrega 6.5). */
+export const EstadoCorrida = {
+  /** La abrió el job al pedir la configuración; faltan resultados de algún repositorio. */
+  EnCurso: "enCurso",
+  /** Llegaron los resultados de todos sus repositorios (alguno puede no haber compilado). */
+  Terminada: "terminada",
+  /** No terminó: el job falló o la reemplazó una corrida nueva. */
+  Fallida: "fallida",
+} as const;
+export type EstadoCorrida = (typeof EstadoCorrida)[keyof typeof EstadoCorrida];
+
+/** Cómo le fue a un repositorio en una corrida de prueba (entrega 6.5). */
+export const EstadoRepositorioPrueba = {
+  Ok: "ok",
+  /** No compiló, o el job no pudo analizarlo: el error queda en la corrida. */
+  Error: "error",
+} as const;
+export type EstadoRepositorioPrueba = (typeof EstadoRepositorioPrueba)[keyof typeof EstadoRepositorioPrueba];
+
+/** Lo que dijo el equipo de una muestra de issue de una regla en prueba (entrega 6.5, E6). */
+export const EvaluacionMuestra = {
+  SinEvaluar: "sinEvaluar",
+  Valida: "valida",
+  FalsoPositivo: "falsoPositivo",
+} as const;
+export type EvaluacionMuestra = (typeof EvaluacionMuestra)[keyof typeof EvaluacionMuestra];

@@ -129,9 +129,9 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0009_pr_de_configuracion` | Entrega 6.4, paso 6: `publicacion.prNumero` y `prUrl`, el PR de configuración que llevó la regla al paquete. |
 | `0010_seguimiento_del_paquete` | Entrega 6.4, paso 7: `prConfiguracion` (los PRs de configuración y su estado en GitHub) con su tabla de referencia `estadoPr`, `revisionPaquete` (el log de cada revisión) y el tipo de desvío `globalconfigDistinto`. Registra como abiertos los PRs que ya figuraban en las publicaciones. |
 | `0011_tokens_de_servicio` | Entrega 6.5, paso 1: `tokenServicio` (los tokens con los que los jobs de CI entran a `/api/ci/`: hash, prefijo, alcance, vencimiento, último uso y baja) y su tabla de referencia `alcanceToken`, con el alcance `prueba`. |
+| `0012_corridas_de_prueba` | Entrega 6.5, paso 2: `corridaPrueba` (cada corrida del job de prueba), `reglaEnCorrida` y `repositorioEnCorrida` (qué probó y dónde, y cómo le fue a cada repositorio), `resultadoPrueba` (issues por regla y repositorio, cero incluido) y `muestraPrueba` (referencias al código para evaluar, sin código; una por regla, repositorio, archivo y mensaje). Tablas de referencia `estadoCorrida`, `estadoRepositorioPrueba` y `evaluacionMuestra`, con sus valores. |
 
-Las tablas de las entregas siguientes (sugerencias de IA, relaciones, las corridas de
-prueba) se agregan con su propia migración cuando se implementan.
+Las tablas de las entregas siguientes (sugerencias de IA, relaciones) se agregan con su propia migración cuando se implementan.
 
 `.env.example` lista las variables que hacen falta. Nunca se commitean valores reales.
 
@@ -957,6 +957,8 @@ entorno](#bases-por-entorno)).
 | `tests/publicacion/consultas.test.ts` | Lo que muestran la pantalla Sonar y el inventario: sin publicar (fallidas vigentes), desvíos abiertos, última publicación de una regla. | Base de pruebas. |
 | `tests/ui/` | Textos de la pantalla: lo esperado y lo encontrado de un desvío, el estado de una regla en Sonar. | Nada. |
 | `tests/publicacion/resumen.test.ts` | El resultado de publicar, en una frase. | Nada. |
+| `tests/dominio/prueba.test.ts` | El estado En prueba sin base: el `.globalconfig` de prueba, IDs de diagnóstico y claves, rutas de archivo, identidad y link de una muestra, tasa de falsos positivos, corridas que cuentan para el mínimo. | Nada. |
+| `tests/prueba/esquema.test.ts` | Restricciones de las tablas de la prueba de reglas: corridas, repositorios, resultados (solo de un repositorio y una regla de la corrida) y muestras (una por identidad, sin código, evaluadas con autor). Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/servicio/token.test.ts` | Tokens de servicio: formato, hash, prefijo y cómo se leen del encabezado. | Nada. |
 | `tests/servicio/tokensDeServicio.test.ts` | Crear, listar, dar de baja y validar tokens de servicio; el `401` de `/api/ci/`, igual para cualquier motivo. Cada test en una transacción que se descarta. | Base de pruebas. |
 | `tests/publicacion/encolar.test.ts` | Encolar la publicación al decidir, en la misma transacción. Cada test corre en una transacción que se descarta, porque usa reglas de Sonar y los tests de sincronización las borran en paralelo. | Base de pruebas. |
@@ -1006,7 +1008,7 @@ app/
 │   ├── app/          # Rutas (App Router). reglas/: inventario; reglas/[id]: detalle. tablero/: progreso. sonar/: publicación y desvíos. ingresar/: pantalla de ingreso. api/auth: Auth.js. api/salud: chequeo de salud. paquete/: el paquete de reglas propias. api/cron: sincronizar-sonar, sincronizar-roslyn, publicar-sonar, publicar-paquete, reconciliar-sonar y revisar-paquete. api/reglas: transiciones.
 │   ├── auth/         # Auth.js (index.ts, config.ts), alta y búsqueda de usuarios, sesión (sesion.ts).
 │   ├── db/           # Esquema (esquema.ts), conexión (cliente.ts), chequeo (salud.ts).
-│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero).
+│   ├── dominio/      # Reglas del negocio, sin I/O: valores.ts (códigos), transiciones.ts (ciclo de vida), acceso.ts (quién entra), sincronizacion.ts (qué cambió en Sonar), filtros.ts (filtros del inventario en la URL), progreso.ts (cuentas del tablero), prueba.ts (el estado En prueba: configuración de prueba, muestras, tasa, corridas que cuentan).
 │   ├── inventario/   # Consulta del inventario y la acción de la operación masiva.
 │   ├── vistas/       # Vistas guardadas: guardar, listar, borrar.
 │   ├── tablero/      # Consultas del tablero de progreso.

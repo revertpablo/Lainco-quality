@@ -20,12 +20,15 @@ import type {
   AlcanceToken,
   DestinoPublicacion,
   Estado,
+  EstadoCorrida,
   EstadoPr,
   EstadoPublicacion,
+  EstadoRepositorioPrueba,
   EstadoSincronizacion,
   Lenguaje,
   MotivoAviso,
   Origen,
+  EvaluacionMuestra,
   Rol,
   TipoDesvio,
 } from "@/dominio/valores";
@@ -47,9 +50,9 @@ import type {
  *
  * Están las tablas de la entrega 6.1 (con `aviso`, agregada en el paso 6), las de la
  * publicación a Sonar de la 6.2 (`publicacion` y `desvio`), las del paquete de reglas
- * propias de la 6.4 y los tokens de servicio de la 6.5. Las de las entregas siguientes
- * (sugerencias de IA, relaciones, grupos de equivalencia, pruebas) se agregan con su propia
- * migración cuando se implementan.
+ * propias de la 6.4, y los tokens de servicio y las corridas de prueba de la 6.5. Las de
+ * las entregas siguientes (sugerencias de IA, relaciones, grupos de equivalencia) se
+ * agregan con su propia migración cuando se implementan.
  */
 
 const fechaDeAlta = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -84,6 +87,9 @@ export const destinoPublicacion = tablaDeReferencia<DestinoPublicacion>("destino
 export const tipoDesvio = tablaDeReferencia<TipoDesvio>("tipoDesvio");
 export const estadoPr = tablaDeReferencia<EstadoPr>("estadoPr");
 export const alcanceToken = tablaDeReferencia<AlcanceToken>("alcanceToken");
+export const estadoCorrida = tablaDeReferencia<EstadoCorrida>("estadoCorrida");
+export const estadoRepositorioPrueba = tablaDeReferencia<EstadoRepositorioPrueba>("estadoRepositorioPrueba");
+export const evaluacionMuestra = tablaDeReferencia<EvaluacionMuestra>("evaluacionMuestra");
 
 // ---------------------------------------------------------------------- usuario
 
@@ -539,5 +545,151 @@ export const tokenServicio = pgTable(
     // Que nadie guarde el token en claro por error.
     check("tokenServicioHashSha256", sql`${t.hash} ~ '^[0-9a-f]{64}$'`),
     check("tokenServicioVenceDespuesDeCrearse", sql`${t.expiraEn} > ${t.creadoEn}`),
+  ],
+);
+
+// ---------------------------------------------------------------- prueba de reglas
+
+/** `owner/repo` de GitHub, en minúsculas (GitHub no distingue mayúsculas). */
+const repositorioDeGithub = (columna: unknown) => sql`${columna} ~ '^[a-z0-9_.-]+/[a-z0-9_.-]+$'`;
+
+/**
+ * Cada corrida del job de prueba (entrega 6.5, decisión E4): la abre el job al pedir la
+ * configuración y termina cuando llegaron los resultados de todos sus repositorios.
+ */
+export const corridaPrueba = pgTable(
+  "corridaPrueba",
+  {
+    id: uuid().notNull().defaultRandom(),
+    iniciadaEn: fechaDeAlta(),
+    terminadaEn: timestamp({ withTimezone: true }),
+    estado: text().$type<EstadoCorrida>().notNull().default("enCurso"),
+    /** Por qué no terminó, si falló. */
+    error: text(),
+    /** El token con el que el job la abrió. */
+    tokenId: uuid().notNull(),
+    /** La corrida del workflow en GitHub Actions. */
+    workflowUrl: text(),
+    /** Las versiones con las que compiló el job: qué reglas había para probar (E7). */
+    versionSonarAnalyzer: text(),
+    versionLaincoAnalyzers: text(),
+  },
+  (t) => [
+    primaryKey({ name: "corridaPruebaPk", columns: [t.id] }),
+    foreignKey({ name: "corridaPruebaEstado", columns: [t.estado], foreignColumns: [estadoCorrida.codigo] }),
+    foreignKey({ name: "corridaPruebaToken", columns: [t.tokenId], foreignColumns: [tokenServicio.id] }),
+    check("corridaPruebaTerminadaConFecha", sql`(${t.estado} = 'enCurso') = (${t.terminadaEn} is null)`),
+    check("corridaPruebaFallidaConError", sql`(${t.estado} = 'fallida') = (${t.error} is not null)`),
+    index("corridaPruebaIniciadaEn").on(t.iniciadaEn),
+  ],
+);
+
+/** Las reglas que probó una corrida: las que estaban En prueba cuando el job pidió la configuración. */
+export const reglaEnCorrida = pgTable(
+  "reglaEnCorrida",
+  {
+    corridaId: uuid().notNull(),
+    reglaId: uuid().notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "reglaEnCorridaPk", columns: [t.corridaId, t.reglaId] }),
+    foreignKey({ name: "reglaEnCorridaCorrida", columns: [t.corridaId], foreignColumns: [corridaPrueba.id] }).onDelete("cascade"),
+    foreignKey({ name: "reglaEnCorridaRegla", columns: [t.reglaId], foreignColumns: [regla.id] }),
+    index("reglaEnCorridaReglaId").on(t.reglaId),
+  ],
+);
+
+/**
+ * Los repositorios de una corrida (E2) y cómo le fue a cada uno. Sin estado, todavía no
+ * llegaron sus resultados.
+ */
+export const repositorioEnCorrida = pgTable(
+  "repositorioEnCorrida",
+  {
+    corridaId: uuid().notNull(),
+    repositorio: text().notNull(),
+    estado: text().$type<EstadoRepositorioPrueba>(),
+    /** El commit analizado (para los links de las muestras). */
+    commit: text(),
+    /** Por qué no se pudo analizar. */
+    error: text(),
+    recibidoEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "repositorioEnCorridaPk", columns: [t.corridaId, t.repositorio] }),
+    foreignKey({ name: "repositorioEnCorridaCorrida", columns: [t.corridaId], foreignColumns: [corridaPrueba.id] }).onDelete("cascade"),
+    foreignKey({ name: "repositorioEnCorridaEstado", columns: [t.estado], foreignColumns: [estadoRepositorioPrueba.codigo] }),
+    check("repositorioEnCorridaFormato", repositorioDeGithub(t.repositorio)),
+    check("repositorioEnCorridaRecibidoConEstado", sql`(${t.estado} is null) = (${t.recibidoEn} is null)`),
+    check("repositorioEnCorridaErrorConMotivo", sql`${t.estado} is null or (${t.estado} = 'error') = (${t.error} is not null)`),
+    check("repositorioEnCorridaOkConCommit", sql`${t.estado} is distinct from 'ok' or ${t.commit} is not null`),
+  ],
+);
+
+/**
+ * Cuántos issues levantó cada regla en cada repositorio de una corrida, cero incluido: así la
+ * evolución entre corridas no confunde "sin issues" con "no se probó".
+ */
+export const resultadoPrueba = pgTable(
+  "resultadoPrueba",
+  {
+    corridaId: uuid().notNull(),
+    repositorio: text().notNull(),
+    reglaId: uuid().notNull(),
+    cantidad: integer().notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "resultadoPruebaPk", columns: [t.corridaId, t.repositorio, t.reglaId] }),
+    // Solo de un repositorio y una regla de la corrida.
+    foreignKey({ name: "resultadoPruebaRepositorio", columns: [t.corridaId, t.repositorio], foreignColumns: [repositorioEnCorrida.corridaId, repositorioEnCorrida.repositorio] }).onDelete("cascade"),
+    foreignKey({ name: "resultadoPruebaRegla", columns: [t.corridaId, t.reglaId], foreignColumns: [reglaEnCorrida.corridaId, reglaEnCorrida.reglaId] }).onDelete("cascade"),
+    check("resultadoPruebaCantidadNoNegativa", sql`${t.cantidad} >= 0`),
+    index("resultadoPruebaReglaId").on(t.reglaId),
+  ],
+);
+
+/**
+ * Muestras de issues de las reglas en prueba, para evaluarlas (E1, E6). Solo la referencia
+ * al código, nunca el código: se evalúa abriendo el link en GitHub.
+ *
+ * Una muestra es la misma entre corridas mientras coincidan regla, repositorio, archivo y
+ * mensaje; la línea y el commit son los de la última vez que apareció. Así la evaluación se
+ * conserva.
+ */
+export const muestraPrueba = pgTable(
+  "muestraPrueba",
+  {
+    id: uuid().notNull().defaultRandom(),
+    reglaId: uuid().notNull(),
+    repositorio: text().notNull(),
+    /** Relativo a la raíz del repositorio, con `/`. */
+    archivo: text().notNull(),
+    mensaje: text().notNull(),
+    linea: integer().notNull(),
+    columna: integer(),
+    commit: text().notNull(),
+    primeraCorridaId: uuid().notNull(),
+    ultimaCorridaId: uuid().notNull(),
+    evaluacion: text().$type<EvaluacionMuestra>().notNull().default("sinEvaluar"),
+    evaluadaPorId: uuid(),
+    evaluadaEn: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ name: "muestraPruebaPk", columns: [t.id] }),
+    foreignKey({ name: "muestraPruebaRegla", columns: [t.reglaId], foreignColumns: [regla.id] }),
+    foreignKey({ name: "muestraPruebaPrimeraCorrida", columns: [t.primeraCorridaId], foreignColumns: [corridaPrueba.id] }),
+    foreignKey({ name: "muestraPruebaUltimaCorrida", columns: [t.ultimaCorridaId], foreignColumns: [corridaPrueba.id] }),
+    foreignKey({ name: "muestraPruebaEvaluacion", columns: [t.evaluacion], foreignColumns: [evaluacionMuestra.codigo] }),
+    foreignKey({ name: "muestraPruebaEvaluadaPor", columns: [t.evaluadaPorId], foreignColumns: [usuario.id] }),
+    unique("muestraPruebaIdentidad").on(t.reglaId, t.repositorio, t.archivo, t.mensaje),
+    check("muestraPruebaRepositorio", repositorioDeGithub(t.repositorio)),
+    check("muestraPruebaArchivoRelativo", sql`${t.archivo} <> '' and left(${t.archivo}, 1) <> '/' and strpos(${t.archivo}, '\\') = 0`),
+    check("muestraPruebaMensajeSinEspaciosDeMas", sql`${t.mensaje} <> '' and ${t.mensaje} = btrim(${t.mensaje})`),
+    check("muestraPruebaPosicion", sql`${t.linea} >= 1 and (${t.columna} is null or ${t.columna} >= 1)`),
+    check(
+      "muestraPruebaEvaluadaConAutor",
+      sql`(${t.evaluacion} = 'sinEvaluar') = (${t.evaluadaPorId} is null) and (${t.evaluadaPorId} is null) = (${t.evaluadaEn} is null)`,
+    ),
+    index("muestraPruebaReglaUltimaCorrida").on(t.reglaId, t.ultimaCorridaId),
   ],
 );

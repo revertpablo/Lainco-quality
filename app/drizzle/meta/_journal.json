@@ -85,6 +85,13 @@
       "when": 1793281854536,
       "tag": "0011_tokens_de_servicio",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793286348730,
+      "tag": "0012_corridas_de_prueba",
+      "breakpoints": true
     }
   ]
 }
