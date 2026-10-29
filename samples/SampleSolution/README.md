@@ -36,7 +36,7 @@ Cada una está marcada en el código con un comentario `// >>> LAINxxx`.
 
 | Regla | Archivo | Línea | Qué viola |
 |---|---|---|---|
-| LAIN001 | `Sample.Dominio/Pedido.cs` | 13 | Constructor sin parámetros `public` existiendo otro constructor; debería ser `protected`. |
+| LAIN001 | `Sample.Dominio/Pedido.cs` | 14 | Constructor sin parámetros `public` existiendo otro constructor; debería ser `protected`. |
 | LAIN002 | `Sample.Dominio/LineaPedido.cs` | 16, 24 | Dos constructores con código y ninguno encadena al otro. |
 | LAIN003 | `Sample.Tests/MapeoDeEntidadesTests.cs` | 85 | `Deposito` está mapeada en `DepositoMap` pero no tiene test que asigne sus properties persistidas. |
 | LAIN004 | `Sample.Dominio/Articulo.cs` | 25 | `Descripcion` se inicializa inline (`{ get; set; } = "..."`). |

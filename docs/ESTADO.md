@@ -13,10 +13,10 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 0 — Setup | ✅ Completa |
 | 1 — Primera regla y empaquetado | ✅ Completa. El paquete se publica en GitHub Packages desde la 6.4 (0.1.0, 2026-10-28) |
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
-| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar) |
+| 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar); LAIN001 implementada (2026-10-28) y en el paquete 0.2.0, falta verla en Sonar |
 | 4 — Suppressor | ✅ Completa |
 | 5 — TypeScript | ⬜ Sin empezar |
-| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 terminada (2026-10-28): los 7 pasos (tablas `publicacion` y `desvio`, cliente de perfiles, encolar al decidir, publicar con reintentos, reconciliación y desvíos, pantalla Sonar, prueba contra SonarQube Cloud), con sus dos criterios de aceptación verificados contra los perfiles reales. Plan y decisiones P1–P5 en `FASE-6-APP.md`, sección 8 bis. Entrega 6.4 (reglas propias, parte Roslyn), adelantada a la 6.3 porque esta espera D6.2 y D6.3: plan en 8 pasos y decisiones R1–R5 en `FASE-6-APP.md`, sección 8 ter; pasos 1 a 7 hechos (2026-10-28): el catálogo `reglas-roslyn.json` con su generador `tools/catalogo-reglas`, enganchado al build del paquete; el workflow que publica el paquete y crea el release al subir la versión, verificado con la publicación de la 0.1.0; la sincronización de las reglas Roslyn desde el último release, verificada contra GitHub (el primer criterio de la 6.4 se cumple); el ciclo de vida de las reglas propias, que se incorporan con su severidad y encolan el PR de configuración; la generación del `.globalconfig` desde el estado de la app; la decisión R6: las reglas propias nacen apagadas y las enciende ese archivo; el PR de configuración, que la app abre o actualiza con cada decisión (probado contra GitHub: PR #2, mergeado); y el seguimiento en la pantalla Paquete (PRs, versión publicada y el desvío si main no coincide con la app). Falta el paso 8, la prueba completa contra GitHub. Ver `app/README.md` |
+| 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 terminada (2026-10-28): los 7 pasos (tablas `publicacion` y `desvio`, cliente de perfiles, encolar al decidir, publicar con reintentos, reconciliación y desvíos, pantalla Sonar, prueba contra SonarQube Cloud), con sus dos criterios de aceptación verificados contra los perfiles reales. Plan y decisiones P1–P5 en `FASE-6-APP.md`, sección 8 bis. Entrega 6.4 (reglas propias, parte Roslyn), adelantada a la 6.3 porque esta espera D6.2 y D6.3: plan en 8 pasos y decisiones R1–R5 en `FASE-6-APP.md`, sección 8 ter; pasos 1 a 7 hechos (2026-10-28): el catálogo `reglas-roslyn.json` con su generador `tools/catalogo-reglas`, enganchado al build del paquete; el workflow que publica el paquete y crea el release al subir la versión, verificado con la publicación de la 0.1.0; la sincronización de las reglas Roslyn desde el último release, verificada contra GitHub (el primer criterio de la 6.4 se cumple); el ciclo de vida de las reglas propias, que se incorporan con su severidad y encolan el PR de configuración; la generación del `.globalconfig` desde el estado de la app; la decisión R6: las reglas propias nacen apagadas y las enciende ese archivo; el PR de configuración, que la app abre o actualiza con cada decisión (probado contra GitHub: PR #2, mergeado); y el seguimiento en la pantalla Paquete (PRs, versión publicada y el desvío si main no coincide con la app). Paso 8 en curso: el workflow publicó la 0.1.1 al mergear el PR #2; LAIN001, la regla nueva para probar que una regla publicada entra al inventario, sale en la 0.2.0. Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
 
@@ -26,6 +26,11 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
 - **LAIN004** implementada, con 13 tests (6 positivos, 7 negativos).
 - **LAIN005** implementada, con 29 tests (13 positivos, 16 negativos). D5 resuelta.
+- **LAIN001** implementada, con 32 casos de test (18 positivos, 14 negativos). Cuenta los
+  constructores escritos en el código (incluido el primario); en una clase `sealed` acepta
+  también `private`. Las entidades (`Lainco.Domain.IEntity`, directa o heredada) que
+  declaran constructores tienen que tener uno sin parámetros, también si son abstractas. Nace apagada: en la sample dispara en `Pedido.cs` solo cuando el
+  `.globalconfig` la enciende. Detalle en `rules/LAIN001.md`.
 - **Paquete NuGet `Lainco.Analyzers` 0.1.0**, con los analyzers en `analyzers/dotnet/cs`
   y el `.globalconfig` de severidades en `buildTransitive`.
 - **`tools/sonar-sync`** genera `sonar-accepted.json` con los issues LAIN aceptados o falsos
@@ -157,7 +162,7 @@ Requisitos: **.NET SDK 8** (o superior), **git**, y `gh` opcional.
 git clone https://github.com/revertpablo/Lainco-quality.git
 cd Lainco-quality
 
-# 1. Tests de los analyzers y el suppressor — deben pasar 61
+# 1. Tests de los analyzers y el suppressor — deben pasar todos
 dotnet test src/dotnet/Lainco.Analyzers.sln
 
 # 2. Empaquetar: la sample consume el paquete desde este feed local,

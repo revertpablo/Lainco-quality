@@ -46,7 +46,7 @@ Los resultados de los spikes y las decisiones medidas están en `docs/decisiones
 
 | ID | Regla |
 |---|---|
-| LAIN001 | El constructor sin parámetros debe ser `protected`, salvo que sea el único constructor del tipo. |
+| LAIN001 | El constructor sin parámetros debe ser `protected`, salvo que sea el único constructor del tipo. Las entidades (`Lainco.Domain.IEntity`) que declaran constructores tienen que tener uno sin parámetros `protected`. |
 | LAIN002 | Un solo constructor con código; todos los demás deben encadenar a él (`: this(...)`). |
 | LAIN003 | Cada entidad mapeada en NHibernate debe tener un test que asigne valores a todas sus properties persistidas. |
 | LAIN004 | No se permite inicialización inline de properties (`{ get; set; } = valor`). |

@@ -22,3 +22,11 @@ Rule ID | New Category | New Severity | Old Category | Old Severity | Notes
 --------|--------------|--------------|--------------|--------------|-------------------------------------------------------
 LAIN004 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).
 LAIN005 | Diseño       | Disabled     | Diseño       | Warning      | Nace apagada: la enciende el .globalconfig (decisión R6).
+
+## Release 0.2.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------------------------------------------------------
+LAIN001 | Diseño   | Disabled | El constructor sin parámetros debe ser protected si el tipo tiene otros constructores. (Nace apagada: decisión R6.)

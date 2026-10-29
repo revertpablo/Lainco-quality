@@ -32,6 +32,21 @@ internal static class Generador
 {
     private static readonly Regex FormaDelId = new("^LAIN[0-9]{3}$", RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// Los datos del descriptor que se publican en el catálogo: todo menos el mensaje.
+    /// </summary>
+    private static string LoQueVaAlCatalogo(DiagnosticDescriptor descriptor)
+    {
+        return string.Join(
+            "\u0001",
+            descriptor.Title.ToString(CultureInfo.InvariantCulture),
+            descriptor.Description.ToString(CultureInfo.InvariantCulture),
+            descriptor.Category,
+            descriptor.DefaultSeverity.ToString(),
+            descriptor.IsEnabledByDefault.ToString(),
+            descriptor.HelpLinkUri);
+    }
+
     /// <summary>Genera el catálogo, o devuelve los errores si alguna regla no cumple.</summary>
     public static ResultadoDelCatalogo Generar(EntradaDelCatalogo entrada)
     {
@@ -47,10 +62,11 @@ internal static class Generador
                      .GroupBy(d => d.Id, StringComparer.Ordinal)
                      .OrderBy(g => g.Key, StringComparer.Ordinal))
         {
-            // Dos analyzers pueden compartir un descriptor; dos descriptores con el mismo ID
-            // y distinto contenido son un error.
+            // Dos analyzers pueden compartir un descriptor, y una regla puede tener varios
+            // descriptores que solo cambian el mensaje (LAIN001). Si difieren en algo que va
+            // al catálogo, es un error.
             DiagnosticDescriptor[] distintos = grupo.Distinct().ToArray();
-            if (distintos.Length > 1)
+            if (distintos.Select(LoQueVaAlCatalogo).Distinct().Count() > 1)
             {
                 errores.Add($"{grupo.Key}: hay dos descriptores distintos con el mismo ID.");
                 continue;

@@ -38,7 +38,8 @@ public class CatalogoDeLaincoAnalyzersTests
             Documentacion: Generacion.LectorDeDocumentacion(Path.Combine(raiz, "docs", "rules"))));
 
         Assert.Empty(resultado.Errores);
-        Assert.Contains("LAIN004", resultado.Catalogo!.Reglas.Select(r => r.Clave));
+        Assert.Contains("LAIN001", resultado.Catalogo!.Reglas.Select(r => r.Clave));
+        Assert.Contains("LAIN004", resultado.Catalogo.Reglas.Select(r => r.Clave));
         Assert.Contains("LAIN005", resultado.Catalogo.Reglas.Select(r => r.Clave));
         Assert.All(resultado.Catalogo.Reglas, r => Assert.Equal("warning", r.SeveridadPorDefecto));
         Assert.All(resultado.Catalogo.Reglas, r => Assert.False(r.HabilitadaPorDefecto));

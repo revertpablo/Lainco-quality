@@ -76,4 +76,7 @@ lista todas las que no cumplen:
   (o figura como quitada);
 - la severidad por defecto es `error`;
 - la regla viene habilitada por defecto (`isEnabledByDefault` tiene que ser `false`);
-- el descriptor no tiene título, o dos descriptores distintos usan el mismo ID.
+- el descriptor no tiene título, o dos descriptores con el mismo ID difieren en algo que va
+  al catálogo (título, descripción, categoría, severidad, si viene habilitada o el
+  `helpLinkUri`). Pueden diferir en el mensaje: una regla con varios mensajes, como
+  LAIN001, declara un descriptor por mensaje.

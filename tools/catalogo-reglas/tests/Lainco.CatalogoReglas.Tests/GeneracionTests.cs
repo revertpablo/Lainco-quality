@@ -21,7 +21,8 @@ public class GeneracionTests : IDisposable
         File.WriteAllText(
             Path.Combine(carpeta, "releases", "AnalyzerReleases.Unshipped.md"),
             "### New Rules\n\nRule ID | Category | Severity | Notes\n--------|----------|----------|------\n" +
-            "LAIN004 | Diseño | Warning | x\nLAIN005 | Diseño | Warning | x\n");
+            "LAIN001 | Diseño | Warning | x\nLAIN004 | Diseño | Warning | x\nLAIN005 | Diseño | Warning | x\n");
+        File.WriteAllText(Path.Combine(carpeta, "rules", "LAIN001.md"), "# LAIN001\n");
         File.WriteAllText(Path.Combine(carpeta, "rules", "LAIN004.md"), "# LAIN004\n");
         File.WriteAllText(Path.Combine(carpeta, "rules", "LAIN005.md"), "# LAIN005\n");
     }
@@ -55,9 +56,10 @@ public class GeneracionTests : IDisposable
 
         Assert.Equal(Generacion.Exito, codigo);
         string json = File.ReadAllText(Salida);
+        Assert.Contains("\"clave\": \"LAIN001\"", json);
         Assert.Contains("\"clave\": \"LAIN004\"", json);
         Assert.Contains("\"clave\": \"LAIN005\"", json);
-        Assert.Contains("2 reglas", log.ToString());
+        Assert.Contains("3 reglas", log.ToString());
     }
 
     [Fact]

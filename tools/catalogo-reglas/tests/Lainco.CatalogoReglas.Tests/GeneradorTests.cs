@@ -94,6 +94,37 @@ public class GeneradorTests
     }
 
     [Fact]
+    public void Un_mismo_ID_con_dos_descriptores_que_solo_cambian_el_mensaje_aparece_una_vez()
+    {
+        // Una regla con dos mensajes (LAIN001): todo lo que va al catálogo coincide.
+        ResultadoDelCatalogo resultado = Generador.Generar(Entrada(new[] { Regla("LAIN004", mensaje: "Uno '{0}'"), Regla("LAIN004", mensaje: "Otro '{0}'") }));
+
+        Assert.Empty(resultado.Errores);
+        Assert.Single(resultado.Catalogo!.Reglas);
+    }
+
+    [Theory]
+    [InlineData("descripcion")]
+    [InlineData("categoria")]
+    [InlineData("severidad")]
+    [InlineData("ayuda")]
+    public void Un_mismo_ID_con_descriptores_que_difieren_en_lo_que_va_al_catalogo_falla(string campo)
+    {
+        DiagnosticDescriptor otro = campo switch
+        {
+            "descripcion" => Regla("LAIN004", descripcion: "Otra descripción."),
+            "categoria" => Regla("LAIN004", categoria: "Persistencia"),
+            "severidad" => Regla("LAIN004", severidad: DiagnosticSeverity.Info),
+            _ => Regla("LAIN004", ayuda: "https://github.com/revertpablo/Lainco-quality/blob/main/docs/rules/LAIN004.md#otra"),
+        };
+
+        ResultadoDelCatalogo resultado = Generador.Generar(Entrada(new[] { Regla("LAIN004"), otro }));
+
+        Assert.Null(resultado.Catalogo);
+        Assert.Contains(resultado.Errores, e => e.Contains("LAIN004") && e.Contains("dos descriptores"));
+    }
+
+    [Fact]
     public void Un_mismo_ID_con_dos_descriptores_distintos_falla()
     {
         ResultadoDelCatalogo resultado = Generador.Generar(Entrada(new[] { Regla("LAIN004", titulo: "Uno"), Regla("LAIN004", titulo: "Otro") }));

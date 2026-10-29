@@ -12,12 +12,13 @@ internal static class Descriptores
         string categoria = "Diseño",
         DiagnosticSeverity severidad = DiagnosticSeverity.Warning,
         bool habilitada = false,
-        string? ayuda = null)
+        string? ayuda = null,
+        string mensaje = "Mensaje '{0}'")
     {
         return new DiagnosticDescriptor(
             id,
             titulo,
-            "Mensaje '{0}'",
+            mensaje,
             categoria,
             severidad,
             habilitada,
