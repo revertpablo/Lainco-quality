@@ -24,7 +24,7 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
 
     <PackageId>Lainco.Analyzers</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Lainco</Authors>
     <Company>Lainco</Company>
     <Description>
