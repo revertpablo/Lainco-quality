@@ -14,8 +14,11 @@
 
 is_global = true
 
+# LAIN001 — El constructor sin parámetros debe ser protected si el tipo tiene otros constructores
+dotnet_diagnostic.LAIN001.severity = warning
+
 # LAIN004 — No se permite inicialización inline de properties
-dotnet_diagnostic.LAIN004.severity = warning
+dotnet_diagnostic.LAIN004.severity = none
 
 # LAIN005 — No se permiten métodos estáticos
-dotnet_diagnostic.LAIN005.severity = warning
+dotnet_diagnostic.LAIN005.severity = none
