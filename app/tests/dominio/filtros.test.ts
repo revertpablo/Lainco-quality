@@ -15,7 +15,7 @@ describe("leer la URL", () => {
   it("lee cada filtro, con valores repetidos como lista", () => {
     const filtros = leerFiltros({
       q: "  null  ",
-      estado: ["pendienteDeAnalizar", "aRevisar"],
+      estado: ["pendienteDeAnalizar", "enAnalisis"],
       lenguaje: "cs",
       origen: "sonar",
       tipo: ["BUG", "VULNERABILITY"],
@@ -30,7 +30,7 @@ describe("leer la URL", () => {
 
     expect(filtros).toEqual({
       q: "null",
-      estados: ["pendienteDeAnalizar", "aRevisar"],
+      estados: ["pendienteDeAnalizar", "enAnalisis"],
       lenguajes: ["cs"],
       origenes: ["sonar"],
       tipos: ["BUG", "VULNERABILITY"],
@@ -45,16 +45,16 @@ describe("leer la URL", () => {
   });
 
   it("acepta URLSearchParams", () => {
-    const filtros = leerFiltros(new URLSearchParams("tag=react&tag=vue&estado=aRevisar"));
+    const filtros = leerFiltros(new URLSearchParams("tag=react&tag=vue&estado=enAnalisis"));
 
     expect(filtros.tags).toEqual(["react", "vue"]);
-    expect(filtros.estados).toEqual(["aRevisar"]);
+    expect(filtros.estados).toEqual(["enAnalisis"]);
   });
 
   it("ignora los valores que no existen, en vez de fallar", () => {
     // Una URL vieja o editada a mano no tiene que romper la pantalla.
     const filtros = leerFiltros({
-      estado: ["aprobada", "aRevisar"],
+      estado: ["aprobada", "enAnalisis"],
       lenguaje: "java",
       origen: "otro",
       novedad: "viejas",
@@ -63,7 +63,12 @@ describe("leer la URL", () => {
       sentido: "arriba",
     });
 
-    expect(filtros).toEqual({ ...FILTROS_POR_DEFECTO, estados: ["aRevisar"] });
+    expect(filtros).toEqual({ ...FILTROS_POR_DEFECTO, estados: ["enAnalisis"] });
+  });
+
+  it("un link viejo con aRevisar filtra por En análisis (2026-10-30), sin repetirlo", () => {
+    expect(leerFiltros({ estado: ["aRevisar", "enDuda"] }).estados).toEqual(["enAnalisis", "enDuda"]);
+    expect(leerFiltros({ estado: ["aRevisar", "enAnalisis"] }).estados).toEqual(["enAnalisis"]);
   });
 
   it("sin repetidos ni vacíos", () => {
@@ -98,19 +103,19 @@ describe("escribir la URL", () => {
   });
 
   it("siempre en el mismo orden, para que la misma búsqueda dé la misma URL", () => {
-    const a = aParametros(leerFiltros({ tag: "react", estado: "aRevisar" }));
-    const b = aParametros(leerFiltros({ estado: "aRevisar", tag: "react" }));
+    const a = aParametros(leerFiltros({ tag: "react", estado: "enAnalisis" }));
+    const b = aParametros(leerFiltros({ estado: "enAnalisis", tag: "react" }));
 
     expect(a).toBe(b);
-    expect(a).toBe("estado=aRevisar&tag=react");
+    expect(a).toBe("estado=enAnalisis&tag=react");
   });
 });
 
 describe("como se guardan en una vista", () => {
   it("los parámetros de la URL, valor por valor", () => {
-    const filtros = leerFiltros({ tag: ["react", "vue"], estado: "aRevisar", orden: "nombre" });
+    const filtros = leerFiltros({ tag: ["react", "vue"], estado: "enAnalisis", orden: "nombre" });
 
-    expect(aRegistro(filtros)).toEqual({ estado: ["aRevisar"], tag: ["react", "vue"], orden: ["nombre"] });
+    expect(aRegistro(filtros)).toEqual({ estado: ["enAnalisis"], tag: ["react", "vue"], orden: ["nombre"] });
   });
 
   it("ida y vuelta dan lo mismo", () => {

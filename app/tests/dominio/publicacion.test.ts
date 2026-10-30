@@ -32,15 +32,16 @@ describe("qué decisiones se publican", () => {
     expect(destinoDeLaDecision(Origen.NormaIa, desde, hacia)).toBeNull();
   });
 
-  it("de las 12 transiciones de la tabla, publican las 4 que entran a Incorporada o salen", () => {
+  it("de las 18 transiciones de la tabla, publican las 5 que entran a Incorporada o salen", () => {
     const publican = TRANSICIONES.filter((t) => destinoDeLaDecision(Origen.Sonar, t.desde, t.hacia)).map((t) => `${t.desde} → ${t.hacia}`);
 
-    expect(TRANSICIONES).toHaveLength(12);
+    expect(TRANSICIONES).toHaveLength(18);
     expect(publican).toEqual([
-      "aRevisar → incorporada",
+      "enAnalisis → incorporada",
       "enPrueba → incorporada",
       "incorporada → descartada",
       "incorporada → enPrueba",
+      "enDuda → incorporada",
     ]);
   });
 });
@@ -50,7 +51,7 @@ describe("qué se le pide a Sonar", () => {
     expect(accionEnSonar(Incorporada)).toBe("activar");
   });
 
-  it.each([Estado.PendienteDeAnalizar, Estado.ARevisar, Estado.EnPrueba, Estado.Descartada])("%s se desactiva", (estado) => {
+  it.each([Estado.PendienteDeAnalizar, Estado.EnAnalisis, Estado.EnPrueba, Estado.EnDuda, Estado.Descartada])("%s se desactiva", (estado) => {
     expect(accionEnSonar(estado)).toBe("desactivar");
   });
 });

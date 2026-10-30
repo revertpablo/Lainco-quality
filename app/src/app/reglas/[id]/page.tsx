@@ -213,7 +213,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 </h2>
                 <p>{enElPaquete.enElArchivo}</p>
                 {enElPaquete.pedido && (
-                  <p className={enElPaquete.tono === "error" ? "text-error" : enElPaquete.tono === "alerta" ? "text-[var(--estado-revisar)]" : undefined}>
+                  <p className={enElPaquete.tono === "error" ? "text-error" : enElPaquete.tono === "alerta" ? "text-[var(--aviso)]" : undefined}>
                     {enElPaquete.pedido}
                   </p>
                 )}
@@ -238,7 +238,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 <h2 id="titulo-en-sonar" className="text-base font-medium">
                   En Sonar
                 </h2>
-                <p className={enSonar.tono === "error" ? "text-error" : enSonar.tono === "alerta" ? "text-[var(--estado-revisar)]" : undefined}>
+                <p className={enSonar.tono === "error" ? "text-error" : enSonar.tono === "alerta" ? "text-[var(--aviso)]" : undefined}>
                   {enSonar.texto}
                 </p>
                 {enSonar.error && <p className="text-tenue [overflow-wrap:anywhere]">{enSonar.error}</p>}
@@ -247,7 +247,7 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
                 )}
                 {desvios.map((d) => (
                   <div key={d.id} className="flex flex-col gap-1 border-t border-linea pt-3" data-desvio={d.tipo}>
-                    <p className="font-medium text-[var(--estado-revisar)]">{d.tipoDescripcion}</p>
+                    <p className="font-medium text-[var(--aviso)]">{d.tipoDescripcion}</p>
                     <p>
                       <span className="text-tenue">La app: </span>
                       {describirValor(d.detalle?.esperado)}

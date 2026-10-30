@@ -84,7 +84,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
   }
 
-  const incorporar = (c: Contexto, id: string, desde: TipoEstado = Estado.ARevisar) =>
+  const incorporar = (c: Contexto, id: string, desde: TipoEstado = Estado.EnAnalisis) =>
     aplicarTransicion(c.tx, c.decisor, {
       reglas: [{ id, desde }],
       hacia: Estado.Incorporada,
@@ -95,7 +95,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
 
   describe("qué decisiones encolan", () => {
     enTransaccion("incorporar deja una publicación pendiente de esa decisión", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
 
       const resultado = await incorporar(c, id);
 
@@ -165,10 +165,10 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("una transición que no toca Incorporada no encola", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
 
       await aplicarTransicion(c.tx, c.analista, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.EnPrueba,
         masiva: false,
       });
@@ -177,7 +177,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("las reglas de Sonar se publican en el perfil", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
 
       await incorporar(c, id);
 
@@ -185,10 +185,10 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("una regla propia se incorpora con su severidad y encola el PR de configuración (entrega 6.4)", async (c) => {
-      const id = await c.regla(Estado.ARevisar, Origen.Roslyn);
+      const id = await c.regla(Estado.EnAnalisis, Origen.Roslyn);
 
       const resultado = await aplicarTransicion(c.tx, c.decisor, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "La queremos",
         masiva: false,
@@ -211,7 +211,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("a una regla propia no se le elige la severidad", async (c) => {
-      const id = await c.regla(Estado.ARevisar, Origen.Roslyn);
+      const id = await c.regla(Estado.EnAnalisis, Origen.Roslyn);
 
       const resultado = await incorporar(c, id);
 
@@ -220,7 +220,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("una norma de IA no se publica en ningún lado", async (c) => {
-      const id = await c.regla(Estado.ARevisar, Origen.NormaIa);
+      const id = await c.regla(Estado.EnAnalisis, Origen.NormaIa);
 
       const resultado = await incorporar(c, id);
 
@@ -252,10 +252,10 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
 
   describe("si la transición no se aplica, no queda nada encolado", () => {
     enTransaccion("rechazada: un analista no puede incorporar", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(c.tx, c.analista, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         severidad: "MAJOR",
         justificacion: "x",
@@ -269,7 +269,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     enTransaccion("el estado cambió mientras tanto", async (c) => {
       const id = await c.regla(Estado.EnPrueba);
 
-      const resultado = await incorporar(c, id, Estado.ARevisar);
+      const resultado = await incorporar(c, id, Estado.EnAnalisis);
 
       expect(resultado).toMatchObject({ ok: false, tipo: "estadoCambio" });
       expect(await c.publicacionesDe(id)).toEqual([]);
@@ -277,7 +277,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
 
     enTransaccion("todo o nada: si una regla del lote no puede, ninguna encola", async (c) => {
       const puede = await c.regla(Estado.Incorporada);
-      // De Descartada solo se vuelve a A revisar.
+      // De Descartada solo se vuelve a En análisis.
       const noPuede = await c.regla(Estado.Descartada);
 
       const resultado = await aplicarTransicion(c.tx, c.decisor, {
@@ -297,7 +297,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
 
   describe("una sola publicación pendiente por regla", () => {
     enTransaccion("si la anterior no se publicó, la nueva decisión la toma y vuelve a intentarse ya", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
       const primera = await incorporar(c, id);
       // La primera ya había fallado dos veces y esperaba para reintentar.
       await c.tx
@@ -329,7 +329,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("una ya publicada no se toca: la nueva decisión encola otra", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
       const primera = await incorporar(c, id);
       await c.tx
         .update(publicacion)
@@ -349,7 +349,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
     });
 
     enTransaccion("una pendiente por la corrección de un desvío pasa a ser de la decisión", async (c) => {
-      const id = await c.regla(Estado.ARevisar);
+      const id = await c.regla(Estado.EnAnalisis);
       const [d] = await c.tx
         .insert(desvio)
         .values({ tipo: TipoDesvio.ActivaSinIncorporar, lenguaje: "cs", clave: `${PREFIJO}desvio`, reglaId: id })
@@ -368,7 +368,7 @@ describe.skipIf(!url)("encolar la publicación al decidir", async () => {
   });
 
   enTransaccion("la decisión y su publicación quedan juntas: la publicación apunta a la decisión escrita", async (c) => {
-    const id = await c.regla(Estado.ARevisar);
+    const id = await c.regla(Estado.EnAnalisis);
 
     await incorporar(c, id);
 

@@ -99,7 +99,7 @@ export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual;
                 {s.texto}
                 {(insignias[s.codigo]?.cantidad ?? 0) > 0 && (
                   <span
-                    className="ml-1.5 inline-block rounded-full bg-[var(--estado-revisar)] px-1.5 py-px text-xs font-medium text-superficie"
+                    className="ml-1.5 inline-block rounded-full bg-[var(--aviso)] px-1.5 py-px text-xs font-medium text-superficie"
                     title={insignias[s.codigo]!.detalle}
                     data-atencion={insignias[s.codigo]!.cantidad}
                   >

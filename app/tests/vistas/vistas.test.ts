@@ -83,12 +83,12 @@ describe.skipIf(!url)("vistas guardadas contra la base", async () => {
     // Por ejemplo, un estado que se renombró después de guardar la vista.
     await db()
       .insert(vistaGuardada)
-      .values({ nombre: "Vieja", usuarioId: ana, filtros: { estado: ["aprobada", "aRevisar"], tag: ["react"] } });
+      .values({ nombre: "Vieja", usuarioId: ana, filtros: { estado: ["aprobada", "enAnalisis"], tag: ["react"] } });
 
     const [vista] = await listarVistas(db(), ana);
 
-    expect(vista.filtros.estados).toEqual(["aRevisar"]);
-    expect(vista.parametros).toBe("estado=aRevisar&tag=react");
+    expect(vista.filtros.estados).toEqual(["enAnalisis"]);
+    expect(vista.parametros).toBe("estado=enAnalisis&tag=react");
   });
 
   it("guardar con un nombre que ya existe actualiza esa vista", async () => {

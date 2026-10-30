@@ -9,7 +9,7 @@ import { AlcanceToken, Estado, EstadoCorrida, Origen, type Estado as TipoEstado,
  * qué configuración recibe el job, y la ruta POST /api/ci/prueba/corridas.
  *
  * Necesita DATABASE_URL_PRUEBAS. Cada test corre en una transacción que se descarta. Al
- * empezar, pasa a A revisar las reglas que la base de pruebas tenga En prueba de otros
+ * empezar, pasa a En análisis las reglas que la base de pruebas tenga En prueba de otros
  * tests, así cada uno ve solo las suyas.
  */
 
@@ -42,7 +42,7 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
     it(nombre, async () => {
       const resultado = obtenerDb().transaction(async (transaccion) => {
         const tx = transaccion as unknown as Db;
-        await tx.update(estadoRegla).set({ estado: Estado.ARevisar }).where(eq(estadoRegla.estado, Estado.EnPrueba));
+        await tx.update(estadoRegla).set({ estado: Estado.EnAnalisis }).where(eq(estadoRegla.estado, Estado.EnPrueba));
         const creado = await crearTokenServicio(tx, { nombre: "job-de-prueba-abrir", alcance: AlcanceToken.Prueba, dias: 30, ahora: new Date(AHORA.getTime() - 86_400_000) });
 
         await prueba({
@@ -122,7 +122,7 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
     const entra = await c.regla(Origen.Sonar, "csharpsquid:S2325");
     const sinSaber = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.EnPrueba, { probableLocalmente: null });
     const afuera = [
-      await c.regla(Origen.Sonar, "csharpsquid:S101", Estado.ARevisar),
+      await c.regla(Origen.Sonar, "csharpsquid:S101", Estado.EnAnalisis),
       await c.regla(Origen.Sonar, "csharpsquid:S102", Estado.Incorporada),
       await c.regla(Origen.Sonar, "csharpsquid:S103", Estado.EnPrueba, { probableLocalmente: false }),
       await c.regla(Origen.Sonar, "csharpsquid:S104", Estado.EnPrueba, { deprecadaEn: AHORA }),
@@ -142,7 +142,7 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
   });
 
   enTransaccion("sin reglas En prueba no abre corrida", async (c) => {
-    await c.regla(Origen.Sonar, "csharpsquid:S2325", Estado.ARevisar);
+    await c.regla(Origen.Sonar, "csharpsquid:S2325", Estado.EnAnalisis);
     const antes = await c.tx.$count(corridaPrueba);
 
     const abierta = await abrir(c);

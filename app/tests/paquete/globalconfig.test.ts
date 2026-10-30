@@ -49,7 +49,7 @@ describe("generar el .globalconfig", () => {
 
   it("escribe el archivo completo: encabezado, y por regla, ordenadas por clave, su título y su severidad", () => {
     const generado = generarGlobalconfig([
-      regla("LAIN006", Estado.ARevisar, { titulo: "No se permite ToList() sobre queries" }),
+      regla("LAIN006", Estado.EnAnalisis, { titulo: "No se permite ToList() sobre queries" }),
       regla("LAIN004", Estado.Incorporada, { titulo: "No se permite inicialización inline de properties" }),
     ]);
 
@@ -81,7 +81,7 @@ describe("generar el .globalconfig", () => {
     );
   });
 
-  it.each([Estado.PendienteDeAnalizar, Estado.ARevisar, Estado.EnPrueba, Estado.Descartada])(
+  it.each([Estado.PendienteDeAnalizar, Estado.EnAnalisis, Estado.EnPrueba, Estado.Descartada])(
     "una regla %s va apagada",
     (estado) => {
       expect(configuracion(generarGlobalconfig([regla("LAIN004", estado)]))).toContain("dotnet_diagnostic.LAIN004.severity = none");
@@ -105,7 +105,7 @@ describe("generar el .globalconfig", () => {
   });
 
   it("un título con saltos de línea queda en un solo comentario", () => {
-    const generado = generarGlobalconfig([regla("LAIN004", Estado.ARevisar, { titulo: "Dos\nlíneas  y\tespacios" })]);
+    const generado = generarGlobalconfig([regla("LAIN004", Estado.EnAnalisis, { titulo: "Dos\nlíneas  y\tespacios" })]);
 
     expect(generado).toContain("# LAIN004 — Dos líneas y espacios\n");
   });
@@ -134,10 +134,10 @@ describe("generar el .globalconfig", () => {
   });
 
   it("rechaza claves que no son LAIN### y claves repetidas", () => {
-    expect(() => generarGlobalconfig([regla("csharpsquid:S2325", Estado.ARevisar)])).toThrow(
+    expect(() => generarGlobalconfig([regla("csharpsquid:S2325", Estado.EnAnalisis)])).toThrow(
       "'csharpsquid:S2325' no es una clave de regla Roslyn propia (LAIN###).",
     );
-    expect(() => generarGlobalconfig([regla("LAIN004", Estado.ARevisar), regla("LAIN004", Estado.Incorporada)])).toThrow(
+    expect(() => generarGlobalconfig([regla("LAIN004", Estado.EnAnalisis), regla("LAIN004", Estado.Incorporada)])).toThrow(
       "LAIN004 está dos veces.",
     );
   });

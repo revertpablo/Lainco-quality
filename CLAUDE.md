@@ -23,7 +23,7 @@ Los resultados de los spikes y las decisiones medidas están en `docs/decisiones
 | `@lainco/eslint-plugin` (TypeScript) | Reglas duras propias para TypeScript. Se importan en Sonar vía reporte JSON de ESLint. |
 | SonarQube Cloud | Única herramienta de gestión de issues: triage, estados (Aceptado / Falso positivo), quality gate sobre código nuevo. Quality Profile propio, sin herencia de "Sonar way". |
 | Suppressor (Roslyn) / Processor (ESLint) | Ocultan en el IDE los issues aceptados en Sonar. Leen `sonar-accepted.json`, sincronizado desde la API de Sonar. **Solo activos en builds locales, nunca en CI.** |
-| App de catálogo de reglas | Fuente de verdad sobre qué reglas están activas y con qué severidad. Ciclo de vida: Pendiente de analizar → A revisar → En prueba → Incorporada / Descartada. |
+| App de catálogo de reglas | Fuente de verdad sobre qué reglas están activas y con qué severidad. Ciclo de vida: Pendiente de analizar → En análisis → En prueba → Incorporada / Descartada, con En duda para las que no tienen decisión. |
 | Registro de hallazgos (fase posterior) | Hallazgos de IA y de revisores, reemitidos como issues externos en cada análisis. |
 
 ## Gobernanza

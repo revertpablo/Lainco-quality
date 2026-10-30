@@ -28,7 +28,7 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
   const REGLAS = [
     { clave: "A1", nombre: "Null checks", tipo: "BUG", severidad: "BLOCKER", tags: ["react", "pitfall"], estado: Estado.PendienteDeAnalizar, lenguaje: "ts" },
     { clave: "A2", nombre: "Unused variable", tipo: "CODE_SMELL", severidad: "MINOR", tags: ["unused"], estado: Estado.PendienteDeAnalizar, lenguaje: "cs" },
-    { clave: "A3", nombre: "SQL injection", tipo: "VULNERABILITY", severidad: "CRITICAL", tags: ["cwe", "react"], estado: Estado.ARevisar, lenguaje: "cs" },
+    { clave: "A3", nombre: "SQL injection", tipo: "VULNERABILITY", severidad: "CRITICAL", tags: ["cwe", "react"], estado: Estado.EnAnalisis, lenguaje: "cs" },
     { clave: "A4", nombre: "Deprecated API_100%", tipo: "CODE_SMELL", severidad: null, tags: [], estado: Estado.Descartada, lenguaje: "cs", deprecada: true },
     { clave: "A5", nombre: "Hotspot", tipo: "SECURITY_HOTSPOT", severidad: "MAJOR", tags: ["vue"], estado: Estado.Incorporada, lenguaje: "ts", nueva: true },
   ] as const;
@@ -85,7 +85,7 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
     ["un tag", { tags: ["react"] }, ["A1", "A3"]],
     ["varios tags: alcanza con uno", { tags: ["unused", "vue"] }, ["A2", "A5"]],
     ["estado", { estados: [Estado.PendienteDeAnalizar] }, ["A1", "A2"]],
-    ["varios estados", { estados: [Estado.ARevisar, Estado.Incorporada] }, ["A3", "A5"]],
+    ["varios estados", { estados: [Estado.EnAnalisis, Estado.Incorporada] }, ["A3", "A5"]],
     ["lenguaje", { lenguajes: ["ts"] }, ["A1", "A5"]],
     ["tipo", { tipos: ["CODE_SMELL"] }, ["A2", "A4"]],
     ["severidad", { severidades: ["BLOCKER", "CRITICAL"] }, ["A1", "A3"]],
@@ -172,6 +172,6 @@ describe.skipIf(!url)("consulta del inventario contra la base", async () => {
       .from(estadoRegla)
       .where(inArray(estadoRegla.reglaId, filas.map((f) => f.id)));
 
-    expect(estados.map((e) => e.estado).sort()).toEqual([Estado.ARevisar, Estado.PendienteDeAnalizar].sort());
+    expect(estados.map((e) => e.estado).sort()).toEqual([Estado.EnAnalisis, Estado.PendienteDeAnalizar].sort());
   });
 });

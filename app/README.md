@@ -166,7 +166,7 @@ existen y qué exige cada uno:
 
 Además, hacia En prueba se rechaza una regla de Sonar que no está en SonarAnalyzer.CSharp
 (`probableLocalmente` falso, decisión E7): el job no la puede correr. Puede incorporarse
-sin prueba desde A revisar. El formulario de cambio de estado lo avisa al elegir la opción,
+sin prueba desde En análisis o En duda. El formulario de cambio de estado lo avisa al elegir la opción,
 y en el detalle la sección Prueba dice cuántas corridas faltan.
 | `admiteMasiva` | Se puede aplicar a varias reglas a la vez. Hoy en `true` en toda transición que no va a Incorporada. |
 
@@ -174,6 +174,14 @@ Para cambiar una regla del ciclo de vida se toca **solo su fila**. Los tests
 (`tests/dominio/transiciones.test.ts`) comparan la tabla contra el diseño de
 `FASE-6.md` y garantizan, entre otras cosas, que Pendiente de analizar → Incorporada no
 exista y que ninguna transición hacia Incorporada admita operación masiva.
+
+**En análisis y En duda (2026-10-30).** "A revisar" pasó a llamarse **En análisis**, también
+en el código (`aRevisar` → `enAnalisis`), y se agregó **En duda** (`enDuda`): no hay
+acuerdo, o los resultados de la prueba no convencen todavía. La migración `0013` pasa al
+código nuevo el estado de las reglas, el historial y los filtros de las vistas guardadas;
+un link viejo con `?estado=aRevisar` sigue filtrando por En análisis (`leerFiltros`). En
+duda no toca Sonar ni el paquete, el job de prueba no la corre, y cuenta para las
+estancadas del tablero.
 
 `validarTransicion` valida una solicitud contra la tabla y devuelve todos los motivos de
 rechazo juntos; `MENSAJES_DE_RECHAZO` tiene el texto para el usuario de cada uno.
@@ -217,7 +225,7 @@ Las dos rutas piden sesión y JSON, y rechazan pedidos de otro origen.
 **`POST /api/reglas/{id}/transicion`**: una regla.
 
 ```json
-{ "desde": "aRevisar", "hacia": "incorporada", "justificacion": "Bugs reales en el código",
+{ "desde": "enAnalisis", "hacia": "incorporada", "justificacion": "Bugs reales en el código",
   "severidad": "CRITICAL", "parametros": { "max": "5" } }
 ```
 
@@ -228,7 +236,7 @@ al incorporar. Los parámetros tienen que ser de la regla.
 2.000 reglas. Siempre es masiva, aunque tenga una sola regla: hacia Incorporada se rechaza.
 
 ```json
-{ "reglas": [{ "id": "…", "desde": "pendienteDeAnalizar" }, { "id": "…", "desde": "aRevisar" }],
+{ "reglas": [{ "id": "…", "desde": "pendienteDeAnalizar" }, { "id": "…", "desde": "enAnalisis" }],
   "hacia": "descartada", "justificacion": "Reglas de React: no usamos React" }
 ```
 
@@ -306,13 +314,13 @@ vuelve a la búsqueda de la que se vino.
 `src/tablero/consulta.ts` las consultas):
 
 - **Triageada** es toda regla que salió de Pendiente de analizar: alguien ya la miró y
-  decidió qué hacer, aunque siga en A revisar o En prueba. El porcentaje se redondea para
+  decidió qué hacer, aunque siga En análisis, En prueba o En duda. El porcentaje se redondea para
   abajo, así 100 % significa que no queda ninguna pendiente.
 - **Por lenguaje y tipo**: cuántas reglas, qué porcentaje está triageado y una barra con
   cuántas hay en cada estado. La cantidad de pendientes es un link al inventario con ese
   filtro.
 - **Reglas en cada estado, por origen.**
-- **Estancadas**: las que llevan más de N días en A revisar o En prueba, de la más vieja a
+- **Estancadas**: las que llevan más de N días En análisis, En prueba o En duda, de la más vieja a
   la más nueva, con quién las pasó a ese estado. N es 14 por defecto y se cambia en la
   página (`/tablero?dias=30`, de 1 a 365). "Desde cuándo" es la última transición de la
   regla.
@@ -327,7 +335,7 @@ Arriba de los filtros: cualquier búsqueda (filtros y orden) se guarda con un no
   precargado.
 - **Que la vea todo el equipo** la comparte: aparece en la lista de los demás con el nombre
   del autor. Solo el autor la actualiza o la borra.
-- En la base se guarda como los parámetros de la URL (`{"estado": ["aRevisar"], "tag":
+- En la base se guarda como los parámetros de la URL (`{"estado": ["enAnalisis"], "tag":
   ["react"]}`), y al leerla pasa por los mismos filtros de la URL: una vista vieja con un
   valor que ya no existe no rompe nada, ese valor se ignora.
 
@@ -1012,7 +1020,7 @@ hasta 200 ubicaciones cada una, que no pueden ser más que la cantidad. La app
   link al código en GitHub y los botones **Válida** y **Falso positivo** (cualquier usuario:
   la evalúa el equipo; tocar de nuevo el elegido la deja sin evaluar). Debajo, la tasa de
   falsos positivos sobre las evaluadas. Una regla que no está en SonarAnalyzer.CSharp lo
-  dice: puede incorporarse sin prueba desde A revisar.
+  dice: puede incorporarse sin prueba desde En análisis o En duda.
 
 ### El job
 

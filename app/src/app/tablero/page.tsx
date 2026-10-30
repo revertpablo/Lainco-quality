@@ -19,7 +19,7 @@ import { COLOR_DE_ESTADO, textoDeTipo } from "@/ui/etiquetas";
 /**
  * Tablero de progreso del triage (entrega 6.1, paso 11; FASE-6.md, sección 5): porcentaje
  * triageado por lenguaje y tipo, reglas en cada estado por origen, y las reglas estancadas
- * en A revisar o En prueba hace más de N días.
+ * En análisis, En prueba o En duda hace más de N días.
  */
 
 // El botón de sincronizar del encabezado corre en esta página: hasta 5 minutos.
@@ -148,7 +148,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/tablero">, "searchPara
           </div>
         </Panel>
 
-        <Panel titulo={`Estancadas: en ${estados[Estado.ARevisar]} o ${estados[Estado.EnPrueba]} hace más de ${dias} ${dias === 1 ? "día" : "días"}`} id="estancadas">
+        <Panel titulo={`Estancadas: en ${estados[Estado.EnAnalisis]} o ${estados[Estado.EnPrueba]} hace más de ${dias} ${dias === 1 ? "día" : "días"}`} id="estancadas">
           <form method="get" className="flex flex-wrap items-center gap-2 px-5 pt-3 text-sm">
             <label htmlFor="dias" className="text-tenue">
               Más de
@@ -257,7 +257,7 @@ function Cifra({
         {color && <span aria-hidden className="inline-block size-2 rounded-full" style={{ background: color }} />}
         {titulo}
       </dt>
-      <dd className={`text-2xl font-semibold ${destacada ? "text-pino" : ""} ${alerta ? "text-[var(--estado-revisar)]" : ""}`}>
+      <dd className={`text-2xl font-semibold ${destacada ? "text-pino" : ""} ${alerta ? "text-[var(--aviso)]" : ""}`}>
         {valor}
       </dd>
       {detalle && <dd className="text-xs text-tenue">{detalle}</dd>}

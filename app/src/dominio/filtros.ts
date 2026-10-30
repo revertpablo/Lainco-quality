@@ -57,6 +57,12 @@ const LARGO_MAXIMO = 100;
 
 type Entrada = URLSearchParams | Record<string, string | string[] | undefined>;
 
+/**
+ * Códigos de estado que cambiaron de nombre, para que los links guardados sigan filtrando
+ * igual: "A revisar" pasó a "En análisis" (2026-10-30, migración 0013).
+ */
+const CODIGOS_VIEJOS_DE_ESTADO: Readonly<Record<string, Estado>> = { aRevisar: Estado.EnAnalisis };
+
 export function leerFiltros(entrada: Entrada): Filtros {
   const todos = (nombre: string): string[] => {
     const crudo = entrada instanceof URLSearchParams ? entrada.getAll(nombre) : entrada[nombre];
@@ -71,7 +77,9 @@ export function leerFiltros(entrada: Entrada): Filtros {
 
   return {
     q: uno("q") ?? "",
-    estados: de(Object.values(Estado), "estado"),
+    estados: [...new Set(todos("estado").map((v) => CODIGOS_VIEJOS_DE_ESTADO[v] ?? v))].filter((v): v is Estado =>
+      (Object.values(Estado) as string[]).includes(v),
+    ),
     lenguajes: de(Object.values(Lenguaje), "lenguaje"),
     origenes: de(Object.values(Origen), "origen"),
     tipos: todos("tipo"),

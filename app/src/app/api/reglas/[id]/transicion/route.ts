@@ -8,7 +8,7 @@ import { error, responder } from "@/transiciones/respuestas";
 /**
  * Cambia el estado de una regla (transición individual). Cuerpo:
  *
- *   { "desde": "aRevisar", "hacia": "incorporada", "justificacion": "...",
+ *   { "desde": "enAnalisis", "hacia": "incorporada", "justificacion": "...",
  *     "severidad": "MAJOR", "parametros": { "max": "5" } }
  *
  * `desde` es el estado en que el usuario vio la regla. Respuestas: src/transiciones/respuestas.ts.

@@ -43,7 +43,7 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
     it(nombre, async () => {
       const resultado = obtenerDb().transaction(async (transaccion) => {
         const tx = transaccion as unknown as Db;
-        await tx.update(estadoRegla).set({ estado: Estado.ARevisar }).where(eq(estadoRegla.estado, Estado.EnPrueba));
+        await tx.update(estadoRegla).set({ estado: Estado.EnAnalisis }).where(eq(estadoRegla.estado, Estado.EnPrueba));
         const token = await crearTokenServicio(tx, { nombre: "job-ciclo", alcance: AlcanceToken.Prueba, dias: 30 });
         const [decisor] = await tx
           .insert(usuario)
@@ -96,8 +96,8 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
   // --------------------------------------------------------- En prueba → Incorporada
 
   enTransaccion("una regla propia en prueba se incorpora recién con el mínimo de corridas", async (c) => {
-    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.ARevisar);
-    expect((await c.mover(id, Estado.ARevisar, Estado.EnPrueba)).ok).toBe(true);
+    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.EnAnalisis);
+    expect((await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba)).ok).toBe(true);
     await c.corrida();
     await c.corrida();
 
@@ -109,8 +109,8 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
   });
 
   enTransaccion("una de Sonar para C# también", async (c) => {
-    const id = await c.regla(Origen.Sonar, "csharpsquid:S1118", Estado.ARevisar);
-    await c.mover(id, Estado.ARevisar, Estado.EnPrueba);
+    const id = await c.regla(Origen.Sonar, "csharpsquid:S1118", Estado.EnAnalisis);
+    await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba);
     for (let i = 0; i < MINIMO - 1; i++) {
       await c.corrida();
     }
@@ -120,14 +120,14 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
   });
 
   enTransaccion("las corridas de una vuelta anterior por En prueba no cuentan", async (c) => {
-    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.ARevisar);
-    await c.mover(id, Estado.ARevisar, Estado.EnPrueba);
+    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.EnAnalisis);
+    await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba);
     for (let i = 0; i < MINIMO; i++) {
       await c.corrida();
     }
-    // Vuelve a A revisar y entra de nuevo: hay que juntar las corridas otra vez.
-    await c.mover(id, Estado.EnPrueba, Estado.ARevisar);
-    const vuelta = await c.mover(id, Estado.ARevisar, Estado.EnPrueba);
+    // Vuelve a En análisis y entra de nuevo: hay que juntar las corridas otra vez.
+    await c.mover(id, Estado.EnPrueba, Estado.EnAnalisis);
+    const vuelta = await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba);
     // Dentro de la transacción del test now() es siempre el mismo instante: la segunda
     // entrada se fecha ahora, después de las corridas de la primera vuelta.
     await c.tx.update(decision).set({ fecha: new Date() }).where(eq(decision.id, vuelta.ok ? vuelta.decisiones[0].decisionId : ""));
@@ -137,8 +137,8 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
   });
 
   enTransaccion("las corridas que fallaron no cuentan", async (c) => {
-    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.ARevisar);
-    await c.mover(id, Estado.ARevisar, Estado.EnPrueba);
+    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.EnAnalisis);
+    await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba);
     await c.corrida();
     await c.corrida();
     // Una corrida que se abre y no termina.
@@ -148,10 +148,10 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
     expect(motivos(await c.mover(id, Estado.EnPrueba, Estado.Incorporada))).toEqual(["faltanResultadosDePrueba"]);
   });
 
-  enTransaccion("desde A revisar se incorpora sin prueba", async (c) => {
-    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.ARevisar);
+  enTransaccion("desde En análisis se incorpora sin prueba", async (c) => {
+    const id = await c.regla(Origen.Roslyn, "LAIN991", Estado.EnAnalisis);
 
-    expect((await c.mover(id, Estado.ARevisar, Estado.Incorporada)).ok).toBe(true);
+    expect((await c.mover(id, Estado.EnAnalisis, Estado.Incorporada)).ok).toBe(true);
   });
 
   enTransaccion("una regla que el job de C# todavía no corre (TypeScript, ESLint) no queda trabada en prueba", async (c) => {
@@ -167,31 +167,31 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
   // ------------------------------------------------------------------ hacia En prueba
 
   enTransaccion("una regla de Sonar que no está en SonarAnalyzer.CSharp no entra a En prueba", async (c) => {
-    const id = await c.regla(Origen.Sonar, "csharpsquid:S9001", Estado.ARevisar, { probableLocalmente: false });
+    const id = await c.regla(Origen.Sonar, "csharpsquid:S9001", Estado.EnAnalisis, { probableLocalmente: false });
 
-    expect(motivos(await c.mover(id, Estado.ARevisar, Estado.EnPrueba))).toEqual(["noSePuedeProbar"]);
-    expect((await c.mover(id, Estado.ARevisar, Estado.Incorporada)).ok).toBe(true);
+    expect(motivos(await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba))).toEqual(["noSePuedeProbar"]);
+    expect((await c.mover(id, Estado.EnAnalisis, Estado.Incorporada)).ok).toBe(true);
   });
 
   enTransaccion("en una operación masiva, una regla que no se puede probar frena el lote entero", async (c) => {
-    const se = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.ARevisar, { probableLocalmente: true });
-    const noSe = await c.regla(Origen.Sonar, "csharpsquid:S9001", Estado.ARevisar, { probableLocalmente: false });
+    const se = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.EnAnalisis, { probableLocalmente: true });
+    const noSe = await c.regla(Origen.Sonar, "csharpsquid:S9001", Estado.EnAnalisis, { probableLocalmente: false });
 
     const resultado = await aplicarTransicion(
       c.tx,
       c.decisor,
-      { reglas: [{ id: se, desde: Estado.ARevisar }, { id: noSe, desde: Estado.ARevisar }], hacia: Estado.EnPrueba, masiva: true },
+      { reglas: [{ id: se, desde: Estado.EnAnalisis }, { id: noSe, desde: Estado.EnAnalisis }], hacia: Estado.EnPrueba, masiva: true },
       { minimoDeCorridas: MINIMO },
     );
 
     expect(resultado).toMatchObject({ ok: false, tipo: "rechazada", rechazos: [{ reglaId: noSe, motivos: ["noSePuedeProbar"] }] });
     const [estado] = await c.tx.select().from(estadoRegla).where(eq(estadoRegla.reglaId, se));
-    expect(estado.estado).toBe(Estado.ARevisar);
+    expect(estado.estado).toBe(Estado.EnAnalisis);
   });
 
   enTransaccion("si todavía no se sabe si se puede probar, entra", async (c) => {
-    const id = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.ARevisar, { probableLocalmente: null });
+    const id = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.EnAnalisis, { probableLocalmente: null });
 
-    expect((await c.mover(id, Estado.ARevisar, Estado.EnPrueba)).ok).toBe(true);
+    expect((await c.mover(id, Estado.EnAnalisis, Estado.EnPrueba)).ok).toBe(true);
   });
 });

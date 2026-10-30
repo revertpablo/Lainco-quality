@@ -36,7 +36,7 @@ export function SeccionPrueba({ prueba, enPrueba, seProbaConElJob }: { prueba: P
         ) : (
           <>
             {enPrueba && (
-              <p className={minimo.cumple ? undefined : "text-[var(--estado-revisar)]"} data-minimo={minimo.cumple ? "cumple" : "falta"}>
+              <p className={minimo.cumple ? undefined : "text-[var(--aviso)]"} data-minimo={minimo.cumple ? "cumple" : "falta"}>
                 {minimo.texto}
               </p>
             )}

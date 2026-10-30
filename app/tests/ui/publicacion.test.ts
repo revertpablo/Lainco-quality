@@ -45,7 +45,7 @@ describe("estado de una regla en Sonar", () => {
 describe("estado de una regla propia en el paquete (entrega 6.4, paso 4)", () => {
   it.each<[UltimaPublicacion | null, Estado, string | null, string, string | null, string]>([
     [null, Estado.Incorporada, "warning", "En el .globalconfig va con severidad Warning.", null, "normal"],
-    [null, Estado.ARevisar, null, "En el .globalconfig va apagada (none).", null, "normal"],
+    [null, Estado.EnAnalisis, null, "En el .globalconfig va apagada (none).", null, "normal"],
     [
       publicacion({ estado: "pendiente", intentos: 0, publicadaEn: null }),
       Estado.Incorporada,

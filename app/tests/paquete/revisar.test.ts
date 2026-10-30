@@ -62,7 +62,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
             return creada.id;
           },
           async incorporar(id) {
-            const r = await aplicarTransicion(tx, decisor, { reglas: [{ id, desde: Estado.ARevisar }], hacia: Estado.Incorporada, justificacion: "x", masiva: false });
+            const r = await aplicarTransicion(tx, decisor, { reglas: [{ id, desde: Estado.EnAnalisis }], hacia: Estado.Incorporada, justificacion: "x", masiva: false });
             if (!r.ok) throw new Error(JSON.stringify(r));
           },
           desvioAbierto: async () =>
@@ -82,7 +82,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
 
   enTransaccion("el PR que abre la publicación queda registrado, abierto, con la versión que propone", async (c) => {
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
 
     await publicarPaquete({ db: c.tx, github: repo.github });
 
@@ -91,7 +91,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
 
   enTransaccion("con el PR abierto no hay desvío; mergeado, la revisión lo registra y main coincide", async (c) => {
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
     await publicarPaquete({ db: c.tx, github: repo.github });
 
     const conPr = await revisarPaquete({ db: c.tx, github: repo.github });
@@ -109,7 +109,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
 
   enTransaccion("un PR cerrado sin mergear deja a main distinto de la app: desvío", async (c) => {
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
     await publicarPaquete({ db: c.tx, github: repo.github });
     repo.cerrarSinMergear(1);
 
@@ -131,7 +131,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
 
   enTransaccion("un decisor lo corrige abriendo el PR: el desvío se cierra en la revisión siguiente", async (c) => {
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
     await publicarPaquete({ db: c.tx, github: repo.github });
     repo.cerrarSinMergear(1);
     await revisarPaquete({ db: c.tx, github: repo.github });
@@ -165,7 +165,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
 
   enTransaccion("con algo pendiente de pasar al paquete, la diferencia está en camino: no es desvío", async (c) => {
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
 
     expect(await revisarPaquete({ db: c.tx, github: repo.github })).toMatchObject({ coincide: false, desvio: null });
   });
@@ -173,7 +173,7 @@ describe.skipIf(!url)("revisión del paquete", async () => {
   enTransaccion("si GitHub falla, la revisión queda con error y el desvío no se toca", async (c) => {
     let caido = false;
     const repo = githubEnMemoria((op) => (caido && op === "commitDeRama" ? new ErrorDeGitHub("red", "No se pudo conectar con GitHub.") : undefined));
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
     await publicarPaquete({ db: c.tx, github: repo.github });
     repo.cerrarSinMergear(1);
     await revisarPaquete({ db: c.tx, github: repo.github });
@@ -207,11 +207,11 @@ describe.skipIf(!url)("revisión del paquete", async () => {
   enTransaccion("lo que muestra la pantalla: versión publicada, revisión, PRs, lo que falta pasar y el desvío", async (c) => {
     const { estadoDelPaquete, atencionDelPaquete } = await import("@/paquete/consultas");
     const repo = githubEnMemoria();
-    await c.incorporar(await c.reglaPropia("LAIN901", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN901", Estado.EnAnalisis));
     await publicarPaquete({ db: c.tx, github: repo.github });
     repo.cerrarSinMergear(1);
     await revisarPaquete({ db: c.tx, github: repo.github, disparadaPorId: c.decisor.id });
-    await c.incorporar(await c.reglaPropia("LAIN902", Estado.ARevisar));
+    await c.incorporar(await c.reglaPropia("LAIN902", Estado.EnAnalisis));
 
     const estado = await estadoDelPaquete(c.tx);
 

@@ -70,7 +70,7 @@ export function CambiarEstado({ reglaId, estado, disponibles, estados, severidad
       {elegida && (
         <>
           {avisos[elegida.hacia] && (
-            <p className="text-[var(--estado-revisar)]" data-aviso={elegida.hacia}>
+            <p className="text-[var(--aviso)]" data-aviso={elegida.hacia}>
               {avisos[elegida.hacia]}
             </p>
           )}

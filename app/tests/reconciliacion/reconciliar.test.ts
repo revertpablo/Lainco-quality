@@ -237,7 +237,7 @@ describe.skipIf(!url)("reconciliación con Sonar", async () => {
   });
 
   enTransaccion("una regla publicada mientras corría la reconciliación no es desvío", async (c) => {
-    const r = await c.regla(Estado.ARevisar);
+    const r = await c.regla(Estado.EnAnalisis);
     const leerActivas = c.falso.sonar.reglasActivas;
     // Justo después de que la reconciliación lee Sonar (sin la regla), alguien la incorpora
     // y se publica: la app ya la tiene Incorporada, pero la foto de Sonar es de antes.

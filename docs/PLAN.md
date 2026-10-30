@@ -177,7 +177,7 @@ lainco-quality/
 
 ## Fase 6 — Inventario y catálogo de reglas (línea paralela)
 
-**Objetivo:** inventario de todas las reglas disponibles (Sonar, Roslyn, ESLint, normas de IA) con su ciclo de vida: Pendiente de analizar → A revisar → En prueba → Incorporada / Descartada. La app es la fuente de verdad de qué reglas están activas.
+**Objetivo:** inventario de todas las reglas disponibles (Sonar, Roslyn, ESLint, normas de IA) con su ciclo de vida: Pendiente de analizar → En análisis → En prueba → Incorporada / Descartada, con En duda para las que no tienen decisión. La app es la fuente de verdad de qué reglas están activas.
 
 **Detalle completo en `docs/FASE-6.md`.**
 

@@ -56,7 +56,7 @@ export interface ReglaEstancada {
 }
 
 /**
- * Las reglas que llevan más de `dias` días en A revisar o En prueba, de la más vieja a la
+ * Las reglas que llevan más de `dias` días En análisis, En prueba o En duda, de la más vieja a la
  * más nueva. "Desde cuándo" es la última transición (`estadoRegla.actualizadoEn`, que solo
  * cambia `aplicarTransicion`).
  */

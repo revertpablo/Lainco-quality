@@ -9,13 +9,13 @@ import { Estado, Rol } from "@/dominio/valores";
  * operación masiva y con el rol de quien mira. Sale de la tabla TRANSICIONES.
  */
 
-const { PendienteDeAnalizar, ARevisar, EnPrueba, Incorporada, Descartada } = Estado;
+const { PendienteDeAnalizar, EnAnalisis, EnPrueba, EnDuda, Incorporada, Descartada } = Estado;
 
 const destinos = (estados: Estado[], rol: Rol) => destinosMasivos(estados, rol).map((d) => d.hacia);
 
 describe("destinos de una operación masiva", () => {
-  it("desde Pendiente, un analista puede mandar a A revisar, En prueba o Descartada", () => {
-    expect(destinos([PendienteDeAnalizar], Rol.Analista)).toEqual([ARevisar, EnPrueba, Descartada]);
+  it("desde Pendiente, un analista puede mandar a En análisis, En prueba o Descartada", () => {
+    expect(destinos([PendienteDeAnalizar], Rol.Analista)).toEqual([EnAnalisis, EnPrueba, Descartada]);
   });
 
   it("nunca ofrece Incorporada, ni a un decisor", () => {
@@ -25,14 +25,20 @@ describe("destinos de una operación masiva", () => {
   });
 
   it("con reglas de varios estados, solo los destinos que valen para todas", () => {
-    // Pendiente → A revisar existe; A revisar → A revisar no. En prueba vale para las dos.
-    expect(destinos([PendienteDeAnalizar, ARevisar], Rol.Analista)).toEqual([EnPrueba]);
+    // Pendiente → En análisis existe; En análisis → En análisis no. En prueba vale para las dos.
+    expect(destinos([PendienteDeAnalizar, EnAnalisis], Rol.Analista)).toEqual([EnPrueba]);
   });
 
   it("un analista no ve los destinos que requieren decisor", () => {
-    // A revisar → Descartada requiere decisor.
-    expect(destinos([ARevisar], Rol.Analista)).toEqual([EnPrueba]);
-    expect(destinos([ARevisar], Rol.Decisor)).toEqual([EnPrueba, Descartada]);
+    // En análisis → Descartada requiere decisor.
+    expect(destinos([EnAnalisis], Rol.Analista)).toEqual([EnPrueba, EnDuda]);
+    expect(destinos([EnAnalisis], Rol.Decisor)).toEqual([EnPrueba, EnDuda, Descartada]);
+  });
+
+  it("En duda (2026-10-30): se entra en masa desde En análisis y En prueba, con justificación, y se sale en masa salvo a Incorporada", () => {
+    expect(destinosMasivos([EnAnalisis, EnPrueba], Rol.Analista)).toEqual([{ hacia: EnDuda, requiereJustificacion: true }]);
+    expect(destinos([EnDuda], Rol.Analista)).toEqual([EnAnalisis, EnPrueba]);
+    expect(destinos([EnDuda], Rol.Decisor)).toEqual([EnAnalisis, EnPrueba, Descartada]);
   });
 
   it("sin reglas no hay destinos", () => {
@@ -43,7 +49,7 @@ describe("destinos de una operación masiva", () => {
     const desdePendiente = destinosMasivos([PendienteDeAnalizar], Rol.Analista);
 
     expect(desdePendiente).toEqual([
-      { hacia: ARevisar, requiereJustificacion: false },
+      { hacia: EnAnalisis, requiereJustificacion: false },
       { hacia: EnPrueba, requiereJustificacion: false },
       { hacia: Descartada, requiereJustificacion: true },
     ]);

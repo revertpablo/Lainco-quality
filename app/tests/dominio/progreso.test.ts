@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   avanceDe,
   DIAS_PARA_ESTANCADA_POR_DEFECTO,
+  ESTADOS_QUE_SE_ESTANCAN,
   leerDias,
   resumirProgreso,
   type ConteoPorEstado,
@@ -28,7 +29,7 @@ describe("avance", () => {
   it("triageada es toda regla que salió de Pendiente de analizar", () => {
     const avance = avanceDe([
       conteo("cs", "BUG", Estado.PendienteDeAnalizar, 6),
-      conteo("cs", "BUG", Estado.ARevisar, 1),
+      conteo("cs", "BUG", Estado.EnAnalisis, 1),
       conteo("cs", "BUG", Estado.EnPrueba, 1),
       conteo("cs", "BUG", Estado.Incorporada, 1),
       conteo("cs", "BUG", Estado.Descartada, 1),
@@ -38,7 +39,7 @@ describe("avance", () => {
       total: 10,
       triageadas: 4,
       porcentaje: 40,
-      porEstado: { pendienteDeAnalizar: 6, aRevisar: 1, enPrueba: 1, incorporada: 1, descartada: 1 },
+      porEstado: { pendienteDeAnalizar: 6, enAnalisis: 1, enPrueba: 1, enDuda: 0, incorporada: 1, descartada: 1 },
     });
   });
 
@@ -63,8 +64,8 @@ describe("resumen por lenguaje, tipo y origen", () => {
     conteo("cs", "CODE_SMELL", Estado.Descartada, 1),
     conteo("cs", "BUG", Estado.Incorporada, 2),
     conteo("cs", null, Estado.PendienteDeAnalizar, 1, Origen.Roslyn),
-    conteo("cs", "VULNERABILITY", Estado.ARevisar, 1),
-    conteo("cs", "OTRO", Estado.ARevisar, 1),
+    conteo("cs", "VULNERABILITY", Estado.EnAnalisis, 1),
+    conteo("cs", "OTRO", Estado.EnAnalisis, 1),
     conteo("ts", "BUG", Estado.PendienteDeAnalizar, 4),
     conteo("ts", "BUG", Estado.Descartada, 4),
   ];
@@ -124,5 +125,11 @@ describe("N de las estancadas", () => {
 
   it("por defecto son 14", () => {
     expect(DIAS_PARA_ESTANCADA_POR_DEFECTO).toBe(14);
+  });
+});
+
+describe("estados que se estancan", () => {
+  it("En análisis, En prueba y En duda (2026-10-30): una duda que dura también tiene que aparecer en el tablero", () => {
+    expect([...ESTADOS_QUE_SE_ESTANCAN]).toEqual([Estado.EnAnalisis, Estado.EnPrueba, Estado.EnDuda]);
   });
 });

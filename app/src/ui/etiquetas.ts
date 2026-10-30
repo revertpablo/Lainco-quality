@@ -29,8 +29,9 @@ export const textoDeSeveridad = (severidad: string | null) => (severidad ? (SEVE
 /** Variable de color de cada estado (globals.css). */
 export const COLOR_DE_ESTADO: Record<string, string> = {
   pendienteDeAnalizar: "var(--estado-pendiente)",
-  aRevisar: "var(--estado-revisar)",
+  enAnalisis: "var(--estado-analisis)",
   enPrueba: "var(--estado-prueba)",
+  enDuda: "var(--estado-duda)",
   incorporada: "var(--estado-incorporada)",
   descartada: "var(--estado-descartada)",
 };

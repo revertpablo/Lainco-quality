@@ -129,7 +129,7 @@ function FilaDeRegla({ regla: r, minimo }: { regla: ReglaEnPrueba; minimo: numbe
         <span className="block font-mono text-xs text-tenue">{r.clave}</span>
       </td>
       <td className="py-2 pr-4 text-right tabular-nums">{r.ultimoTotal === null ? <span className="text-tenue">—</span> : r.ultimoTotal.toLocaleString("es-AR")}</td>
-      <td className={`py-2 pr-4 ${estadoDelMinimo.cumple ? "" : "text-[var(--estado-revisar)]"}`}>
+      <td className={`py-2 pr-4 ${estadoDelMinimo.cumple ? "" : "text-[var(--aviso)]"}`}>
         {r.probableLocalmente === false ? "No se puede probar" : `${r.cuentan} de ${minimo}`}
       </td>
       <td className="py-2 pr-5">{r.tasa.tasa === null ? <span className="text-tenue">Sin evaluar</span> : describirTasa(r.tasa)}</td>

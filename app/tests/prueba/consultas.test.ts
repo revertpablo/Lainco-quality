@@ -50,7 +50,7 @@ describe.skipIf(!url)("consultas de la prueba de reglas", async () => {
     it(nombre, async () => {
       const resultado = obtenerDb().transaction(async (transaccion) => {
         const tx = transaccion as unknown as Db;
-        await tx.update(estadoRegla).set({ estado: Estado.ARevisar }).where(eq(estadoRegla.estado, Estado.EnPrueba));
+        await tx.update(estadoRegla).set({ estado: Estado.EnAnalisis }).where(eq(estadoRegla.estado, Estado.EnPrueba));
         await tx.update(corridaPrueba).set({ estado: EstadoCorrida.Fallida, terminadaEn: dia(-30), error: "vieja" }).where(eq(corridaPrueba.estado, EstadoCorrida.EnCurso));
         const token = await crearTokenServicio(tx, { nombre: "job-consultas", alcance: AlcanceToken.Prueba, dias: 365, ahora: dia(-10) });
         const [yo] = await tx.insert(usuario).values({ nombre: "Ana Analista", email: "prueba-consultas@laincosoftware.com", rol: Rol.Analista }).returning();
@@ -58,7 +58,7 @@ describe.skipIf(!url)("consultas de la prueba de reglas", async () => {
           const [r] = await tx.insert(regla).values({ origen, clave, lenguaje: "cs", nombre: `Regla ${clave}`, hashDescripcion: "x" }).returning({ id: regla.id });
           await tx.insert(estadoRegla).values({ reglaId: r.id, estado: Estado.EnPrueba });
           // Entró a En prueba el día 0.
-          await tx.insert(decision).values({ reglaId: r.id, estadoAnterior: Estado.ARevisar, estadoNuevo: Estado.EnPrueba, autorId: yo.id, fecha: INICIO });
+          await tx.insert(decision).values({ reglaId: r.id, estadoAnterior: Estado.EnAnalisis, estadoNuevo: Estado.EnPrueba, autorId: yo.id, fecha: INICIO });
           return r.id;
         };
         const lain = await nueva(Origen.Roslyn, "LAIN991");

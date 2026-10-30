@@ -119,7 +119,7 @@ describe.skipIf(!url)("publicar en Sonar lo pendiente", async () => {
       });
     const [d] = await db()
       .insert(decision)
-      .values({ reglaId: r.id, estadoAnterior: Estado.ARevisar, estadoNuevo: estado, autorId })
+      .values({ reglaId: r.id, estadoAnterior: Estado.EnAnalisis, estadoNuevo: estado, autorId })
       .returning({ id: decision.id });
     const [p] = await db()
       .insert(publicacion)

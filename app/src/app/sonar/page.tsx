@@ -98,7 +98,7 @@ async function PanelDeSonar() {
               )}
             </p>
             {ultima && ultima.advertencias.length > 0 && (
-              <ul className="list-disc pl-5 text-sm text-[var(--estado-revisar)]">
+              <ul className="list-disc pl-5 text-sm text-[var(--aviso)]">
                 {ultima.advertencias.map((a) => (
                   <li key={a}>{a}</li>
                 ))}

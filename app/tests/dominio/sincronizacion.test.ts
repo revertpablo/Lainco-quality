@@ -178,7 +178,7 @@ describe("regla modificada en Sonar", () => {
     [Estado.Incorporada, true],
     [Estado.EnPrueba, true],
     [Estado.PendienteDeAnalizar, false],
-    [Estado.ARevisar, false],
+    [Estado.EnAnalisis, false],
     [Estado.Descartada, false],
   ] as [TipoEstado, boolean][])("si estaba %s, avisa: %s", (estado, avisa) => {
     const resultado = comparar(
@@ -238,7 +238,7 @@ describe("regla deprecada o eliminada en Sonar", () => {
     expect(resultado.avisos).toEqual([{ reglaId: "id-1", motivo }]);
   });
 
-  it.each([Estado.PendienteDeAnalizar, Estado.ARevisar, Estado.EnPrueba, Estado.Descartada])(
+  it.each([Estado.PendienteDeAnalizar, Estado.EnAnalisis, Estado.EnPrueba, Estado.Descartada])(
     "si estaba %s, no avisa",
     (estado) => {
       const resultado = comparar([almacenada("id-1", regla, { estado })], [{ ...regla, estado: "DEPRECATED" }]);

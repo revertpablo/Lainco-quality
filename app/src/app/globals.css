@@ -15,10 +15,13 @@
   --pino-claro: #e4eee9;
   --sobre-pino: #ffffff;
   --error: #a3322a;
+  /* Avisos que no son errores (falta el mínimo de corridas, cambios en Sonar...). */
+  --aviso: #a8730f;
 
   --estado-pendiente: #8a918d;
-  --estado-revisar: #a8730f;
+  --estado-analisis: #a8730f;
   --estado-prueba: #2d5f8a;
+  --estado-duda: #8a4f8f;
   --estado-incorporada: #2f7a4d;
   --estado-descartada: #b9bebb;
 
@@ -44,10 +47,12 @@
     --pino-claro: #22322c;
     --sobre-pino: #10201a;
     --error: #ec8a80;
+    --aviso: #e0aa45;
 
     --estado-pendiente: #8d9692;
-    --estado-revisar: #e0aa45;
+    --estado-analisis: #e0aa45;
     --estado-prueba: #78aedb;
+    --estado-duda: #c99ad0;
     --estado-incorporada: #6cc28f;
     --estado-descartada: #56605b;
 

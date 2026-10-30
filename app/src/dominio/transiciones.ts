@@ -26,20 +26,20 @@ export interface Transicion {
   readonly admiteMasiva: boolean;
 }
 
-const { PendienteDeAnalizar, ARevisar, EnPrueba, Incorporada, Descartada } = Estado;
+const { PendienteDeAnalizar, EnAnalisis, EnPrueba, EnDuda, Incorporada, Descartada } = Estado;
 
 /**
  * Las transiciones permitidas. Cualquier par (desde, hacia) que no esté acá se rechaza;
  * en particular, Pendiente de analizar → Incorporada no existe.
  *
- * Operaciones masivas (decisión del 2026-10-16): toda transición hacia A revisar, En
- * prueba o Descartada; nunca hacia Incorporada (FASE-6.md, sección 5). Un test falla si
+ * Operaciones masivas (decisión del 2026-10-16): toda transición hacia En análisis, En
+ * prueba, En duda o Descartada; nunca hacia Incorporada (FASE-6.md, sección 5). Un test falla si
  * alguna transición hacia Incorporada se marca como masiva.
  */
 export const TRANSICIONES: readonly Transicion[] = [
   {
     desde: PendienteDeAnalizar,
-    hacia: ARevisar,
+    hacia: EnAnalisis,
     requiereJustificacion: false,
     requiereSeveridad: false,
     requiereDecisor: false,
@@ -65,7 +65,7 @@ export const TRANSICIONES: readonly Transicion[] = [
     admiteMasiva: true,
   },
   {
-    desde: ARevisar,
+    desde: EnAnalisis,
     hacia: EnPrueba,
     requiereJustificacion: false,
     requiereSeveridad: false,
@@ -74,7 +74,7 @@ export const TRANSICIONES: readonly Transicion[] = [
     admiteMasiva: true,
   },
   {
-    desde: ARevisar,
+    desde: EnAnalisis,
     hacia: Incorporada,
     requiereJustificacion: true,
     requiereSeveridad: true,
@@ -83,7 +83,7 @@ export const TRANSICIONES: readonly Transicion[] = [
     admiteMasiva: false,
   },
   {
-    desde: ARevisar,
+    desde: EnAnalisis,
     hacia: Descartada,
     requiereJustificacion: true,
     requiereSeveridad: false,
@@ -114,7 +114,7 @@ export const TRANSICIONES: readonly Transicion[] = [
   },
   {
     desde: EnPrueba,
-    hacia: ARevisar,
+    hacia: EnAnalisis,
     requiereJustificacion: false,
     requiereSeveridad: false,
     requiereDecisor: false,
@@ -144,10 +144,68 @@ export const TRANSICIONES: readonly Transicion[] = [
   {
     // Reabrir una decisión.
     desde: Descartada,
-    hacia: ARevisar,
+    hacia: EnAnalisis,
     requiereJustificacion: true,
     requiereSeveridad: false,
     requiereDecisor: false,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: true,
+  },
+  // En duda (2026-10-30): no hay acuerdo, o los resultados de la prueba no convencen todavía.
+  // La justificación es la duda. No la corre el job de prueba: para seguir midiendo, se deja
+  // En prueba.
+  {
+    desde: EnAnalisis,
+    hacia: EnDuda,
+    requiereJustificacion: true,
+    requiereSeveridad: false,
+    requiereDecisor: false,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: true,
+  },
+  {
+    desde: EnPrueba,
+    hacia: EnDuda,
+    requiereJustificacion: true,
+    requiereSeveridad: false,
+    requiereDecisor: false,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: true,
+  },
+  {
+    desde: EnDuda,
+    hacia: EnAnalisis,
+    requiereJustificacion: false,
+    requiereSeveridad: false,
+    requiereDecisor: false,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: true,
+  },
+  {
+    desde: EnDuda,
+    hacia: EnPrueba,
+    requiereJustificacion: false,
+    requiereSeveridad: false,
+    requiereDecisor: false,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: true,
+  },
+  {
+    // Como desde En análisis: un decisor resuelve la duda.
+    desde: EnDuda,
+    hacia: Incorporada,
+    requiereJustificacion: true,
+    requiereSeveridad: true,
+    requiereDecisor: true,
+    requiereResultadosDePrueba: false,
+    admiteMasiva: false,
+  },
+  {
+    desde: EnDuda,
+    hacia: Descartada,
+    requiereJustificacion: true,
+    requiereSeveridad: false,
+    requiereDecisor: true,
     requiereResultadosDePrueba: false,
     admiteMasiva: true,
   },
@@ -174,7 +232,7 @@ export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
   noAdmiteOperacionMasiva: "Este cambio de estado se hace de a una regla, no en una operación masiva.",
   parametroDesconocido: "Se eligió un valor para un parámetro que la regla no tiene.",
   severidadNoSeElige: "La severidad de una regla propia la fija la regla: no se elige al incorporarla.",
-  noSePuedeProbar: "La regla no está en SonarAnalyzer.CSharp: el job de prueba no la puede correr. Puede incorporarse sin prueba desde A revisar.",
+  noSePuedeProbar: "La regla no está en SonarAnalyzer.CSharp: el job de prueba no la puede correr. Puede incorporarse sin prueba desde En análisis o En duda.",
 };
 
 /**

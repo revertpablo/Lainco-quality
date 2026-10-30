@@ -70,27 +70,10 @@ Lainco hay que actualizar **los dos**.
 
 ### Consumir desde un repositorio
 
-GitHub Packages pide autenticación para bajar paquetes NuGet, aunque el repositorio sea
-público. Cada programador necesita un Personal Access Token (classic) con `read:packages`,
-y en CI alcanza el `GITHUB_TOKEN` con `packages: read`.
-
-Registrar el feed (una sola vez por máquina; el token nunca va al repositorio):
-
-```bash
-dotnet nuget add source "https://nuget.pkg.github.com/revertpablo/index.json" \
-  --name github-lainco \
-  --username <USUARIO> \
-  --password "$GITHUB_TOKEN" \
-  --store-password-in-clear-text
-```
-
-Y la referencia al paquete, en el `Directory.Build.props` del repositorio:
-
-```xml
-<ItemGroup>
-  <PackageReference Include="Lainco.Analyzers" Version="0.1.0" PrivateAssets="all" />
-</ItemGroup>
-```
+Ver **`docs/nuevo-repositorio.md`**: el feed (`lainco`, con las credenciales en el
+`NuGet.Config` de cada usuario y del `GITHUB_TOKEN` en CI), el `Directory.Build.props`, el
+acceso del repositorio al paquete y la parte de Sonar. El script
+`tools/nuevo-repositorio/Configurar-RepositorioLainco.ps1` hace casi todo.
 
 `PrivateAssets="all"` evita que la referencia se propague a los consumidores: cada
 repositorio referencia el paquete por su cuenta y elige su versión.

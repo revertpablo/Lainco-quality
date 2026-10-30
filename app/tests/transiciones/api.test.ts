@@ -13,7 +13,7 @@ const TERCERO = "0d3f6a1e-5b8c-4e2a-9f7d-2c1b0a9e8d7c";
 describe("pedido individual", () => {
   it("acepta una incorporación con severidad y parámetros", () => {
     const pedido = {
-      desde: "aRevisar",
+      desde: "enAnalisis",
       hacia: "incorporada",
       justificacion: "x",
       severidad: "MAJOR",
@@ -24,19 +24,19 @@ describe("pedido individual", () => {
   });
 
   it.each([
-    ["un estado que no existe", { desde: "aprobada", hacia: "aRevisar" }],
-    ["sin estado de origen", { hacia: "aRevisar" }],
-    ["una severidad que no es de Sonar", { desde: "aRevisar", hacia: "incorporada", severidad: "ALTA" }],
+    ["un estado que no existe", { desde: "aprobada", hacia: "enAnalisis" }],
+    ["sin estado de origen", { hacia: "enAnalisis" }],
+    ["una severidad que no es de Sonar", { desde: "enAnalisis", hacia: "incorporada", severidad: "ALTA" }],
     ["severidad en algo que no es incorporar", { desde: "pendienteDeAnalizar", hacia: "descartada", severidad: "MAJOR" }],
-    ["parámetros en algo que no es incorporar", { desde: "pendienteDeAnalizar", hacia: "aRevisar", parametros: { a: "1" } }],
-    ["un campo de más", { desde: "pendienteDeAnalizar", hacia: "aRevisar", masiva: true }],
-    ["una justificación de más de 2000 caracteres", { desde: "aRevisar", hacia: "descartada", justificacion: "x".repeat(2001) }],
+    ["parámetros en algo que no es incorporar", { desde: "pendienteDeAnalizar", hacia: "enAnalisis", parametros: { a: "1" } }],
+    ["un campo de más", { desde: "pendienteDeAnalizar", hacia: "enAnalisis", masiva: true }],
+    ["una justificación de más de 2000 caracteres", { desde: "enAnalisis", hacia: "descartada", justificacion: "x".repeat(2001) }],
   ])("rechaza %s", (_caso, pedido) => {
     expect(pedidoIndividual.safeParse(pedido).success).toBe(false);
   });
 
   it("los mensajes de error están en español", () => {
-    const resultado = pedidoIndividual.safeParse({ desde: "aprobada", hacia: "aRevisar" });
+    const resultado = pedidoIndividual.safeParse({ desde: "aprobada", hacia: "enAnalisis" });
 
     expect(resultado.error?.issues[0].message).toMatch(/[Oo]pción|[Ii]nválid|[Ee]sperado/);
   });
@@ -47,7 +47,7 @@ describe("pedido masivo", () => {
     const pedido = {
       reglas: [
         { id: ID, desde: "pendienteDeAnalizar" },
-        { id: OTRO, desde: "aRevisar" },
+        { id: OTRO, desde: "enAnalisis" },
       ],
       hacia: "descartada",
       justificacion: "No aplica",
@@ -58,9 +58,9 @@ describe("pedido masivo", () => {
 
   it.each([
     ["sin reglas", { reglas: [], hacia: "descartada" }],
-    ["reglas repetidas", { reglas: [{ id: ID, desde: "aRevisar" }, { id: ID, desde: "aRevisar" }], hacia: "descartada" }],
-    ["un id que no es uuid", { reglas: [{ id: "123", desde: "aRevisar" }], hacia: "descartada" }],
-    ["severidad (no se elige en masa)", { reglas: [{ id: ID, desde: "aRevisar" }], hacia: "descartada", severidad: "MAJOR" }],
+    ["reglas repetidas", { reglas: [{ id: ID, desde: "enAnalisis" }, { id: ID, desde: "enAnalisis" }], hacia: "descartada" }],
+    ["un id que no es uuid", { reglas: [{ id: "123", desde: "enAnalisis" }], hacia: "descartada" }],
+    ["severidad (no se elige en masa)", { reglas: [{ id: ID, desde: "enAnalisis" }], hacia: "descartada", severidad: "MAJOR" }],
     [
       `más de ${MAXIMO_DE_REGLAS_POR_LOTE} reglas`,
       {
@@ -77,7 +77,7 @@ describe("pedido masivo", () => {
 
   it("hacia Incorporada pasa la forma: lo rechaza el ciclo de vida, con el motivo", () => {
     // Así la respuesta dice "no se incorpora en masa" en vez de un error de formato.
-    const pedido = { reglas: [{ id: ID, desde: "aRevisar" }], hacia: "incorporada", justificacion: "x" };
+    const pedido = { reglas: [{ id: ID, desde: "enAnalisis" }], hacia: "incorporada", justificacion: "x" };
 
     expect(pedidoMasivo.safeParse(pedido).success).toBe(true);
   });
@@ -88,7 +88,7 @@ describe("respuestas", () => {
     const respuesta = responder({
       ok: true,
       loteId: null,
-      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "incorporada" }],
+      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "enAnalisis", hacia: "incorporada" }],
       publicaciones: [TERCERO],
       destinos: ["perfilSonar"],
     });
@@ -96,7 +96,7 @@ describe("respuestas", () => {
     expect(respuesta.status).toBe(200);
     expect(await respuesta.json()).toEqual({
       loteId: null,
-      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "aRevisar", hacia: "incorporada" }],
+      decisiones: [{ reglaId: ID, decisionId: OTRO, desde: "enAnalisis", hacia: "incorporada" }],
       publicaciones: [TERCERO],
     });
   });
@@ -128,7 +128,7 @@ describe("respuestas", () => {
 
   it.each<[ResultadoDeTransicion, number, string]>([
     [{ ok: false, tipo: "noEncontradas", reglaIds: [ID] }, 404, "noEncontradas"],
-    [{ ok: false, tipo: "estadoCambio", reglas: [{ id: ID, esperado: "aRevisar", actual: "enPrueba" }] }, 409, "estadoCambio"],
+    [{ ok: false, tipo: "estadoCambio", reglas: [{ id: ID, esperado: "enAnalisis", actual: "enPrueba" }] }, 409, "estadoCambio"],
   ])("%o → %i", async (resultado, estado, codigo) => {
     const respuesta = responder(resultado);
 

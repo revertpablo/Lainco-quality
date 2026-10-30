@@ -4,11 +4,11 @@ import { Estado, type Lenguaje, type Origen } from "./valores";
  * Tablero de progreso del triage (entrega 6.1, paso 11; FASE-6.md, sección 5).
  *
  * Una regla está **triageada** cuando salió de Pendiente de analizar: alguien ya la miró y
- * decidió qué hacer con ella, aunque todavía esté en A revisar o En prueba. Cuántas
+ * decidió qué hacer con ella, aunque todavía esté En análisis, En prueba o En duda. Cuántas
  * llegaron a una decisión final (Incorporada o Descartada) se ve en el detalle por estado.
  *
- * Una regla está **estancada** cuando lleva más de N días en A revisar o En prueba: son
- * los estados en los que alguien tiene que hacer algo para que la regla avance.
+ * Una regla está **estancada** cuando lleva más de N días En análisis, En prueba o En duda:
+ * son los estados en los que alguien tiene que hacer algo para que la regla avance.
  */
 
 /** Cuántas reglas hay en un estado, para una combinación de lenguaje, tipo y origen. */
@@ -36,7 +36,7 @@ export interface ResumenDeProgreso {
 }
 
 /** Los estados en los que una regla espera que alguien la haga avanzar. */
-export const ESTADOS_QUE_SE_ESTANCAN = [Estado.ARevisar, Estado.EnPrueba] as const;
+export const ESTADOS_QUE_SE_ESTANCAN = [Estado.EnAnalisis, Estado.EnPrueba, Estado.EnDuda] as const;
 
 /** Orden de los tipos de Sonar: primero los de mayor valor (orden sugerido del triage). */
 const ORDEN_DE_TIPOS = ["BUG", "VULNERABILITY", "SECURITY_HOTSPOT", "CODE_SMELL"];

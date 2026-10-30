@@ -84,8 +84,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
   }
 
   enTransaccion("incorporar una regla propia abre el PR con el .globalconfig, la versión y AnalyzerReleases", async (c) => {
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar, "No se permite ToList() sobre queries");
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada, "Regla dura acordada en la Fase 3.");
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis, "No se permite ToList() sobre queries");
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada, "Regla dura acordada en la Fase 3.");
     const repo = githubEnMemoria();
 
     const resumen = await publicarPaquete({ db: c.tx, github: repo.github });
@@ -117,12 +117,12 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
 
   enTransaccion("otra decisión antes del merge actualiza el mismo PR, que sigue siendo un commit sobre main", async (c) => {
     const repo = githubEnMemoria();
-    const primera = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(primera, Estado.ARevisar, Estado.Incorporada);
+    const primera = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(primera, Estado.EnAnalisis, Estado.Incorporada);
     await publicarPaquete({ db: c.tx, github: repo.github });
 
-    const segunda = await c.reglaPropia("LAIN902", Estado.ARevisar);
-    await c.decidir(segunda, Estado.ARevisar, Estado.Incorporada);
+    const segunda = await c.reglaPropia("LAIN902", Estado.EnAnalisis);
+    await c.decidir(segunda, Estado.EnAnalisis, Estado.Incorporada);
     const resumen = await publicarPaquete({ db: c.tx, github: repo.github });
 
     expect(resumen).toMatchObject({ publicadas: 1, pr: { numero: 1 } });
@@ -137,8 +137,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
 
   enTransaccion("después del merge, la siguiente decisión abre un PR nuevo con la versión siguiente", async (c) => {
     const repo = githubEnMemoria();
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada);
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada);
     await publicarPaquete({ db: c.tx, github: repo.github });
     repo.mergear(RAMA_DEL_PR);
 
@@ -156,8 +156,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
 
   enTransaccion("si main ya tiene lo que dice la app, no hay PR: se publica sin PR y el abierto se cierra", async (c) => {
     const repo = githubEnMemoria();
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada);
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada);
     await publicarPaquete({ db: c.tx, github: repo.github });
 
     // Se arrepiente antes del merge: vuelve a como está en main.
@@ -177,8 +177,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
   enTransaccion("si GitHub falla, quedan pendientes con el error; el reintento arma el PR", async (c) => {
     let caido = true;
     const repo = githubEnMemoria((op) => (caido && op === "crearCommit" ? new ErrorDeGitHub("servidor", "GitHub no respondió bien. (HTTP 502)", 502) : undefined));
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada);
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada);
 
     const fallo = await publicarPaquete({ db: c.tx, github: repo.github });
 
@@ -197,8 +197,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
   enTransaccion("si main no permite armar el PR (versión previa), queda fallida enseguida: lo mira una persona", async (c) => {
     const repo = githubEnMemoria();
     repo.cambiarEnMain(RUTAS.csproj, repo.archivo("main", RUTAS.csproj)!.replace(/<Version>[^<]*<\/Version>/, "<Version>0.2.0-beta.1</Version>"));
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada);
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada);
 
     const resumen = await publicarPaquete({ db: c.tx, github: repo.github });
 
@@ -213,9 +213,9 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
       .insert(regla)
       .values({ origen: Origen.Sonar, clave: "PRUEBA-PAQ-S1", lenguaje: "cs", nombre: "x", hashDescripcion: "x" })
       .returning({ id: regla.id });
-    await c.tx.insert(estadoRegla).values({ reglaId: deSonar.id, estado: Estado.ARevisar });
+    await c.tx.insert(estadoRegla).values({ reglaId: deSonar.id, estado: Estado.EnAnalisis });
     await aplicarTransicion(c.tx, c.decisor, {
-      reglas: [{ id: deSonar.id, desde: Estado.ARevisar }],
+      reglas: [{ id: deSonar.id, desde: Estado.EnAnalisis }],
       hacia: Estado.Incorporada,
       severidad: "MAJOR",
       justificacion: "x",
@@ -232,8 +232,8 @@ describe.skipIf(!url)("publicar en el paquete: el PR de configuración", async (
 
   enTransaccion("las publicaciones de reglas que ya estaban publicadas no se vuelven a tomar", async (c) => {
     const repo = githubEnMemoria();
-    const id = await c.reglaPropia("LAIN901", Estado.ARevisar);
-    await c.decidir(id, Estado.ARevisar, Estado.Incorporada);
+    const id = await c.reglaPropia("LAIN901", Estado.EnAnalisis);
+    await c.decidir(id, Estado.EnAnalisis, Estado.Incorporada);
     await publicarPaquete({ db: c.tx, github: repo.github });
     const llamadas = repo.llamadas.length;
 

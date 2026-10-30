@@ -62,7 +62,7 @@ describe.skipIf(!url)("consultas de la publicación en Sonar", async () => {
   async function publicada(reglaId: string, estado: EstadoPublicacion, minutos: number, extra: Partial<typeof publicacion.$inferInsert> = {}) {
     const [d] = await db()
       .insert(decision)
-      .values({ reglaId, estadoAnterior: Estado.ARevisar, estadoNuevo: Estado.Incorporada, autorId })
+      .values({ reglaId, estadoAnterior: Estado.EnAnalisis, estadoNuevo: Estado.Incorporada, autorId })
       .returning({ id: decision.id });
     const creadaEn = new Date(Date.now() - minutos * 60_000);
     const [p] = await db()

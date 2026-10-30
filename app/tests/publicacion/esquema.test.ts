@@ -76,14 +76,14 @@ describe.skipIf(!url)("tablas de la publicación a Sonar", async () => {
         .insert(regla)
         .values({ origen: Origen.Eslint, clave: `${PREFIJO}${clave}`, nombre: clave, lenguaje: "cs", hashDescripcion: "x" })
         .returning({ id: regla.id });
-      await db().insert(estadoRegla).values({ reglaId: creada.id, estado: Estado.ARevisar });
+      await db().insert(estadoRegla).values({ reglaId: creada.id, estado: Estado.EnAnalisis });
       ids.push(creada.id);
     }
     [reglaId, otraReglaId] = ids;
 
     const [d] = await db()
       .insert(decision)
-      .values({ reglaId, estadoAnterior: Estado.PendienteDeAnalizar, estadoNuevo: Estado.ARevisar, autorId })
+      .values({ reglaId, estadoAnterior: Estado.PendienteDeAnalizar, estadoNuevo: Estado.EnAnalisis, autorId })
       .returning({ id: decision.id });
     decisionId = d.id;
   });

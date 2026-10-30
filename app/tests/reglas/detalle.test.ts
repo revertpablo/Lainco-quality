@@ -85,15 +85,15 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
     principal = await crearRegla("PRINCIPAL");
     otra = await crearRegla("OTRA");
 
-    // 1. La analista la pasa a A revisar, sin justificación.
+    // 1. La analista la pasa a En análisis, sin justificación.
     await aplicarTransicion(db(), analista, {
       reglas: [{ id: principal, desde: Estado.PendienteDeAnalizar }],
-      hacia: Estado.ARevisar,
+      hacia: Estado.EnAnalisis,
       masiva: false,
     });
     // 2. El decisor la incorpora, con justificación, severidad y parámetros.
     await aplicarTransicion(db(), decisor, {
-      reglas: [{ id: principal, desde: Estado.ARevisar }],
+      reglas: [{ id: principal, desde: Estado.EnAnalisis }],
       hacia: Estado.Incorporada,
       justificacion: "Encontró bugs reales en Dico",
       severidad: "CRITICAL",
@@ -129,8 +129,8 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
 
     expect(decisiones.map((d) => [d.autor, d.desde, d.hacia, d.justificacion])).toEqual([
       ["Diego Decisor", Estado.Incorporada, Estado.Descartada, "Cambió en Sonar y ya no aplica"],
-      ["Diego Decisor", Estado.ARevisar, Estado.Incorporada, "Encontró bugs reales en Dico"],
-      ["Ana Analista", Estado.PendienteDeAnalizar, Estado.ARevisar, null],
+      ["Diego Decisor", Estado.EnAnalisis, Estado.Incorporada, "Encontró bugs reales en Dico"],
+      ["Ana Analista", Estado.PendienteDeAnalizar, Estado.EnAnalisis, null],
     ]);
     for (const d of decisiones) {
       expect(d.fecha).toBeInstanceOf(Date);
@@ -144,7 +144,7 @@ describe.skipIf(!url)("detalle e historial de una regla", async () => {
     const incorporacion = historial.find((e) => e.tipo === "decision" && e.hacia === Estado.Incorporada);
 
     expect(incorporacion).toMatchObject({
-      desdeDescripcion: "A revisar",
+      desdeDescripcion: "En análisis",
       haciaDescripcion: "Incorporada",
       severidad: "CRITICAL",
       parametros: { max: "5" },

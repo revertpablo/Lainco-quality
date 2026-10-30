@@ -89,36 +89,36 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
   // ------------------------------------------------------------------- individual
 
   describe("individual", () => {
-    it("un analista pasa una regla de Pendiente a A revisar", async () => {
+    it("un analista pasa una regla de Pendiente a En análisis", async () => {
       const [id] = await reglas(Estado.PendienteDeAnalizar);
 
       const resultado = await aplicarTransicion(db(), analista, {
         reglas: [{ id, desde: Estado.PendienteDeAnalizar }],
-        hacia: Estado.ARevisar,
+        hacia: Estado.EnAnalisis,
         masiva: false,
       });
 
       expect(resultado).toMatchObject({ ok: true, loteId: null });
-      expect((await estadoDe(id)).estado).toBe(Estado.ARevisar);
+      expect((await estadoDe(id)).estado).toBe(Estado.EnAnalisis);
       const [registrada] = await decisionesDe([id]);
       expect(registrada).toMatchObject({
         estadoAnterior: Estado.PendienteDeAnalizar,
-        estadoNuevo: Estado.ARevisar,
+        estadoNuevo: Estado.EnAnalisis,
         autorId: analista.id,
         justificacion: null,
         loteId: null,
         basadaEnSugerencia: false,
       });
       expect(resultado.ok && resultado.decisiones).toEqual([
-        { reglaId: id, decisionId: registrada.id, desde: Estado.PendienteDeAnalizar, hacia: Estado.ARevisar },
+        { reglaId: id, decisionId: registrada.id, desde: Estado.PendienteDeAnalizar, hacia: Estado.EnAnalisis },
       ]);
     });
 
     it("un analista no puede incorporar, y no se escribe nada", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), analista, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "Aplica a todo el código",
         severidad: "MAJOR",
@@ -130,15 +130,15 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
         tipo: "rechazada",
         rechazos: [{ reglaId: id, motivos: ["requiereRolDecisor"] }],
       });
-      expect((await estadoDe(id)).estado).toBe(Estado.ARevisar);
+      expect((await estadoDe(id)).estado).toBe(Estado.EnAnalisis);
       expect(await decisionesDe([id])).toEqual([]);
     });
 
     it("un decisor incorpora con justificación, severidad y parámetros", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), decisor, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "Bugs reales en el código actual",
         severidad: "CRITICAL",
@@ -175,10 +175,10 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
     });
 
     it("un parámetro que la regla no tiene se rechaza", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), decisor, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "x",
         severidad: "MAJOR",
@@ -191,13 +191,13 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
         tipo: "rechazada",
         rechazos: [{ reglaId: id, motivos: ["parametroDesconocido"] }],
       });
-      expect((await estadoDe(id)).estado).toBe(Estado.ARevisar);
+      expect((await estadoDe(id)).estado).toBe(Estado.EnAnalisis);
     });
 
     it("al sacar una regla de Incorporada se borran la severidad y los parámetros asignados", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
       await aplicarTransicion(db(), decisor, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "x",
         severidad: "MAJOR",
@@ -236,11 +236,11 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
 
   describe("masiva", () => {
     it("un intento de incorporación masiva se rechaza, aunque la haga un decisor", async () => {
-      const ids = await reglas(Estado.ARevisar, Estado.EnPrueba);
+      const ids = await reglas(Estado.EnAnalisis, Estado.EnPrueba);
 
       const resultado = await aplicarTransicion(db(), decisor, {
         reglas: [
-          { id: ids[0], desde: Estado.ARevisar },
+          { id: ids[0], desde: Estado.EnAnalisis },
           { id: ids[1], desde: Estado.EnPrueba },
         ],
         hacia: Estado.Incorporada,
@@ -254,16 +254,16 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
         tipo: "rechazada",
         rechazos: ids.map((reglaId) => ({ reglaId, motivos: ["noAdmiteOperacionMasiva"] })),
       });
-      expect((await estadoDe(ids[0])).estado).toBe(Estado.ARevisar);
+      expect((await estadoDe(ids[0])).estado).toBe(Estado.EnAnalisis);
       expect((await estadoDe(ids[1])).estado).toBe(Estado.EnPrueba);
       expect(await decisionesDe(ids)).toEqual([]);
     });
 
     it("una masiva de una sola regla también es masiva: hacia Incorporada se rechaza", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), decisor, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Incorporada,
         justificacion: "x",
         severidad: "MAJOR",
@@ -304,12 +304,12 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
     });
 
     it("las reglas de un lote pueden venir de estados distintos", async () => {
-      const ids = await reglas(Estado.PendienteDeAnalizar, Estado.ARevisar);
+      const ids = await reglas(Estado.PendienteDeAnalizar, Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), analista, {
         reglas: [
           { id: ids[0], desde: Estado.PendienteDeAnalizar },
-          { id: ids[1], desde: Estado.ARevisar },
+          { id: ids[1], desde: Estado.EnAnalisis },
         ],
         hacia: Estado.EnPrueba,
         masiva: true,
@@ -317,18 +317,18 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
 
       expect(resultado.ok).toBe(true);
       expect((await decisionesDe(ids)).map((d) => d.estadoAnterior).sort()).toEqual(
-        [Estado.ARevisar, Estado.PendienteDeAnalizar].sort(),
+        [Estado.EnAnalisis, Estado.PendienteDeAnalizar].sort(),
       );
     });
 
     it("es todo o nada: si una regla no puede, no cambia ninguna", async () => {
-      // Descartar desde Pendiente lo puede hacer un analista; desde A revisar, no.
-      const ids = await reglas(Estado.PendienteDeAnalizar, Estado.ARevisar, Estado.PendienteDeAnalizar);
+      // Descartar desde Pendiente lo puede hacer un analista; desde En análisis, no.
+      const ids = await reglas(Estado.PendienteDeAnalizar, Estado.EnAnalisis, Estado.PendienteDeAnalizar);
 
       const resultado = await aplicarTransicion(db(), analista, {
         reglas: [
           { id: ids[0], desde: Estado.PendienteDeAnalizar },
-          { id: ids[1], desde: Estado.ARevisar },
+          { id: ids[1], desde: Estado.EnAnalisis },
           { id: ids[2], desde: Estado.PendienteDeAnalizar },
         ],
         hacia: Estado.Descartada,
@@ -366,7 +366,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
 
   describe("lo que cambió mientras tanto", () => {
     it("si la regla ya no está en el estado que vio el usuario, no se aplica", async () => {
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
 
       const resultado = await aplicarTransicion(db(), decisor, {
         reglas: [{ id, desde: Estado.PendienteDeAnalizar }],
@@ -378,7 +378,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
       expect(resultado).toEqual({
         ok: false,
         tipo: "estadoCambio",
-        reglas: [{ id, esperado: Estado.PendienteDeAnalizar, actual: Estado.ARevisar }],
+        reglas: [{ id, esperado: Estado.PendienteDeAnalizar, actual: Estado.EnAnalisis }],
       });
       expect(await decisionesDe([id])).toEqual([]);
     });
@@ -392,7 +392,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
           { id, desde: Estado.PendienteDeAnalizar },
           { id: inexistente, desde: Estado.PendienteDeAnalizar },
         ],
-        hacia: Estado.ARevisar,
+        hacia: Estado.EnAnalisis,
         masiva: true,
       });
 
@@ -410,7 +410,7 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
           masiva: false,
         });
 
-      const resultados = await Promise.all([pedido(Estado.ARevisar), pedido(Estado.Descartada)]);
+      const resultados = await Promise.all([pedido(Estado.EnAnalisis), pedido(Estado.Descartada)]);
 
       expect(resultados.filter((r) => r.ok)).toHaveLength(1);
       expect(resultados.filter((r) => !r.ok)).toMatchObject([{ tipo: "estadoCambio" }]);
@@ -419,14 +419,14 @@ describe.skipIf(!url)("aplicarTransicion contra la base", async () => {
 
     it("el rol que cuenta es el que recibe la función, no el que se pida", async () => {
       // La API pasa el usuario de la sesión, con el rol leído de la base.
-      const [id] = await reglas(Estado.ARevisar);
+      const [id] = await reglas(Estado.EnAnalisis);
       const [filaAnalista] = await db()
         .select({ id: usuario.id, rol: usuario.rol })
         .from(usuario)
         .where(and(eq(usuario.id, analista.id)));
 
       const resultado = await aplicarTransicion(db(), filaAnalista, {
-        reglas: [{ id, desde: Estado.ARevisar }],
+        reglas: [{ id, desde: Estado.EnAnalisis }],
         hacia: Estado.Descartada,
         justificacion: "x",
         masiva: false,

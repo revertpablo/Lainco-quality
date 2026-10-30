@@ -13,8 +13,10 @@
 /** Estados del ciclo de vida de una regla (FASE-6.md, sección 4). */
 export const Estado = {
   PendienteDeAnalizar: "pendienteDeAnalizar",
-  ARevisar: "aRevisar",
+  EnAnalisis: "enAnalisis",
   EnPrueba: "enPrueba",
+  /** Sin acuerdo, o los resultados de la prueba no convencen (2026-10-30). */
+  EnDuda: "enDuda",
   Incorporada: "incorporada",
   Descartada: "descartada",
 } as const;

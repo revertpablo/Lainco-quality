@@ -28,7 +28,7 @@ const fecha = new Intl.DateTimeFormat("es-AR", {
 });
 const formatear = (d: Date) => fecha.format(d);
 
-const TONO = { normal: undefined, alerta: "text-[var(--estado-revisar)]", error: "text-error" } as const;
+const TONO = { normal: undefined, alerta: "text-[var(--aviso)]", error: "text-error" } as const;
 
 export default function Paquete() {
   return (
@@ -94,7 +94,7 @@ async function PanelDelPaquete() {
         {estado.desvio && (
           <Panel titulo="Desvío" id="desvio">
             <div className="flex flex-col gap-3 px-5 py-4 text-sm" data-desvio="globalconfigDistinto">
-              <p className="font-medium text-[var(--estado-revisar)]">El .globalconfig de main no es el de la app, y no hay un PR abierto.</p>
+              <p className="font-medium text-[var(--aviso)]">El .globalconfig de main no es el de la app, y no hay un PR abierto.</p>
               <p className="text-tenue">
                 Alguien lo cambió a mano, o el PR se cerró sin mergear. Abrir el PR lleva main a lo que dice la app; si el cambio
                 de main era correcto, primero hay que decidirlo en la app.

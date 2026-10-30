@@ -187,8 +187,8 @@ export function TablaDeReglas({ filas, rol, estados, lenguajes, columnas, aplica
             </strong>
             {destinos.length === 0 ? (
               <span>
-                {seleccionadas.some((f) => f.estado === "aRevisar" || f.estado === "enPrueba" || f.estado === "incorporada") &&
-                rol !== "decisor"
+                {/* Con rol decisor habría alguno: es el rol lo que falta. */}
+                {rol !== "decisor" && destinosMasivos(seleccionadas.map((f) => f.estado), "decisor").length > 0
                   ? "No hay un cambio de estado que valga para todas en una operación masiva con tu rol."
                   : "No hay un cambio de estado que valga para todas en una operación masiva."}
               </span>
@@ -289,7 +289,7 @@ function Marcas({ fila }: { fila: FilaDeInventario }) {
     <>
       {marcas.length > 0 && <span className="ml-2 text-xs text-tenue">({marcas.join(", ")})</span>}
       {alertas.length > 0 && (
-        <span className="ml-2 text-xs text-[var(--estado-revisar)]" data-alerta-sonar>
+        <span className="ml-2 text-xs text-[var(--aviso)]" data-alerta-sonar>
           ({alertas.join(", ")})
         </span>
       )}

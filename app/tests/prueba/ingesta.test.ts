@@ -22,7 +22,7 @@ import {
  * corrida y los rechazos.
  *
  * Necesita DATABASE_URL_PRUEBAS. Cada test corre en una transacción que se descarta; al
- * empezar pasa a A revisar las reglas que la base tenga En prueba de otros tests.
+ * empezar pasa a En análisis las reglas que la base tenga En prueba de otros tests.
  */
 
 const url = process.env.DATABASE_URL_PRUEBAS;
@@ -68,7 +68,7 @@ describe.skipIf(!url)("ingesta de resultados de prueba", async () => {
     it(nombre, async () => {
       const resultado = obtenerDb().transaction(async (transaccion) => {
         const tx = transaccion as unknown as Db;
-        await tx.update(estadoRegla).set({ estado: Estado.ARevisar }).where(eq(estadoRegla.estado, Estado.EnPrueba));
+        await tx.update(estadoRegla).set({ estado: Estado.EnAnalisis }).where(eq(estadoRegla.estado, Estado.EnPrueba));
         const creado = await crearTokenServicio(tx, { nombre: "job-de-prueba-ingesta", alcance: AlcanceToken.Prueba, dias: 30, ahora: new Date(AHORA.getTime() - 86_400_000) });
 
         const nueva = async (origen: TipoOrigen, clave: string, estado: TipoEstado, lenguaje: "cs" | "ts" = "cs") => {
@@ -80,8 +80,8 @@ describe.skipIf(!url)("ingesta de resultados de prueba", async () => {
           lain: await nueva(Origen.Roslyn, "LAIN991", Estado.EnPrueba),
           s1118: await nueva(Origen.Sonar, "csharpsquid:S1118", Estado.EnPrueba),
           s9001: await nueva(Origen.Sonar, "csharpsquid:S9001", Estado.EnPrueba),
-          s100: await nueva(Origen.Sonar, "csharpsquid:S100", Estado.ARevisar),
-          s101: await nueva(Origen.Sonar, "csharpsquid:S101", Estado.ARevisar),
+          s100: await nueva(Origen.Sonar, "csharpsquid:S100", Estado.EnAnalisis),
+          s101: await nueva(Origen.Sonar, "csharpsquid:S101", Estado.EnAnalisis),
           ts: await nueva(Origen.Sonar, "typescript:S1118", Estado.EnPrueba, "ts"),
         };
         const repositorios = [

@@ -22,18 +22,22 @@ describe("analista", () => {
     expect(disponibles.filter((t) => t.requiereDecisor)).toEqual([]);
   });
 
-  it("solo ve las transiciones entre Pendiente, A revisar y En prueba, y el descarte desde Pendiente", () => {
+  it("solo ve las transiciones entre Pendiente, En análisis, En prueba y En duda, y el descarte desde Pendiente", () => {
     // FASE-6.md, sección 4, "Roles".
     const todas = ESTADOS.flatMap((desde) => nombres(desde, Rol.Analista)).sort();
 
     expect(todas).toEqual(
       [
-        "pendienteDeAnalizar → aRevisar",
+        "pendienteDeAnalizar → enAnalisis",
         "pendienteDeAnalizar → enPrueba",
         "pendienteDeAnalizar → descartada",
-        "aRevisar → enPrueba",
-        "enPrueba → aRevisar",
-        "descartada → aRevisar",
+        "enAnalisis → enPrueba",
+        "enPrueba → enAnalisis",
+        "descartada → enAnalisis",
+        "enAnalisis → enDuda",
+        "enPrueba → enDuda",
+        "enDuda → enAnalisis",
+        "enDuda → enPrueba",
       ].sort(),
     );
   });

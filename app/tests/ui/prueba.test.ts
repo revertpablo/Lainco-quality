@@ -25,7 +25,7 @@ describe("describirMinimo", () => {
 
   it("una regla que no se puede probar lo dice, en lugar de contar corridas", () => {
     expect(describirMinimo({ minimo: 5, cuentan: 0, probableLocalmente: false })).toEqual({
-      texto: "No está en SonarAnalyzer.CSharp: el job no la puede probar. Puede incorporarse sin prueba desde A revisar.",
+      texto: "No está en SonarAnalyzer.CSharp: el job no la puede probar. Puede incorporarse sin prueba desde En análisis o En duda.",
       cumple: false,
     });
   });

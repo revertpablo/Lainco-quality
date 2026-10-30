@@ -4,7 +4,7 @@ import { Estado } from "@/dominio/valores";
 import { COLOR_DE_ESTADO } from "./etiquetas";
 
 /** Orden de los tramos: lo decidido a la izquierda, lo pendiente a la derecha. */
-const ORDEN: Estado[] = [Estado.Incorporada, Estado.Descartada, Estado.EnPrueba, Estado.ARevisar, Estado.PendienteDeAnalizar];
+const ORDEN: Estado[] = [Estado.Incorporada, Estado.Descartada, Estado.EnPrueba, Estado.EnDuda, Estado.EnAnalisis, Estado.PendienteDeAnalizar];
 
 /**
  * Una barra con un tramo por estado, proporcional a la cantidad de reglas. Es decorativa:

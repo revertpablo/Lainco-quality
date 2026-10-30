@@ -149,15 +149,17 @@ Una **aplicación de catálogo de reglas**, que es la fuente de verdad. Contiene
 reglas disponibles de todos los orígenes, y el estado de cada una:
 
 ```
-Pendiente de analizar  →  A revisar  →  En prueba  →  Incorporada
-                                                   →  Descartada
+Pendiente de analizar  →  En análisis  →  En prueba  →  Incorporada
+                                       ↘    En duda   ↗   →  Descartada
 ```
 
 - **Pendiente de analizar** — nadie la miró. Estado inicial de todas.
-- **A revisar** — alguien la analizó y hace falta decidir.
+- **En análisis** — alguien la está analizando para llevarla a una decisión.
 - **En prueba** — se está midiendo cuántos issues levantaría sobre el código real, **sin
   afectar a nadie todavía**. Se puede ver una muestra y marcar cuáles son falsos
   positivos antes de decidir.
+- **En duda** — se analizó o se probó y no hay decisión todavía: el equipo no se pone de
+  acuerdo o los resultados no convencen. Queda escrito cuál es la duda.
 - **Incorporada** — activa. Cuenta para bloquear.
 - **Descartada** — no se usa, con justificación obligatoria.
 

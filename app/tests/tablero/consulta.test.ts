@@ -29,8 +29,8 @@ describe.skipIf(!url)("consultas del tablero de progreso", async () => {
   const REGLAS = [
     ["P1", "cs", "BUG", Estado.PendienteDeAnalizar, 100],
     ["P2", "cs", "BUG", Estado.PendienteDeAnalizar, 100],
-    ["R1", "cs", "BUG", Estado.ARevisar, 20],
-    ["R2", "cs", "CODE_SMELL", Estado.ARevisar, 3],
+    ["R1", "cs", "BUG", Estado.EnAnalisis, 20],
+    ["R2", "cs", "CODE_SMELL", Estado.EnAnalisis, 3],
     ["E1", "ts", null, Estado.EnPrueba, 40],
     ["E2", "ts", null, Estado.EnPrueba, 15],
     ["I1", "ts", "BUG", Estado.Incorporada, 300],
@@ -64,17 +64,17 @@ describe.skipIf(!url)("consultas del tablero de progreso", async () => {
       const desde = sql`now() - make_interval(days => ${dias}, hours => 1)`;
       await db().insert(estadoRegla).values({ reglaId: creada.id, estado, actualizadoEn: desde });
       if (clave === "E1") {
-        // Antes pasó por A revisar, de la mano de otra persona: "quién la pasó" es el último.
+        // Antes pasó por En análisis, de la mano de otra persona: "quién la pasó" es el último.
         await db().insert(decision).values({
           reglaId: creada.id,
           estadoAnterior: Estado.PendienteDeAnalizar,
-          estadoNuevo: Estado.ARevisar,
+          estadoNuevo: Estado.EnAnalisis,
           autorId: otro.id,
           fecha: sql`now() - make_interval(days => 60)`,
         });
         await db().insert(decision).values({
           reglaId: creada.id,
-          estadoAnterior: Estado.ARevisar,
+          estadoAnterior: Estado.EnAnalisis,
           estadoNuevo: estado,
           autorId,
           fecha: desde,
@@ -101,15 +101,15 @@ describe.skipIf(!url)("consultas del tablero de progreso", async () => {
 
     expect(Object.fromEntries(propios.map((c) => [clave(c), c.cantidad]))).toEqual({
       "cs/BUG/pendienteDeAnalizar": 2,
-      "cs/BUG/aRevisar": 1,
-      "cs/CODE_SMELL/aRevisar": 1,
+      "cs/BUG/enAnalisis": 1,
+      "cs/CODE_SMELL/enAnalisis": 1,
       "ts/-/enPrueba": 2,
       "ts/BUG/incorporada": 1,
       "ts/BUG/descartada": 1,
     });
   });
 
-  it("estancadas: solo A revisar y En prueba con más de N días, de la más vieja a la más nueva", async () => {
+  it("estancadas: solo En análisis y En prueba con más de N días, de la más vieja a la más nueva", async () => {
     const claves = async (dias: number) =>
       (await reglasEstancadas(db(), dias)).filter((r) => r.clave.startsWith(PREFIJO)).map((r) => r.clave.slice(PREFIJO.length));
 

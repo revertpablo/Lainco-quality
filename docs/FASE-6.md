@@ -62,8 +62,9 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 | Estado | Significado |
 |---|---|
 | **Pendiente de analizar** | Nadie la miró todavía. Estado inicial de toda regla nueva. |
-| **A revisar** | Alguien la analizó y requiere decisión del equipo. |
+| **En análisis** | Alguien la está analizando para llevarla a una decisión del equipo. Hasta el 2026-10-30 se llamó **A revisar**. |
 | **En prueba** | Se está midiendo su efecto sobre el código real, sin afectar el quality gate. |
+| **En duda** | Se analizó o se probó y no hay decisión: el equipo no se pone de acuerdo, o los resultados de la prueba no convencen todavía. La justificación dice cuál es la duda. Agregado el 2026-10-30. |
 | **Incorporada** | Activa. Cuenta para el quality gate. |
 | **Descartada** | No se usa. Con justificación obligatoria. |
 
@@ -71,18 +72,24 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 
 | Desde | Hacia | Requisitos |
 |---|---|---|
-| Pendiente de analizar | A revisar | — |
+| Pendiente de analizar | En análisis | — |
 | Pendiente de analizar | Descartada | Justificación. Admite transición masiva. |
 | Pendiente de analizar | En prueba | — |
-| A revisar | En prueba | — |
-| A revisar | Incorporada | Justificación y severidad. Rol decisor. |
-| A revisar | Descartada | Justificación. Rol decisor. |
+| En análisis | En prueba | — |
+| En análisis | Incorporada | Justificación y severidad. Rol decisor. |
+| En análisis | Descartada | Justificación. Rol decisor. |
 | En prueba | Incorporada | Justificación, severidad y resultados de prueba disponibles. Rol decisor. |
 | En prueba | Descartada | Justificación. Rol decisor. |
-| En prueba | A revisar | — |
+| En prueba | En análisis | — |
 | Incorporada | Descartada | Justificación. Rol decisor. (Retiro de una regla activa.) |
 | Incorporada | En prueba | Justificación. Rol decisor. (Por ejemplo, tras un cambio de la regla en Sonar.) |
-| Descartada | A revisar | Justificación. (Reabrir una decisión.) |
+| Descartada | En análisis | Justificación. (Reabrir una decisión.) |
+| En análisis | En duda | Justificación (la duda). |
+| En prueba | En duda | Justificación (la duda). |
+| En duda | En análisis | — |
+| En duda | En prueba | — |
+| En duda | Incorporada | Justificación y severidad. Rol decisor. |
+| En duda | Descartada | Justificación. Rol decisor. |
 
 **No se puede pasar de "Pendiente de analizar" directo a "Incorporada":** toda regla que entra al quality gate pasa antes por revisión o por prueba.
 
@@ -90,12 +97,13 @@ Job periódico (diario, y ejecutable a demanda desde la app).
 
 - **Operaciones masivas:** se admiten en toda transición permitida que no va hacia Incorporada (sección 5), con los mismos requisitos de rol y justificación que de a una. No solo en Pendiente → Descartada. Cuáles las admiten se configura en un único lugar: el campo `admiteMasiva` de cada transición.
 - **En prueba → Incorporada:** "resultados de prueba disponibles" es, desde la entrega 6.5, haber cumplido el mínimo de corridas desde la última vez que la regla entró en prueba (decisión E3, `FASE-6-APP.md` sección 8 quater). Solo para las reglas que corre el job de prueba (de C#); a las demás no se les pide hasta que exista cómo probarlas.
-- **Hacia En prueba:** una regla que no se puede probar localmente (`probableLocalmente` falso, decisión E7) no entra; va de A revisar a Incorporada sin prueba (sección 8, "Mapeo de claves").
+- **Hacia En prueba:** una regla que no se puede probar localmente (`probableLocalmente` falso, decisión E7) no entra; va de En análisis o En duda a Incorporada sin prueba (sección 8, "Mapeo de claves").
+- **En duda (2026-10-30):** el job de prueba no corre las reglas En duda; para seguir midiendo, la regla se deja En prueba. Los resultados que ya juntó se siguen viendo en su detalle, y si vuelve a En prueba, el mínimo de corridas se cuenta de nuevo desde esa vuelta (E3). Pasar de En duda a Incorporada no exige el mínimo, como desde En análisis: lo decide un decisor, con justificación.
 
 ### Roles
 
-- **Analista:** cualquier miembro del equipo. Puede mover reglas entre Pendiente, A revisar y En prueba, y descartar masivamente desde Pendiente.
-- **Decisor:** los revisores. Únicos habilitados para Incorporar, Descartar desde A revisar o En prueba, y retirar reglas activas.
+- **Analista:** cualquier miembro del equipo. Puede mover reglas entre Pendiente, En análisis, En prueba y En duda, y descartar masivamente desde Pendiente.
+- **Decisor:** los revisores. Únicos habilitados para Incorporar, Descartar desde En análisis, En prueba o En duda, y retirar reglas activas.
 
 Con un equipo chico, una misma persona puede tener ambos roles; lo importante es que las decisiones que afectan el gate queden asociadas a alguien con rol decisor.
 
@@ -121,13 +129,13 @@ La primera sincronización trae varios cientos de reglas (solo para C# son más 
 ### Operaciones masivas
 
 - Transición masiva de las reglas seleccionadas, con **una justificación común** registrada en cada decisión.
-- Las transiciones masivas solo se permiten hacia A revisar, En prueba o Descartada. **Nunca hacia Incorporada**: cada regla que entra al gate se decide individualmente.
+- Las transiciones masivas solo se permiten hacia En análisis, En prueba, En duda o Descartada. **Nunca hacia Incorporada**: cada regla que entra al gate se decide individualmente.
 
 ### Tablero de progreso
 
 - Porcentaje de reglas triageadas por lenguaje y tipo.
 - Reglas en cada estado, por origen.
-- Reglas en A revisar o En prueba hace más de N días.
+- Reglas En análisis, En prueba o En duda hace más de N días.
 
 ### Orden sugerido para el triage inicial
 
@@ -165,7 +173,7 @@ Una primera pasada automática sobre las reglas pendientes, para que el equipo p
 - La sugerencia se guarda **aparte del estado**: nunca cambia el estado por sí misma.
 - En la UI se muestra junto a la regla, con su justificación y los conflictos detectados.
 - El usuario puede aceptarla con un clic, o en masa sobre una vista filtrada. Al aceptarla, la decisión queda registrada **a nombre del usuario**, con una marca "basada en sugerencia de IA".
-- Las restricciones de la sección 4 aplican igual: una sugerencia de "Incorporada" solo puede llevar la regla a A revisar en masa; la incorporación sigue siendo individual y de un decisor.
+- Las restricciones de la sección 4 aplican igual: una sugerencia de "Incorporada" solo puede llevar la regla a En análisis en masa; la incorporación sigue siendo individual y de un decisor.
 - Cache por `(clave de regla, hash de la descripción, versión de las normas, versión del prompt y modelo)`. Si cambian las normas de diseño, se re-sugiere todo lo pendiente.
 
 ---
@@ -248,7 +256,7 @@ Probar una regla no puede afectar el quality gate de producción. Tampoco convie
 
 - C#: los IDs de `SonarAnalyzer.CSharp` coinciden con las claves de Sonar (`S2325` ↔ `csharpsquid:S2325`).
 - TypeScript: los nombres de regla de `eslint-plugin-sonarjs` no coinciden con las claves de Sonar. Hay que construir y mantener un mapeo; verificar si el plugin expone la clave de Sonar en su metadata para generarlo automáticamente.
-- Algunas reglas de Sonar no existen en estos paquetes (por ejemplo, las que dependen de análisis que solo hace el motor de Sonar). Se marcan como **"no probable localmente"**: pueden pasar de A revisar a Incorporada sin prueba.
+- Algunas reglas de Sonar no existen en estos paquetes (por ejemplo, las que dependen de análisis que solo hace el motor de Sonar). Se marcan como **"no probable localmente"**: pueden pasar de En análisis (o En duda) a Incorporada sin prueba.
 
 ### Qué muestra la app por regla en prueba
 

@@ -92,7 +92,8 @@ Al mergear cambios en `normas/`, un job de CI notifica a la app, que importa las
 | Estado | Efecto en los PRs |
 |---|---|
 | Pendiente de analizar | No se evalúa. |
-| A revisar | No se evalúa. |
+| En análisis | No se evalúa. |
+| En duda | No se evalúa. |
 | En prueba | Se evalúa **siempre en modo sugerencia**, sin importar el modo configurado: solo comentarios en el PR, nunca hallazgos registrados automáticamente. Las métricas de la sección 9 se acumulan desde acá. |
 | Incorporada | Se evalúa en el modo configurado en la app (`sugerencia` o `automatica`). |
 | Descartada | No se evalúa. Sus hallazgos activos pasan a `descartado`. |

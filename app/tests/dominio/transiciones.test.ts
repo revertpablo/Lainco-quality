@@ -22,7 +22,7 @@ import { Estado, Origen, Rol } from "@/dominio/valores";
  * ninguna transición hacia Incorporada lo tenga (FASE-6.md, sección 5).
  */
 
-const { PendienteDeAnalizar, ARevisar, EnPrueba, Incorporada, Descartada } = Estado;
+const { PendienteDeAnalizar, EnAnalisis, EnPrueba, EnDuda, Incorporada, Descartada } = Estado;
 
 interface Especificacion {
   desde: Estado;
@@ -33,18 +33,25 @@ interface Especificacion {
 }
 
 const ESPECIFICACION: Especificacion[] = [
-  { desde: PendienteDeAnalizar, hacia: ARevisar, justificacion: false, severidad: false, decisor: false },
+  { desde: PendienteDeAnalizar, hacia: EnAnalisis, justificacion: false, severidad: false, decisor: false },
   { desde: PendienteDeAnalizar, hacia: Descartada, justificacion: true, severidad: false, decisor: false },
   { desde: PendienteDeAnalizar, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
-  { desde: ARevisar, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
-  { desde: ARevisar, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
-  { desde: ARevisar, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
+  { desde: EnAnalisis, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
+  { desde: EnAnalisis, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
+  { desde: EnAnalisis, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
   { desde: EnPrueba, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
   { desde: EnPrueba, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
-  { desde: EnPrueba, hacia: ARevisar, justificacion: false, severidad: false, decisor: false },
+  { desde: EnPrueba, hacia: EnAnalisis, justificacion: false, severidad: false, decisor: false },
   { desde: Incorporada, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
   { desde: Incorporada, hacia: EnPrueba, justificacion: true, severidad: false, decisor: true },
-  { desde: Descartada, hacia: ARevisar, justificacion: true, severidad: false, decisor: false },
+  { desde: Descartada, hacia: EnAnalisis, justificacion: true, severidad: false, decisor: false },
+  // En duda (2026-10-30): sin acuerdo, o los resultados de la prueba no convencen.
+  { desde: EnAnalisis, hacia: EnDuda, justificacion: true, severidad: false, decisor: false },
+  { desde: EnPrueba, hacia: EnDuda, justificacion: true, severidad: false, decisor: false },
+  { desde: EnDuda, hacia: EnAnalisis, justificacion: false, severidad: false, decisor: false },
+  { desde: EnDuda, hacia: EnPrueba, justificacion: false, severidad: false, decisor: false },
+  { desde: EnDuda, hacia: Incorporada, justificacion: true, severidad: true, decisor: true },
+  { desde: EnDuda, hacia: Descartada, justificacion: true, severidad: false, decisor: true },
 ];
 
 const ESTADOS = Object.values(Estado);
@@ -195,7 +202,7 @@ describe("operaciones masivas", () => {
   });
 
   it("nunca llevan a Incorporada", () => {
-    for (const desde of [ARevisar, EnPrueba]) {
+    for (const desde of [EnAnalisis, EnPrueba]) {
       expect(motivos(completa(desde, Incorporada, { masiva: true }))).toContain("noAdmiteOperacionMasiva");
     }
   });
@@ -207,11 +214,12 @@ describe("En prueba → Incorporada (entrega 6.5, decisión E3)", () => {
     expect(completa(EnPrueba, Incorporada, { resultadosDePruebaDisponibles: true }).valida).toBe(true);
   });
 
-  it("es la única transición que lo exige: desde A revisar se incorpora sin prueba", () => {
+  it("es la única transición que lo exige: desde En análisis se incorpora sin prueba", () => {
     const exigen = TRANSICIONES.filter((t) => t.requiereResultadosDePrueba).map((t) => nombre(t.desde, t.hacia));
 
     expect(exigen).toEqual([nombre(EnPrueba, Incorporada)]);
-    expect(completa(ARevisar, Incorporada, { resultadosDePruebaDisponibles: false }).valida).toBe(true);
+    expect(completa(EnAnalisis, Incorporada, { resultadosDePruebaDisponibles: false }).valida).toBe(true);
+    expect(completa(EnDuda, Incorporada, { resultadosDePruebaDisponibles: false }).valida).toBe(true);
   });
 });
 
@@ -234,8 +242,8 @@ describe("hacia En prueba, una regla que no se puede probar (entrega 6.5, decisi
   });
 
   it("no afecta a las demás transiciones", () => {
-    expect(completa(ARevisar, Incorporada, { probableLocalmente: false }).valida).toBe(true);
-    expect(completa(EnPrueba, ARevisar, { probableLocalmente: false }).valida).toBe(true);
+    expect(completa(EnAnalisis, Incorporada, { probableLocalmente: false }).valida).toBe(true);
+    expect(completa(EnPrueba, EnAnalisis, { probableLocalmente: false }).valida).toBe(true);
   });
 });
 
@@ -243,50 +251,50 @@ describe("parámetros", () => {
   // Al incorporar se pueden elegir valores para los parámetros de la regla. Solo los que
   // la regla tiene.
   it("los parámetros que la regla tiene se aceptan", () => {
-    const resultado = completa(ARevisar, Incorporada, { parametros: { max: "5" }, parametrosDeLaRegla: ["max", "min"] });
+    const resultado = completa(EnAnalisis, Incorporada, { parametros: { max: "5" }, parametrosDeLaRegla: ["max", "min"] });
 
     expect(resultado.valida).toBe(true);
   });
 
   it("un parámetro que la regla no tiene se rechaza", () => {
-    const resultado = completa(ARevisar, Incorporada, { parametros: { maximo: "5" }, parametrosDeLaRegla: ["max"] });
+    const resultado = completa(EnAnalisis, Incorporada, { parametros: { maximo: "5" }, parametrosDeLaRegla: ["max"] });
 
     expect(motivos(resultado)).toEqual(["parametroDesconocido"]);
   });
 
   it("una regla sin parámetros no acepta ninguno", () => {
-    const resultado = completa(ARevisar, Incorporada, { parametros: { max: "5" } });
+    const resultado = completa(EnAnalisis, Incorporada, { parametros: { max: "5" } });
 
     expect(motivos(resultado)).toEqual(["parametroDesconocido"]);
   });
 
   it("sin parámetros elegidos no hay nada que validar", () => {
-    expect(completa(ARevisar, Incorporada, { parametros: {} }).valida).toBe(true);
+    expect(completa(EnAnalisis, Incorporada, { parametros: {} }).valida).toBe(true);
   });
 });
 
 describe("reglas propias: la severidad la dice la regla (entrega 6.4, decisión R3)", () => {
   it.each([Origen.Roslyn, Origen.Eslint])("una regla de %s se incorpora sin elegir severidad", (origen) => {
-    expect(completa(ARevisar, Incorporada, { origen, severidad: null }).valida).toBe(true);
+    expect(completa(EnAnalisis, Incorporada, { origen, severidad: null }).valida).toBe(true);
   });
 
   it.each([Origen.Roslyn, Origen.Eslint])("en una regla de %s no se puede elegir severidad", (origen) => {
-    expect(motivos(completa(ARevisar, Incorporada, { origen, severidad: "MAJOR" }))).toEqual(["severidadNoSeElige"]);
+    expect(motivos(completa(EnAnalisis, Incorporada, { origen, severidad: "MAJOR" }))).toEqual(["severidadNoSeElige"]);
   });
 
   it("una regla de Sonar sigue necesitando la severidad", () => {
-    expect(motivos(completa(ARevisar, Incorporada, { origen: Origen.Sonar, severidad: null }))).toEqual(["faltaSeveridad"]);
+    expect(motivos(completa(EnAnalisis, Incorporada, { origen: Origen.Sonar, severidad: null }))).toEqual(["faltaSeveridad"]);
   });
 
   it("fuera de Incorporada la severidad no cuenta", () => {
-    expect(completa(ARevisar, Descartada, { origen: Origen.Roslyn, severidad: null }).valida).toBe(true);
+    expect(completa(EnAnalisis, Descartada, { origen: Origen.Roslyn, severidad: null }).valida).toBe(true);
   });
 });
 
 describe("rechazos", () => {
   it("informan todos los motivos juntos, no solo el primero", () => {
     const resultado = validarTransicion({
-      desde: ARevisar,
+      desde: EnAnalisis,
       hacia: Incorporada,
       rol: Rol.Analista,
       masiva: true,
