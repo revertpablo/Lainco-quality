@@ -43,7 +43,8 @@ vínculo.
 
 ### Correrlo
 
-Desde la raíz del repositorio nuevo:
+Desde la raíz del repositorio nuevo (o desde cualquier lado, con `-Ruta` o la ruta completa
+de `-Solucion`; corrido dentro de `Lainco-quality` sin ninguno de los dos, se niega):
 
 ```powershell
 $script = "C:\Lainco\Github\Lainco-quality\tools\nuevo-repositorio\Configurar-RepositorioLainco.ps1"
@@ -59,7 +60,7 @@ Parámetros que pueden hacer falta:
 
 | Parámetro | Cuándo |
 |---|---|
-| `-Solucion ruta\a.sln` | El repositorio tiene más de una solución (si no, el script lo pide). |
+| `-Solucion ruta\a.sln` | El repositorio tiene más de una solución (si no, el script lo pide). Puede ser relativa a la raíz o la ruta completa: con la ruta completa y sin `-Ruta`, el repositorio es el que contiene la solución, se corra desde donde se corra. Con una `.slnx`, el workflow instala el SDK 9 (el de .NET 8 no las compila). |
 | `-Repositorio owner/repo` | El remoto `origin` no es de GitHub. |
 | `-ProyectoSonar clave` | La clave en Sonar no es `owner_repo` (la que pone Sonar al importar). |
 | `-VersionDelPaquete 0.2.0` | Fijar una versión en lugar de la del último release. |

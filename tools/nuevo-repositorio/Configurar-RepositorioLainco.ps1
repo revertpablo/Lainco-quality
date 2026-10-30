@@ -202,12 +202,28 @@ function Invocar-Gh([string[]] $argumentos, [string] $entrada) {
 # ------------------------------------------------------------------- 0. el repositorio
 
 Escribir-Paso 'Repositorio'
+# Con la ruta completa de la solución y sin -Ruta, el repositorio es el que la contiene (no la
+# carpeta desde donde se corre el script).
+$solucionCompleta = $null
+if ($Solucion -and [IO.Path]::IsPathRooted($Solucion)) {
+    if (-not (Test-Path $Solucion -PathType Leaf)) { throw "No existe la solución $Solucion." }
+    $solucionCompleta = (Resolve-Path $Solucion).Path
+    if (-not $PSBoundParameters.ContainsKey('Ruta')) { $Ruta = Split-Path -Parent $solucionCompleta }
+}
 $Ruta = (Resolve-Path $Ruta).Path
 if (-not (Hay-Comando git)) { throw 'Falta git.' }
 & git -C $Ruta rev-parse --is-inside-work-tree 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "$Ruta no es un repositorio de git." }
 $raiz = (& git -C $Ruta rev-parse --show-toplevel).Trim()
 if ($raiz) { $Ruta = (Resolve-Path $raiz).Path }
+
+if ($solucionCompleta) {
+    $prefijo = $Ruta.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if (-not $solucionCompleta.StartsWith($prefijo, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "La solución $solucionCompleta no está dentro del repositorio $Ruta."
+    }
+    $Solucion = $solucionCompleta.Substring($prefijo.Length)
+}
 
 if (-not $Repositorio) {
     $remoto = (& git -C $Ruta remote get-url origin 2>$null)
@@ -217,6 +233,9 @@ if (-not $Repositorio) {
     else { throw 'No se pudo deducir owner/repo del remoto origin: pasalo con -Repositorio.' }
 }
 if ($Repositorio -notmatch '^[\w.-]+/[\w.-]+$') { throw "-Repositorio tiene que ser owner/repo: $Repositorio" }
+if ($Repositorio -eq $RepositorioDeReglas) {
+    throw "$Ruta es ${RepositorioDeReglas}: corré el script desde la raíz del repositorio que querés configurar, o pasale -Ruta o la ruta completa de -Solucion."
+}
 $owner, $repo = $Repositorio.Split('/')
 if (-not $ProyectoSonar) { $ProyectoSonar = "${owner}_$repo" }
 
@@ -227,7 +246,12 @@ if (-not $Solucion) {
     else { throw "Hay $($soluciones.Count) soluciones ($($soluciones -join ', ')): elegí una con -Solucion." }
 }
 $Solucion = $Solucion -replace '\\', '/'
-if (-not (Test-Path (Join-Path $Ruta $Solucion))) { throw "No existe la solución $Solucion." }
+if (-not (Test-Path (Join-Path $Ruta $Solucion))) { throw "No existe la solución $Solucion en $Ruta." }
+if ($Solucion -like '*.slnx' -and -not $PSBoundParameters.ContainsKey('VersionDotnet') -and $VersionDotnet -like '8.*') {
+    # dotnet build lee .slnx desde el SDK 9.0.200; el SDK 9 compila igual proyectos net8.0.
+    $VersionDotnet = '9.0.x'
+    Aviso 'La solución es .slnx, que el SDK de .NET 8 no compila: el workflow instala el SDK 9.0.x (cambialo con -VersionDotnet).'
+}
 Write-Host "   $Repositorio en $Ruta"
 Write-Host "   Solución: $Solucion · Proyecto de Sonar: $ProyectoSonar"
 

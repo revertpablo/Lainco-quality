@@ -3,10 +3,12 @@
 # que conviene poder correr y probar a mano.
 #
 #   publicacion-analyzers.sh verificar-releases <version> [carpeta]
-#       Falla si AnalyzerReleases no está listo para publicar <version>: tiene que existir
-#       "## Release <version>" en Shipped y no puede quedar ninguna regla en Unshipped.
+#       Falla si AnalyzerReleases no está listo para publicar <version>: no puede quedar
+#       ninguna regla en Unshipped, ni haber en Shipped una sección de una versión posterior.
 #       Las reglas nuevas se declaran en Unshipped mientras se desarrollan, y el cambio
-#       que sube la versión las mueve a Shipped, bajo esa versión.
+#       que sube la versión las mueve a Shipped, bajo "## Release <version>". Una versión
+#       que no cambia reglas (por ejemplo, la de un PR de la app que solo cambia severidades
+#       en el .globalconfig) no lleva sección.
 #
 #   publicacion-analyzers.sh verificar-catalogo <version> <catalogo>
 #       Falla si el catálogo no es de <version> o no tiene reglas.
@@ -42,11 +44,22 @@ verificar_releases() {
     error "AnalyzerReleases.Unshipped.md todavía tiene reglas. Para publicar $version hay que moverlas a AnalyzerReleases.Shipped.md, bajo '## Release $version': $(echo "$pendientes" | cut -d'|' -f1 | tr -d ' ' | paste -sd, -)"
   fi
 
-  if ! tr -d '\r' < "$shipped" | grep -qxE "##[[:space:]]+Release[[:space:]]+${version//./\\.}[[:space:]]*"; then
-    error "AnalyzerReleases.Shipped.md no tiene la sección '## Release $version'."
+  local secciones posterior
+  secciones="$(tr -d '\r' < "$shipped" | sed -nE 's/^##[[:space:]]+Release[[:space:]]+([^[:space:]]+)[[:space:]]*$/\1/p')"
+  posterior="$(printf '%s\n' "$secciones" | while read -r otra; do
+    if [[ -n "$otra" && "$otra" != "$version" && "$(printf '%s\n%s\n' "$version" "$otra" | sort -V | tail -n 1)" == "$otra" ]]; then
+      echo "$otra"
+    fi
+  done | paste -sd, -)"
+  if [[ -n "$posterior" ]]; then
+    error "AnalyzerReleases.Shipped.md tiene secciones de versiones posteriores a $version ($posterior): ¿las reglas quedaron bajo otro número?"
   fi
 
-  echo "AnalyzerReleases listo para $version."
+  if grep -qxF "$version" <<<"$secciones"; then
+    echo "AnalyzerReleases listo para $version."
+  else
+    echo "AnalyzerReleases listo para $version: no cambia reglas (no tiene sección en Shipped)."
+  fi
 }
 
 verificar_catalogo() {

@@ -35,10 +35,12 @@ El PR que abre la app al decidir sobre una regla propia (entrega 6.4, paso 6) ha
 pasos solo. A mano, en el mismo cambio:
 
 1. Subir `<Version>` en `src/dotnet/Lainco.Analyzers.Package/Lainco.Analyzers.Package.csproj`.
-2. Mover las filas de `AnalyzerReleases.Unshipped.md` a `AnalyzerReleases.Shipped.md`,
+2. Si hay reglas en `AnalyzerReleases.Unshipped.md`, moverlas a `AnalyzerReleases.Shipped.md`,
    bajo `## Release X.Y.Z`. El workflow **no publica** si quedan reglas en Unshipped o si
-   falta la sección de la versión (`.github/scripts/publicacion-analyzers.sh
-   verificar-releases X.Y.Z` lo verifica a mano).
+   Shipped tiene una sección de una versión posterior a la que se publica
+   (`.github/scripts/publicacion-analyzers.sh verificar-releases X.Y.Z` lo verifica a mano).
+   Una versión que no cambia reglas (la de un PR de la app que solo cambia severidades) no
+   lleva sección: hasta el 2026-10-30 el workflow la exigía igual, y por eso falló la 0.2.1.
 
 Mientras se desarrolla una regla nueva, se declara en Unshipped (lo exige el release
 tracking de Roslyn) y se mergea sin subir la versión: no se publica nada hasta que alguien
