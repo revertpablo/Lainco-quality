@@ -49,4 +49,4 @@ por defecto de JavaScript (Sonar way): en `main` hay issues abiertos `javascript
 `jssecurity:S8707` sobre `.github/prueba/reducir-sarif.mjs`, que nadie eligió. Desde este PR
 `.github/**` queda en `sonar.exclusions`, pero el hueco sigue: **hace falta un perfil
 `Lainco JavaScript` vacío y default** (paso manual en SonarQube Cloud, como en la Fase 0) y
-que la app lo gestione igual que los otros dos (decisión pendiente, D5.1). |
+que la app lo gestione igual que los otros dos (D5.1). **Resuelta (2026-11-02): JavaScript no se gestiona**, porque los equipos solo usan TypeScript; ver `ESTADO.md`. |
