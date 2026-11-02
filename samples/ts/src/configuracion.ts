@@ -5,7 +5,7 @@
 export const DB_PASSWORD = process.env.DB_PASSWORD;
 
 // >>> lainco/no-hardcoded-secrets
-// Aceptado en Sonar: se movió de la línea 5 a la 9 para probar que sigue aceptado
+// Aceptado en Sonar: se movió de la línea 5 a la 10 para probar que sigue aceptado
 // (Fase 5, criterio de persistencia).
 export const API_KEY = "sample-api-key-no-es-real";
 
