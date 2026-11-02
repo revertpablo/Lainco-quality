@@ -1,0 +1,159 @@
+# Fase 5, paso 6 (decisión T2): publicar @lainco/eslint-plugin y @lainco/eslint-config.
+#
+# Igual que "Publicar Lainco.Analyzers": al llegar a main un cambio de los paquetes de
+# ESLint o de la documentación de sus reglas, se fija la versión de cada paquete
+# (src/ts/*/package.json). La que ya está en npm no se vuelve a publicar: el cambio sale en
+# la próxima versión. Si alguna falta:
+#
+#   1. corre los tests y compila (el build del plugin genera también reglas-eslint.json);
+#   2. publica en npm, privado en la organización lainco, primero el plugin y después la
+#      config, que depende de él;
+#   3. crea el release eslint-vX.Y.Z (la versión del plugin) con el catálogo como asset.
+#
+# El release usa otro prefijo de tag y se crea con --latest=false: la app sincroniza las
+# reglas Roslyn desde el "último release" del repositorio (GET /releases/latest), y uno de
+# ESLint no puede ocupar ese lugar. Ver docs/publicacion-de-paquetes.md.
+#
+# Necesita el secret NPM_TOKEN: un token de npmjs.com con permiso de publicar en @lainco.
+
+name: Publicar paquetes de ESLint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/ts/**
+      - docs/rules/lainco/**
+      - .github/workflows/publicar-eslint.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write   # crear el tag y el release
+
+concurrency:
+  group: publicar-eslint
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/ts
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: src/ts/package-lock.json
+
+      - name: Versiones
+        id: version
+        run: |
+          plugin="$(node -p "require('./eslint-plugin/package.json').version")"
+          config="$(node -p "require('./eslint-config/package.json').version")"
+          dependencia="$(node -p "require('./eslint-config/package.json').dependencies['@lainco/eslint-plugin']")"
+          # La config fija la versión exacta del plugin: si no coincide, se publicaría una
+          # config que pide un plugin que no existe (o uno viejo).
+          if [[ "$dependencia" != "$plugin" ]]; then
+            echo "::error::@lainco/eslint-config depende de @lainco/eslint-plugin $dependencia, pero el plugin es $plugin."
+            exit 1
+          fi
+          echo "plugin=$plugin" >> "$GITHUB_OUTPUT"
+          echo "config=$config" >> "$GITHUB_OUTPUT"
+          echo "Plugin $plugin, config $config."
+
+      - name: ¿Qué falta publicar?
+        id: pendiente
+        env:
+          PLUGIN: ${{ steps.version.outputs.plugin }}
+          CONFIG: ${{ steps.version.outputs.config }}
+        run: |
+          [[ -n "$NODE_AUTH_TOKEN" ]] || { echo "::error::Falta el secret NPM_TOKEN."; exit 1; }
+          publicado() {
+            # Un paquete privado que no existe da E404, igual que una versión que no está.
+            npm view "$1@$2" version > salida.txt 2> error.txt && [[ -s salida.txt ]] && return 0
+            grep -q "E404" error.txt && return 1
+            echo "::error::No se pudo consultar $1@$2 en npm: $(cat error.txt)"
+            exit 1
+          }
+          algo=false
+          for paquete in plugin config; do
+            nombre="@lainco/eslint-$paquete"
+            version="$([[ $paquete == plugin ]] && echo "$PLUGIN" || echo "$CONFIG")"
+            if publicado "$nombre" "$version"; then
+              echo "::notice::$nombre $version ya está en npm."
+              echo "$paquete=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "$paquete=true" >> "$GITHUB_OUTPUT"
+              algo=true
+            fi
+          done
+          if gh release view "eslint-v$PLUGIN" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            algo=true
+          fi
+          echo "algo=$algo" >> "$GITHUB_OUTPUT"
+          [[ $algo == true ]] || echo "::notice::No hay nada que publicar. Para publicar estos cambios hay que subir la versión de los paquetes."
+
+      - name: Tests y build
+        if: steps.pendiente.outputs.algo == 'true'
+        run: |
+          npm ci
+          npm test
+          npm run build
+          catalogo="$(node -p "require('./eslint-plugin/dist/reglas-eslint.json').version")"
+          [[ "$catalogo" == "${{ steps.version.outputs.plugin }}" ]] || { echo "::error::El catálogo es de la versión $catalogo."; exit 1; }
+
+      - name: Publicar @lainco/eslint-plugin
+        if: steps.pendiente.outputs.plugin == 'true'
+        run: npm publish --workspace eslint-plugin
+
+      - name: Publicar @lainco/eslint-config
+        if: steps.pendiente.outputs.config == 'true'
+        run: npm publish --workspace eslint-config
+
+      - name: Crear el release
+        if: steps.pendiente.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.plugin }}
+        run: |
+          {
+            echo "Paquetes npm privados \`@lainco/eslint-plugin\` $VERSION y \`@lainco/eslint-config\` ${{ steps.version.outputs.config }}, en la organización \`lainco\` de npmjs.com."
+            echo
+            echo "## Reglas"
+            echo
+            echo "| ID | Regla | Severidad por defecto |"
+            echo "|---|---|---|"
+            jq -r '.reglas[] | "| [\(.clave)](\(.ayuda)) | \(.titulo) | \(.severidadPorDefecto) |"' eslint-plugin/dist/reglas-eslint.json
+            echo
+            echo "Qué reglas corren y con qué severidad lo fija \`reglas.json\` de \`@lainco/eslint-config\`."
+            echo
+            echo "## Assets"
+            echo
+            echo "- \`reglas-eslint.json\`: el catálogo de reglas que lee la app de catálogo (formato en \`docs/catalogo-de-reglas.md\`)."
+          } > notas.md
+          previa=()
+          if [[ "$VERSION" == *-* ]]; then previa=(--prerelease); fi
+          gh release create "eslint-v$VERSION" eslint-plugin/dist/reglas-eslint.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "@lainco/eslint-plugin $VERSION" \
+            --notes-file notas.md \
+            --latest=false \
+            "${previa[@]}"
+          echo "::notice::Publicado @lainco/eslint-plugin $VERSION."
