@@ -24,10 +24,13 @@ internal sealed class ClienteSonar
     /// </summary>
     public const int LimiteDeLaApi = 10000;
 
-    // Reglas propias importadas como issues externos: 'external_roslyn:LAIN004'. Las
-    // reglas de Sonar (csharpsquid:...) y los analyzers del SDK (external_roslyn:CA...)
-    // no son de esta herramienta.
-    private static readonly Regex ReglaLain = new(@"^external_[^:]+:(LAIN\d{3})$", RegexOptions.CultureInvariant);
+    // Reglas propias importadas como issues externos: 'external_roslyn:LAIN004' y
+    // 'external_eslint_repo:lainco/no-hardcoded-secrets'. Van las de los dos motores porque
+    // en un repositorio mixto la versión Node de esta herramienta escribe el mismo archivo
+    // (docs/FASE-5.md, T3). Las reglas de Sonar (csharpsquid:...) y las de otros orígenes
+    // (external_roslyn:CA..., external_eslint_repo:no-debugger) no son de esta herramienta.
+    private static readonly Regex ReglaLain = new(
+        @"^external_[^:]+:(LAIN\d{3}|lainco/[a-z0-9]+(?:-[a-z0-9]+)*)$", RegexOptions.CultureInvariant);
 
     private readonly HttpClient http;
     private readonly Opciones opciones;

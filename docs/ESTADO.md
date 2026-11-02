@@ -2,7 +2,7 @@
 
 Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
-Última actualización: **2026-10-30**.
+Última actualización: **2026-11-02**.
 
 ---
 
@@ -15,7 +15,7 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 | 2 — Circuito con SonarQube Cloud | ✅ Completa, se verifico que luego de aceptar el issue en Sonar y al mover, no se reportó en el Sonar |
 | 3 — Reglas restantes (LAIN001, 002, 003, 005, 006) | 🟡 En curso: LAIN005 completa (vista en IDE y en Sonar); LAIN001 implementada (2026-10-28) y en el paquete 0.2.0, falta verla en Sonar |
 | 4 — Suppressor | ✅ Completa |
-| 5 — TypeScript | ⬜ Sin empezar |
+| 5 — TypeScript | 🟡 En curso (2026-11-02): plan en 7 pasos y decisiones T1–T7 en `FASE-5.md`. Pasos 1 a 4 hechos: `@lainco/eslint-plugin` (`src/ts/eslint-plugin`) con la primera regla, `lainco/no-hardcoded-secrets`, y el catálogo `reglas-eslint.json` generado en el build, que la app acepta; `@lainco/eslint-config` (`src/ts/eslint-config`), que enciende solo las reglas de `reglas.json`; y el equivalente de la Fase 4: `lainco-sonar-sync` en Node y el processor que oculta en local los issues aceptados. 139 tests en total. Paso 5 hecho en el código: `samples/ts` (3 violaciones) y el workflow de Sonar con el reporte de ESLint; falta verlo en Sonar con un push. Siguen el paso 6 (publicación en npm, necesita el token de la organización `lainco`) y el 7 (verificación contra Sonar) |
 | 6 — App de catálogo | 🟡 Entrega 6.1 terminada: los 11 pasos (scaffold, esquema y migraciones, máquina de estados, ingreso y roles, cliente de Sonar, sincronización, API de transiciones, inventario, vistas guardadas, detalle e historial, tablero de progreso), con los cinco criterios de aceptación cubiertos por tests. Entrega 6.2 terminada (2026-10-28): los 7 pasos (tablas `publicacion` y `desvio`, cliente de perfiles, encolar al decidir, publicar con reintentos, reconciliación y desvíos, pantalla Sonar, prueba contra SonarQube Cloud), con sus dos criterios de aceptación verificados contra los perfiles reales. Plan y decisiones P1–P5 en `FASE-6-APP.md`, sección 8 bis. Entrega 6.4 (reglas propias, parte Roslyn), adelantada a la 6.3 porque esta espera D6.2 y D6.3: plan en 8 pasos y decisiones R1–R5 en `FASE-6-APP.md`, sección 8 ter; los 8 pasos hechos (2026-10-28 y 29): el catálogo `reglas-roslyn.json` con su generador `tools/catalogo-reglas`, enganchado al build del paquete; el workflow que publica el paquete y crea el release al subir la versión, verificado con la publicación de la 0.1.0; la sincronización de las reglas Roslyn desde el último release, verificada contra GitHub (el primer criterio de la 6.4 se cumple); el ciclo de vida de las reglas propias, que se incorporan con su severidad y encolan el PR de configuración; la generación del `.globalconfig` desde el estado de la app; la decisión R6: las reglas propias nacen apagadas y las enciende ese archivo; el PR de configuración, que la app abre o actualiza con cada decisión (probado contra GitHub: PR #2, mergeado); y el seguimiento en la pantalla Paquete (PRs, versión publicada y el desvío si main no coincide con la app). Entrega 6.4 (parte Roslyn) terminada (2026-10-29): en el paso 8, el workflow publicó la 0.1.1 al mergear el PR #2 y la 0.2.0 con LAIN001, que la sincronización trajo al inventario; los dos criterios se cumplen contra GitHub. La parte ESLint espera la Fase 5. Entrega 6.5 (En prueba, parte C#): plan en 8 pasos y decisiones E1–E7 en `FASE-6-APP.md`, sección 8 quater (2026-10-29); resuelven el punto A (las muestras guardan solo referencias), D6.4 (N corridas) y D6.5 (lista configurable de repositorios). Entrega 6.5 (parte C#) terminada (2026-10-29), con los 8 pasos: los tokens de servicio con los que el job entra a `/api/ci/`, las tablas de corridas, resultados y muestras con las funciones puras de la prueba, la ruta con la que el job abre una corrida y recibe qué probar, y el job (workflow `Prueba de reglas`, el `.targets` que agrega los analyzers sin tocar el repositorio y el reductor de SARIF), probado en la nube con repositorios locales, y la ruta que recibe los resultados (cantidades, muestras con las evaluadas primero, qué reglas de Sonar se pueden probar), y las pantallas (sección Prueba en el detalle, con las muestras para evaluar y la tasa de falsos positivos, y la pantalla Prueba con las corridas), y el ciclo de vida (En prueba → Incorporada exige el mínimo de corridas; una regla que no se puede probar no entra a En prueba). En el paso 8, con la app ya desplegada en Vercel, el workflow corrió en GitHub sobre la sample con LAIN001 y `csharpsquid:S109` En prueba: la app mostró los issues por repositorio (1 y 2), marcar las muestras dio la tasa de falsos positivos, y en Sonar no apareció nada; los dos criterios se cumplen. La parte TypeScript espera la Fase 5. Ciclo de vida (2026-10-30): "A revisar" pasó a llamarse **En análisis** (también en el código, migración `0013`) y se agregó **En duda**, para las reglas sin acuerdo o con resultados de prueba que no convencen; entra desde En análisis o En prueba con justificación, sale a En análisis, En prueba, o, con un decisor, a Incorporada o Descartada (`FASE-6.md`, sección 4). Ver `app/README.md` |
 | 7 — Hallazgos de IA y revisores | ⬜ Sin empezar |
 | 8 — Warnings del compilador | ⬜ Sin empezar (posterior) |
@@ -24,6 +24,14 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
 
 ## Lo que está funcionando hoy
 
+- **`lainco/no-hardcoded-secrets`** (ESLint) implementada, con 48 tests (22 negativos,
+  26 positivos). Detalle en `rules/lainco/no-hardcoded-secrets.md`.
+- **`@lainco/eslint-config`**, **`lainco-sonar-sync`** (Node) y el **processor** de
+  aceptados, probados con ESLint real. Todavía no se publican en npm ni corren en ningún
+  repositorio (pasos 5 y 6 de `FASE-5.md`). Uso en `src/ts/README.md`.
+- **`tools/sonar-sync`** (.NET) guarda también los issues `lainco/...`, para convivir con
+  la versión Node en repositorios mixtos. El cambio llega a los repositorios con la
+  próxima versión de `Lainco.Analyzers`.
 - **LAIN004** implementada, con 13 tests (6 positivos, 7 negativos).
 - **LAIN005** implementada, con 29 tests (13 positivos, 16 negativos). D5 resuelta.
 - **LAIN001** implementada, con 32 casos de test (18 positivos, 14 negativos). Cuenta los
@@ -44,7 +52,8 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
   `.targets` la fuerza a `false` en CI.
 - La **sample** consume el paquete y produce advertencias solo de reglas LAIN: LAIN004
   (×2, en `Articulo.cs`) y LAIN005 (en `CalculadorDeTotales.cs`).
-- **GitHub Actions** analiza la sample en cada push a `main` y en cada PR.
+- **GitHub Actions** analiza la sample en cada push a `main` y en cada PR. Desde la Fase 5
+  analiza también `samples/ts` con ESLint (`sonar.eslint.reportPaths`); todavía sin correr.
 - **Un repositorio nuevo** se suma con `docs/nuevo-repositorio.md` y el script
   `tools/nuevo-repositorio/Configurar-RepositorioLainco.ps1` (2026-10-30): paquete, feed,
   workflow de Sonar, proyecto en Sonar con perfil y gate, secret `SONAR_TOKEN` y protección
@@ -108,7 +117,7 @@ el diseño de las fases 4 y 7.
 |---|---|
 | D1 | CI: **GitHub Actions** |
 | D2 | NHibernate: **Fluent NHibernate (`ClassMap<T>`)** |
-| D7 | Paquetes: **NuGet en GitHub Packages**, npm en npmjs.com |
+| D7 | Paquetes: **NuGet en GitHub Packages**, npm en npmjs.com, **privado** en la organización paga `lainco` (T2, 2026-11-02) |
 | D8 | App de catálogo: **Next.js + TypeScript + Neon Postgres en Vercel** (`FASE-6-APP.md`) |
 | D8.1 | `CS1591` se apaga **en todos lados**, vía el `.globalconfig` del paquete |
 | D8.3 | Los analyzers del SDK **entran al inventario** |

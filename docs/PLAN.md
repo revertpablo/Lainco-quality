@@ -27,7 +27,7 @@ Resolver antes de la fase indicada. Claude Code debe preguntar si alguna sigue a
 | D4 | LAIN002: ¿el encadenamiento puede ser transitivo (A → B → C) o debe ser directo al constructor con código? | Transitivo / Directo | Fase 3 | Abierta |
 | D5 | LAIN005: ¿extension methods y `Main` se exceptúan en la regla o pasan por aceptación en Sonar? | Exceptuados / Aceptación manual | Fase 3 | **Resuelta (2026-10-14): exceptuados en la regla. `Main` solo si es el punto de entrada real; extension methods solo sobre tipos definidos fuera del proyecto que se compila. También se exceptúan las fuentes de datos de `[MemberData]` de xUnit. Detalle en `docs/rules/LAIN005.md`** |
 | D6 | LAIN006: tipos que cuentan como "query a base" además de `IQueryable<T>` (abstracciones de repositorio propias, `IQueryOver`, etc.) | Lista de tipos | Fase 3 | Abierta |
-| D7 | Feed privado para paquetes NuGet / npm | GitHub Packages / Azure Artifacts / otro | Fase 1 | **Resuelta (2026-09-23): NuGet en GitHub Packages; npm en npmjs.com (scope `@lainco`)** |
+| D7 | Feed privado para paquetes NuGet / npm | GitHub Packages / Azure Artifacts / otro | Fase 1 | **Resuelta (2026-09-23): NuGet en GitHub Packages; npm en npmjs.com (scope `@lainco`)**. Precisada el 2026-11-02 (T2 de `FASE-5.md`): privado, en la organización paga `lainco` |
 | D8 | Stack de la app de catálogo | A definir | Fase 6 (entrega 6.1, en paralelo con Fase 1) | **Resuelta (2026-09-23): Next.js + TypeScript + Neon Postgres en Vercel. Diseño en `docs/FASE-6-APP.md`** |
 
 ---
@@ -172,6 +172,8 @@ lainco-quality/
 5. Verificar cómo convive con el scanner de .NET si hay repos mixtos.
 
 **Criterio de aceptación:** mismos criterios que las fases 2 y 4, para TypeScript.
+
+**Detalle, decisiones y avance en `docs/FASE-5.md`.**
 
 ---
 

@@ -52,6 +52,7 @@ Los resultados de los spikes y las decisiones medidas están en `docs/decisiones
 | LAIN004 | No se permite inicialización inline de properties (`{ get; set; } = valor`). |
 | LAIN005 | No se permiten métodos estáticos, salvo operators, el `Main` que es punto de entrada, extension methods sobre tipos de fuera del proyecto y fuentes de `[MemberData]` de xUnit. Las demás excepciones se aceptan en Sonar. |
 | LAIN006 | No se permite `ToList()` sobre queries a base de datos (receptor `IQueryable` o abstracciones de query propias). |
+| `lainco/no-hardcoded-secrets` | (ESLint) No se permiten secretos escritos en el código: un texto literal asignado a un nombre de contraseña, token, secreto o API key. |
 
 ## Forma de trabajo
 
