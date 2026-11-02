@@ -100,7 +100,39 @@ Y crear el release `v<VERSION>` con `Lainco.Analyzers.<VERSION>.nupkg` y
 
 Recién hace falta en la **Fase 5**. Decidido (T2 de `FASE-5.md`): se publica **privado**
 en la organización paga `lainco` de npmjs.com, donde Lainco ya publica sus paquetes Node
-(`publishConfig.access: restricted`). El workflow de publicación es el paso 6.
+(`publishConfig.access: restricted`).
+
+Lo publica el workflow **Publicar paquetes de ESLint** (`.github/workflows/publicar-eslint.yml`)
+al llegar a `main` un cambio de `src/ts/` o de `docs/rules/lainco/`. Como con
+Lainco.Analyzers, **publicar es subir la versión**: una versión que ya está en npm no se
+vuelve a publicar. Para publicar:
+
+1. Subir `version` en `src/ts/eslint-plugin/package.json` y, si cambió, en
+   `src/ts/eslint-config/package.json`. La config fija la versión **exacta** del plugin en
+   sus `dependencies`: hay que actualizarla también (el workflow falla si no coinciden).
+2. Mergear a `main`.
+
+El workflow publica lo que falte (primero el plugin) y crea el release `eslint-vX.Y.Z` con
+`reglas-eslint.json`. **El release no se marca como "latest"** (`--latest=false`): la app
+sincroniza las reglas Roslyn desde el último release del repositorio, y ese lugar es de
+Lainco.Analyzers (`vX.Y.Z`).
+
+### Configuración, una sola vez
+
+| Qué | Dónde |
+|---|---|
+| Secret `NPM_TOKEN` | GitHub → Settings → Secrets and variables → Actions. Un token de npmjs.com (granular, con permiso de **lectura y escritura** sobre los paquetes del scope `@lainco`), creado por alguien con permiso de publicar en la organización `lainco`. |
+
+### Instalar los paquetes en un repositorio
+
+Como son privados, cada máquina y cada CI que los instala necesita un token de **lectura**
+de la organización, en un `.npmrc` (sin commitear el token):
+
+```
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+```
+
+Uso de los paquetes en `src/ts/README.md`.
 
 ---
 
