@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 
 import type { ClienteGitHub, PrDeGitHub } from "@/github/cliente";
 import { RUTAS } from "@/paquete/pr";
+import { RUTAS_ESLINT } from "@/paquete/prEslint";
 
 /**
  * Un repositorio de GitHub en memoria, con lo que usa el PR de configuración: ramas,
  * commits con sus archivos y PRs. `main` arranca con los archivos del paquete de
- * tests/fixtures/paquete/.
+ * tests/fixtures/paquete/ y los de @lainco/eslint-config de tests/fixtures/paquete-eslint/
+ * (como estaban al cerrar la Fase 5).
  * `fallar` decide, por operación, si GitHub falla.
  */
 
@@ -33,6 +35,7 @@ type Operacion = keyof Pick<
 
 // Los archivos de main antes del primer PR de la app (tests/fixtures/paquete/LEEME.md).
 const delRepositorio = (ruta: string) => readFileSync(new URL(`../fixtures/paquete/${ruta.split("/").at(-1)}`, import.meta.url), "utf8");
+const deEslint = (ruta: string) => readFileSync(new URL(`../fixtures/paquete-eslint/${ruta.split("/").at(-1)}`, import.meta.url), "utf8");
 
 export function githubEnMemoria(fallar: (operacion: Operacion) => Error | undefined = () => undefined) {
   const commits = new Map<string, Commit>();
@@ -48,7 +51,14 @@ export function githubEnMemoria(fallar: (operacion: Operacion) => Error | undefi
   };
   ramas.set(
     "main",
-    nuevoCommit({ padre: null, mensaje: "inicial", archivos: new Map(Object.values(RUTAS).map((r) => [r, delRepositorio(r)])) }),
+    nuevoCommit({
+      padre: null,
+      mensaje: "inicial",
+      archivos: new Map([
+        ...Object.values(RUTAS).map((r) => [r, delRepositorio(r)] as const),
+        ...Object.values(RUTAS_ESLINT).map((r) => [r, deEslint(r)] as const),
+      ]),
+    }),
   );
 
   const registrar = (operacion: Operacion) => {

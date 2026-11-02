@@ -34,6 +34,7 @@ export type Seccion = (typeof SECCIONES)[number]["codigo"];
 const ORIGENES_SINCRONIZADOS = [
   { origen: Origen.Sonar, nombre: "Sonar" },
   { origen: Origen.Roslyn, nombre: "Roslyn" },
+  { origen: Origen.Eslint, nombre: "ESLint" },
 ] as const;
 
 /** La última corrida de un origen, termine bien o no. */
@@ -59,7 +60,7 @@ async function ultimaSincronizacion(db: Db, origen: Origen) {
 
 /**
  * Encabezado de las pantallas con sesión: las secciones, quién entró, la sincronización
- * de cada origen (Sonar y Roslyn) y salir.
+ * de cada origen (Sonar, Roslyn y ESLint) y salir.
  */
 export async function Encabezado({ usuario, seccion }: { usuario: UsuarioActual; seccion: Seccion }) {
   const db = obtenerDb();

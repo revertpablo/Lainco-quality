@@ -197,12 +197,15 @@ export function cuerpoDelPr({
   cambios,
   decisiones,
   releasesMovidas,
+  paquete = { nombre: "Lainco.Analyzers", archivo: ".globalconfig" },
 }: {
   versionAnterior: string;
   version: string;
   cambios: CambioDeRegla[];
   decisiones: ReadonlyMap<string, DecisionDeRegla>;
   releasesMovidas: boolean;
+  /** El paquete y su archivo de configuración (entrega 6.4, parte ESLint). Por defecto, Lainco.Analyzers. */
+  paquete?: { nombre: string; archivo: string };
 }): string {
   const filas = cambios.map((c) => {
     const decision = decisiones.get(c.clave);
@@ -218,7 +221,7 @@ export function cuerpoDelPr({
   });
 
   return [
-    `Lleva al paquete las decisiones del catálogo de reglas: actualiza el \`.globalconfig\` de \`Lainco.Analyzers\` y sube la versión de ${versionAnterior} a ${version}. **Al mergearlo, el workflow publica la versión nueva.**`,
+    `Lleva al paquete las decisiones del catálogo de reglas: actualiza el \`${paquete.archivo}\` de \`${paquete.nombre}\` y sube la versión de ${versionAnterior} a ${version}. **Al mergearlo, el workflow publica la versión nueva.**`,
     "",
     "| Regla | En main | Con este PR | Decisión |",
     "|---|---|---|---|",

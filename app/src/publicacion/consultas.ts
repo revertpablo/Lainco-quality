@@ -16,6 +16,7 @@ import {
   type EstadoSincronizacion,
   type Lenguaje,
   type TipoDesvio,
+  type Origen,
 } from "@/dominio/valores";
 
 /**
@@ -84,6 +85,8 @@ export interface PublicacionParaMostrar {
 export async function publicacionesSinPublicar(
   db: Db,
   destino: DestinoPublicacion = DestinoPublicacion.PerfilSonar,
+  /** Solo las de las reglas de un origen (la pantalla Paquete, por paquete). */
+  origen?: Origen,
 ): Promise<PublicacionParaMostrar[]> {
   return db
     .select({
@@ -105,7 +108,10 @@ export async function publicacionesSinPublicar(
     .innerJoin(estadoPublicacion, eq(estadoPublicacion.codigo, publicacion.estado))
     .innerJoin(usuario, eq(usuario.id, publicacion.pedidaPorId))
     .where(
-      sql`((${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) and ${eq(publicacion.destino, destino)}) or (${fallidaVigente(db, destino)})`,
+      and(
+        sql`((${eq(publicacion.estado, EstadoPublicacion.Pendiente)}) and ${eq(publicacion.destino, destino)}) or (${fallidaVigente(db, destino)})`,
+        origen ? eq(regla.origen, origen) : undefined,
+      ),
     )
     .orderBy(desc(sql`${publicacion.estado} = 'fallida'`), asc(publicacion.creadaEn));
 }

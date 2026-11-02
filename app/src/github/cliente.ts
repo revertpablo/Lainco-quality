@@ -86,6 +86,12 @@ export interface PrDeGitHub {
 export interface ClienteGitHub {
   /** El último release publicado, o null si el repositorio no tiene ninguno. */
   ultimoRelease(): Promise<ReleaseDeGitHub | null>;
+  /**
+   * El release más reciente cuyo tag empieza con `prefijo` (`eslint-v`), sin borradores ni
+   * versiones previas, o null si no hay. Para los paquetes que no son el "latest" del
+   * repositorio (entrega 6.4, parte ESLint, decisión L1). Mira los últimos 100 releases.
+   */
+  ultimoReleaseConPrefijo(prefijo: string): Promise<ReleaseDeGitHub | null>;
   /** El contenido de un asset, como texto. */
   descargarAsset(asset: AssetDeGitHub): Promise<string>;
 
@@ -348,6 +354,19 @@ export function crearClienteGitHub(opciones: OpcionesDelClienteGitHub): ClienteG
         throw e;
       }
       return leerRelease(await json(respuesta, descripcion));
+    },
+
+    async ultimoReleaseConPrefijo(prefijo) {
+      const descripcion = `el último release ${prefijo}*`;
+      // GitHub los devuelve del más nuevo al más viejo.
+      const cuerpo = await json(await pedir({ url: `${repo}/releases?per_page=100`, aceptar: API, descripcion }), descripcion);
+      if (!Array.isArray(cuerpo)) {
+        throw new ErrorDeGitHub("respuestaInvalida", `La respuesta de GitHub al buscar ${descripcion} no es una lista.`);
+      }
+      const elegido = cuerpo.find(
+        (r) => esObjeto(r) && r.draft !== true && r.prerelease !== true && typeof r.tag_name === "string" && r.tag_name.startsWith(prefijo),
+      );
+      return elegido ? leerRelease(elegido) : null;
     },
 
     async descargarAsset(asset) {

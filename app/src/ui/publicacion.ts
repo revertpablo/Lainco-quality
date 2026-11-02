@@ -68,7 +68,7 @@ export function describirEstadoEnSonar(
 }
 
 export interface EstadoEnElPaquete {
-  /** Cómo queda la regla en el `.globalconfig` que genera la app (decisión R3). */
+  /** Cómo queda la regla en el archivo que genera la app: `.globalconfig` o `reglas.json` (R3, L2). */
   enElArchivo: string;
   /** En qué está el cambio pedido, o null si nunca se pidió uno. */
   pedido: string | null;
@@ -90,9 +90,14 @@ export function describirEstadoEnPaquete(
   estado: TipoEstado,
   severidad: string | null,
   fecha: (d: Date) => string,
+  /** Las reglas ESLint van en `reglas.json` de @lainco/eslint-config (entrega 6.4, parte ESLint). */
+  deEslint = false,
 ): EstadoEnElPaquete {
-  const enElArchivo =
-    estado === Estado.Incorporada && severidad
+  const enElArchivo = deEslint
+    ? estado === Estado.Incorporada
+      ? "En el reglas.json de @lainco/eslint-config va encendida (warn)."
+      : "En el reglas.json de @lainco/eslint-config va apagada (off)."
+    : estado === Estado.Incorporada && severidad
       ? `En el .globalconfig va con severidad ${textoDeSeveridad(severidad)}.`
       : "En el .globalconfig va apagada (none).";
 

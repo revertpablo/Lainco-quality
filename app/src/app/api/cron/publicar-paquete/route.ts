@@ -4,6 +4,7 @@ import { autorizarCron } from "@/app/api/cron/autorizar";
 import { obtenerDb } from "@/db/cliente";
 import { clienteGitHubDesdeEntorno } from "@/github/configuracion";
 import { baseDelPr } from "@/paquete/configuracion";
+import { PAQUETES } from "@/paquete/paquetes";
 import { publicarPaquete } from "@/paquete/publicar";
 
 /**
@@ -33,5 +34,10 @@ export async function GET(pedido: Request) {
     return Response.json({ error: (e as Error).message }, { status: 500 });
   }
 
-  return Response.json(await publicarPaquete({ db: obtenerDb(), github, base: baseDelPr() }));
+  // Los dos paquetes (entrega 6.4, parte ESLint), cada uno con su PR.
+  const resumenes: Record<string, unknown> = {};
+  for (const paquete of PAQUETES) {
+    resumenes[paquete.nombre] = await publicarPaquete({ db: obtenerDb(), github, base: baseDelPr(), paquete });
+  }
+  return Response.json(resumenes);
 }

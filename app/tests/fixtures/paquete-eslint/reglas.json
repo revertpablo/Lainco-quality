@@ -1,0 +1,6 @@
+{
+  "comentario": "Reglas encendidas y su severidad. Lo va a generar la app de catálogo a partir de las decisiones registradas (entrega 6.4, parte ESLint); hasta entonces se escribe a mano, como el .globalconfig en la Fase 1. Una regla que no está, no corre. Severidades: 'warn' u 'off'; nunca 'error' (CLAUDE.md).",
+  "reglas": {
+    "lainco/no-hardcoded-secrets": "warn"
+  }
+}

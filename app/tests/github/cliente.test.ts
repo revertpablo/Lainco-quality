@@ -170,6 +170,44 @@ describe("cliente de GitHub", () => {
   });
 });
 
+describe("cliente de GitHub: el último release con un prefijo (6.4, parte ESLint, L1)", () => {
+  const delEslint = (tag: string, cambios: Record<string, unknown> = {}) => ({
+    ...releaseDeLaApi,
+    tag_name: tag,
+    html_url: `https://github.com/revertpablo/Lainco-quality/releases/tag/${tag}`,
+    name: `@lainco/eslint-plugin ${tag}`,
+    assets: [{ url: "https://api.github.com/repos/revertpablo/Lainco-quality/releases/assets/20", name: "reglas-eslint.json" }],
+    ...cambios,
+  });
+
+  it("lista los releases y toma el más reciente con el prefijo, salteando borradores, previas y otros paquetes", async () => {
+    const { fetch, pedidos } = fetchFalso(() => [
+      { ...releaseDeLaApi, tag_name: "v0.3.0" },
+      delEslint("eslint-v0.3.0", { draft: true }),
+      delEslint("eslint-v0.3.0-beta.1", { prerelease: true }),
+      delEslint("eslint-v0.2.0"),
+      delEslint("eslint-v0.1.0"),
+    ]);
+
+    const release = await cliente(fetch).ultimoReleaseConPrefijo("eslint-v");
+
+    expect(pedidos[0].url).toBe("https://api.github.com/repos/revertpablo/Lainco-quality/releases?per_page=100");
+    expect(release).toMatchObject({ tag: "eslint-v0.2.0", assets: [{ nombre: "reglas-eslint.json" }] });
+  });
+
+  it("sin ningún release con el prefijo, devuelve null", async () => {
+    const { fetch } = fetchFalso(() => [{ ...releaseDeLaApi, tag_name: "v0.2.1" }]);
+
+    expect(await cliente(fetch).ultimoReleaseConPrefijo("eslint-v")).toBeNull();
+  });
+
+  it("una respuesta que no es una lista es un error", async () => {
+    const { fetch } = fetchFalso(() => ({ message: "x" }));
+
+    expect((await error(cliente(fetch).ultimoReleaseConPrefijo("eslint-v"))).tipo).toBe("respuestaInvalida");
+  });
+});
+
 describe("cliente de GitHub: lo que usa el PR de configuración (paso 6)", () => {
   const REPO = "https://api.github.com/repos/revertpablo/Lainco-quality";
 

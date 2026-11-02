@@ -1,8 +1,8 @@
-import { ErrorDeCatalogo, leerCatalogo, reglasDelCatalogo } from "@/catalogo/formato";
 import type { Db } from "@/db/cliente";
 import { Origen } from "@/dominio/valores";
 import type { ClienteGitHub } from "@/github/cliente";
 
+import { traerCatalogo, type CatalogoEnGitHub } from "./catalogoDeGitHub";
 import { correrSincronizacion, type ResumenDeSincronizacion } from "./corrida";
 
 /**
@@ -23,6 +23,14 @@ import { correrSincronizacion, type ResumenDeSincronizacion } from "./corrida";
 /** El asset del release con el catálogo (docs/catalogo-de-reglas.md). */
 export const CATALOGO_ROSLYN = "reglas-roslyn.json";
 
+const ROSLYN: CatalogoEnGitHub = {
+  origen: "roslyn",
+  asset: CATALOGO_ROSLYN,
+  tag: (version) => `v${version}`,
+  sinRelease: "ningún release publicado",
+  nombre: "Roslyn",
+};
+
 /** Identifica el lock de la sincronización de Roslyn (pg_advisory_xact_lock). */
 const LOCK_SINCRONIZAR_ROSLYN = 6_400_301;
 
@@ -39,38 +47,6 @@ export function sincronizarRoslyn({ db, github, disparadaPorId }: OpcionesDeSinc
     origen: Origen.Roslyn,
     lock: LOCK_SINCRONIZAR_ROSLYN,
     disparadaPorId,
-    traer: async () => {
-      const release = await github.ultimoRelease();
-      if (!release) {
-        throw new ErrorDeCatalogo("El repositorio no tiene ningún release publicado: todavía no hay catálogo de reglas Roslyn.");
-      }
-
-      const asset = release.assets.find((a) => a.nombre === CATALOGO_ROSLYN);
-      if (!asset) {
-        throw new ErrorDeCatalogo(`El release ${release.tag} no tiene el catálogo ${CATALOGO_ROSLYN}.`);
-      }
-
-      let contenido: unknown;
-      try {
-        contenido = JSON.parse(await github.descargarAsset(asset));
-      } catch (e) {
-        if (e instanceof SyntaxError) {
-          throw new ErrorDeCatalogo(`El catálogo ${CATALOGO_ROSLYN} del release ${release.tag} no es JSON.`);
-        }
-        throw e;
-      }
-
-      const catalogo = leerCatalogo(contenido, "roslyn");
-      // El workflow crea el release v<versión> del paquete: si no coinciden, algo se armó a mano.
-      if (release.tag !== `v${catalogo.version}`) {
-        throw new ErrorDeCatalogo(`El release ${release.tag} trae el catálogo de la versión ${catalogo.version}.`);
-      }
-
-      return {
-        reglas: reglasDelCatalogo(catalogo),
-        lenguajes: [catalogo.lenguaje],
-        version: `${catalogo.paquete} ${catalogo.version}`,
-      };
-    },
+    traer: async () => traerCatalogo(ROSLYN, await github.ultimoRelease(), (asset) => github.descargarAsset(asset)),
   });
 }

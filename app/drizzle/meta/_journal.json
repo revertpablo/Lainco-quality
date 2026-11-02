@@ -99,6 +99,13 @@
       "when": 1793381845995,
       "tag": "0013_en_analisis_y_en_duda",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793649413347,
+      "tag": "0014_paquete_eslint",
+      "breakpoints": true
     }
   ]
-}
+}

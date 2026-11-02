@@ -1,13 +1,13 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
-import { desvio, prConfiguracion, publicacion, revisionPaquete } from "@/db/esquema";
-import { DestinoPublicacion, EstadoPr, EstadoPublicacion, EstadoSincronizacion, Lenguaje, TipoDesvio } from "@/dominio/valores";
+import { desvio, prConfiguracion, publicacion, regla, revisionPaquete } from "@/db/esquema";
+import { DestinoPublicacion, EstadoPr, EstadoPublicacion, EstadoSincronizacion } from "@/dominio/valores";
 import type { ClienteGitHub } from "@/github/cliente";
 
-import { generarGlobalconfig } from "./globalconfig";
-import { cambiosDeSeveridad, mismoGlobalconfig, RUTAS, versionDelProyecto, type CambioDeRegla } from "./pr";
-import { RAMA_DEL_PR, reglasDelPaquete } from "./publicar";
+import { PAQUETE_ROSLYN, type DefinicionDelPaquete } from "./paquetes";
+import type { CambioDeRegla } from "./pr";
+import { reglasDelPaquete } from "./publicar";
 
 /**
  * Revisión del paquete (entrega 6.4, paso 7): el seguimiento de lo que la app publica en
@@ -25,13 +25,13 @@ import { RAMA_DEL_PR, reglasDelPaquete } from "./publicar";
  * release (paso 3), y la pantalla la compara con la del último PR mergeado.
  *
  * Si GitHub falla, la revisión queda con error y el desvío no se toca.
+ *
+ * Lo mismo para @lainco/eslint-config y su `reglas.json` (entrega 6.4, parte ESLint,
+ * decisión L4): cada paquete se revisa por su lado, con sus PRs y su desvío.
  */
 
-/** Cómo se identifica el desvío del paquete en la tabla de desvíos. */
-export const DESVIO_DEL_PAQUETE = { tipo: TipoDesvio.GlobalconfigDistinto, lenguaje: Lenguaje.CSharp, clave: "Lainco.Analyzers" } as const;
-
-/** Identifica el lock de la revisión del paquete (pg_advisory_xact_lock). */
-const LOCK_REVISAR_PAQUETE = 6_400_701;
+/** Cómo se identifica el desvío de Lainco.Analyzers en la tabla de desvíos. */
+export const DESVIO_DEL_PAQUETE = PAQUETE_ROSLYN.desvio;
 
 export interface OpcionesDeRevision {
   db: Db;
@@ -39,6 +39,8 @@ export interface OpcionesDeRevision {
   base?: string;
   /** Quién la disparó desde la app. Sin valor: el cron. */
   disparadaPorId?: string;
+  /** Qué paquete. Por defecto, Lainco.Analyzers. */
+  paquete?: DefinicionDelPaquete;
 }
 
 export interface ResumenDeRevision {
@@ -70,8 +72,17 @@ export function detalleDelDesvio(cambios: CambioDeRegla[]): DetalleDelDesvioDelP
   };
 }
 
-export async function revisarPaquete({ db, github, base = "main", disparadaPorId }: OpcionesDeRevision): Promise<ResumenDeRevision> {
-  const [revision] = await db.insert(revisionPaquete).values({ disparadaPorId }).returning({ id: revisionPaquete.id });
+export async function revisarPaquete({
+  db,
+  github,
+  base = "main",
+  disparadaPorId,
+  paquete = PAQUETE_ROSLYN,
+}: OpcionesDeRevision): Promise<ResumenDeRevision> {
+  const [revision] = await db
+    .insert(revisionPaquete)
+    .values({ disparadaPorId, paquete: paquete.origen })
+    .returning({ id: revisionPaquete.id });
   const resumen: ResumenDeRevision = {
     id: revision.id,
     estado: EstadoSincronizacion.Ok,
@@ -84,10 +95,13 @@ export async function revisarPaquete({ db, github, base = "main", disparadaPorId
 
   try {
     await db.transaction(async (tx) => {
-      await tx.execute(sql`select pg_advisory_xact_lock(${LOCK_REVISAR_PAQUETE})`);
+      await tx.execute(sql`select pg_advisory_xact_lock(${paquete.lockRevisar})`);
 
       // 1. Los PRs abiertos, al día.
-      const abiertos = await tx.select({ numero: prConfiguracion.numero }).from(prConfiguracion).where(eq(prConfiguracion.estado, EstadoPr.Abierto));
+      const abiertos = await tx
+        .select({ numero: prConfiguracion.numero })
+        .from(prConfiguracion)
+        .where(and(eq(prConfiguracion.estado, EstadoPr.Abierto), eq(prConfiguracion.paquete, paquete.origen)));
       for (const { numero } of abiertos) {
         const enGitHub = await github.estadoDePr(numero);
         if (enGitHub && enGitHub.estado !== EstadoPr.Abierto) {
@@ -109,22 +123,30 @@ export async function revisarPaquete({ db, github, base = "main", disparadaPorId
       if (!commit) {
         throw new Error(`No existe la rama ${base} en el repositorio.`);
       }
-      const [enMain, csproj] = await Promise.all([github.leerArchivo(RUTAS.globalconfig, commit), github.leerArchivo(RUTAS.csproj, commit)]);
-      if (enMain === null || csproj === null) {
-        throw new Error(`No está ${enMain === null ? RUTAS.globalconfig : RUTAS.csproj} en ${base}.`);
+      const { configuracion, version } = paquete.rutas;
+      const [enMain, archivoDeVersion] = await Promise.all([github.leerArchivo(configuracion, commit), github.leerArchivo(version, commit)]);
+      if (enMain === null || archivoDeVersion === null) {
+        throw new Error(`No está ${enMain === null ? configuracion : version} en ${base}.`);
       }
-      resumen.versionEnMain = versionDelProyecto(csproj);
+      resumen.versionEnMain = paquete.versionDe(archivoDeVersion);
 
-      const deLaApp = generarGlobalconfig(await reglasDelPaquete(tx));
-      resumen.coincide = mismoGlobalconfig(enMain, deLaApp);
+      const deLaApp = paquete.generar(await reglasDelPaquete(tx, paquete.origen));
+      resumen.coincide = paquete.coincide(enMain, deLaApp);
 
       // 3. El desvío. Con un PR abierto o algo pendiente de pasar al paquete, la diferencia
       // ya está en camino: no es un desvío.
-      const prAbierto = await github.prAbierto(RAMA_DEL_PR);
+      const prAbierto = await github.prAbierto(paquete.rama);
       const [pendiente] = await tx
         .select({ id: publicacion.id })
         .from(publicacion)
-        .where(and(eq(publicacion.destino, DestinoPublicacion.PrConfiguracion), eq(publicacion.estado, EstadoPublicacion.Pendiente)))
+        .innerJoin(regla, eq(regla.id, publicacion.reglaId))
+        .where(
+          and(
+            eq(publicacion.destino, DestinoPublicacion.PrConfiguracion),
+            eq(publicacion.estado, EstadoPublicacion.Pendiente),
+            eq(regla.origen, paquete.origen),
+          ),
+        )
         .limit(1);
       const hayDesvio = !resumen.coincide && !prAbierto && !pendiente;
 
@@ -134,18 +156,18 @@ export async function revisarPaquete({ db, github, base = "main", disparadaPorId
         .where(
           and(
             isNull(desvio.resueltoEn),
-            eq(desvio.tipo, DESVIO_DEL_PAQUETE.tipo),
-            eq(desvio.lenguaje, DESVIO_DEL_PAQUETE.lenguaje),
-            eq(desvio.clave, DESVIO_DEL_PAQUETE.clave),
+            eq(desvio.tipo, paquete.desvio.tipo),
+            eq(desvio.lenguaje, paquete.desvio.lenguaje),
+            eq(desvio.clave, paquete.desvio.clave),
           ),
         );
       if (hayDesvio) {
-        const detalle = detalleDelDesvio(cambiosDeSeveridad(enMain, deLaApp));
+        const detalle = detalleDelDesvio(paquete.cambios(enMain, deLaApp));
         if (abierto) {
           await tx.update(desvio).set({ vistoEn: sql`now()`, detalle }).where(eq(desvio.id, abierto.id));
           resumen.desvio = "sigue";
         } else {
-          await tx.insert(desvio).values({ ...DESVIO_DEL_PAQUETE, detalle });
+          await tx.insert(desvio).values({ ...paquete.desvio, detalle });
           resumen.desvio = "nuevo";
         }
       } else if (abierto) {

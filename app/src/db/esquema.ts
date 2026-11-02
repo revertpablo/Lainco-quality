@@ -31,6 +31,7 @@ import type {
   EvaluacionMuestra,
   Rol,
   TipoDesvio,
+  OrigenDePaquete,
 } from "@/dominio/valores";
 
 /**
@@ -471,6 +472,8 @@ export const prConfiguracion = pgTable(
   "prConfiguracion",
   {
     numero: integer().notNull(),
+    /** De qué paquete es: Lainco.Analyzers (`roslyn`) o @lainco/eslint-config (`eslint`). Decisión L4. */
+    paquete: text().$type<OrigenDePaquete>().notNull().default("roslyn"),
     url: text().notNull(),
     /** La versión que propone. Null en uno que la app conoció por sus publicaciones, antes del paso 7. */
     version: text(),
@@ -487,6 +490,7 @@ export const prConfiguracion = pgTable(
     primaryKey({ name: "prConfiguracionPk", columns: [t.numero] }),
     foreignKey({ name: "prConfiguracionEstado", columns: [t.estado], foreignColumns: [estadoPr.codigo] }),
     check("prConfiguracionMergeadoConFecha", sql`(${t.estado} = 'mergeado') = (${t.mergeadoEn} is not null)`),
+    check("prConfiguracionPaquete", sql`${t.paquete} in ('roslyn', 'eslint')`),
   ],
 );
 
@@ -498,9 +502,11 @@ export const revisionPaquete = pgTable(
     iniciadaEn: fechaDeAlta(),
     terminadaEn: timestamp({ withTimezone: true }),
     estado: text().$type<EstadoSincronizacion>().notNull().default("enCurso"),
+    /** Qué paquete se revisó (decisión L4). */
+    paquete: text().$type<OrigenDePaquete>().notNull().default("roslyn"),
     /** La versión del paquete en main. */
     versionEnMain: text(),
-    /** El .globalconfig de main coincide con el que genera la app. */
+    /** El archivo de configuración de main (`.globalconfig`, `reglas.json`) coincide con el que genera la app. */
     coincide: boolean(),
     error: text(),
     /** Quién la disparó desde la app. Null si la disparó el cron. */
@@ -510,6 +516,7 @@ export const revisionPaquete = pgTable(
     primaryKey({ name: "revisionPaquetePk", columns: [t.id] }),
     foreignKey({ name: "revisionPaqueteEstado", columns: [t.estado], foreignColumns: [estadoSincronizacion.codigo] }),
     foreignKey({ name: "revisionPaqueteDisparadaPor", columns: [t.disparadaPorId], foreignColumns: [usuario.id] }),
+    check("revisionPaquetePaquete", sql`${t.paquete} in ('roslyn', 'eslint')`),
   ],
 );
 
