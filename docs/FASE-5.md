@@ -35,7 +35,7 @@ IDE. Tareas y criterio de aceptación en `PLAN.md`, Fase 5.
 | El issue de `lainco/no-hardcoded-secrets` aparece en Sonar como issue externo | ✅ PR #4 |
 | El PR con una violación nueva hace fallar el quality gate | ✅ PR #4 (`new_violations = 3`) |
 | No aparece ningún issue que no sea de una regla elegida | ✅ en el PR #4. Ver la nota sobre JavaScript |
-| Un issue aceptado sigue aceptado después de moverse de línea | ⬜ Necesita que un revisor acepte un issue en Sonar |
+| Un issue aceptado sigue aceptado después de moverse de línea | ✅ 2026-11-02: se aceptó en Sonar el issue de `API_KEY` y el PR #5 lo movió de la línea 5 a la 10. El PR no lo trajo como nuevo (0 issues, quality gate OK) y, después del merge, en `main` es el mismo issue (misma clave y fecha de creación), en la línea 10 y todavía `ACCEPTED`. Valida la convención del símbolo calificado dentro del módulo (T5) |
 | Aceptar un issue en Sonar y sincronizar hace que desaparezca del IDE | ⬜ Necesita un issue aceptado y un `LAINCO_SONAR_TOKEN` real |
 | En CI el issue sigue llegando a Sonar y sigue figurando como aceptado | ⬜ Igual que el anterior |
 | Sin token o sin red, ESLint funciona igual | ✅ Tests y prueba contra SonarCloud (códigos 1 y 2, ESLint sigue) |
