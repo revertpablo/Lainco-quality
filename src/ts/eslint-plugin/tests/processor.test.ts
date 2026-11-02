@@ -40,7 +40,8 @@ const SECRETO = mensaje("lainco/no-hardcoded-secrets", "Secreto hardcodeado en '
 const OTRO = mensaje("lainco/no-hardcoded-secrets", "Secreto hardcodeado en 'DbConfig.password'", 5);
 
 describe("el processor", () => {
-  const local = crearProcessor({});
+  // Entorno explícito: con el de la máquina, en CI (GITHUB_ACTIONS) el processor no oculta nada.
+  const local = crearProcessor({ entorno: {} });
   const archivo = () => join(repo, "web", "src", "config.ts");
 
   it("deja el código como está", () => {
