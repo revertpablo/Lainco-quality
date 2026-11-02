@@ -118,7 +118,7 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
     ]);
   });
 
-  enTransaccion("deja afuera lo que no se prueba con el job de C#", async (c) => {
+  enTransaccion("deja afuera lo que no se prueba con el job", async (c) => {
     const entra = await c.regla(Origen.Sonar, "csharpsquid:S2325");
     const sinSaber = await c.regla(Origen.Sonar, "csharpsquid:S100", Estado.EnPrueba, { probableLocalmente: null });
     const afuera = [
@@ -126,8 +126,8 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
       await c.regla(Origen.Sonar, "csharpsquid:S102", Estado.Incorporada),
       await c.regla(Origen.Sonar, "csharpsquid:S103", Estado.EnPrueba, { probableLocalmente: false }),
       await c.regla(Origen.Sonar, "csharpsquid:S104", Estado.EnPrueba, { deprecadaEn: AHORA }),
-      await c.regla(Origen.Sonar, "typescript:S1234"),
-      await c.regla(Origen.Eslint, "lainco/no-algo"),
+      await c.regla(Origen.Sonar, "typescript:S105", Estado.EnPrueba, { probableLocalmente: false }),
+      await c.regla(Origen.Eslint, "no-algo"),
       await c.regla(Origen.Roslyn, "LAIN992", Estado.PendienteDeAnalizar),
     ];
 
@@ -138,7 +138,32 @@ describe.skipIf(!url)("abrir una corrida de prueba", async () => {
     for (const id of afuera) {
       expect(ids).not.toContain(id);
     }
-    expect(abierta.globalconfig).not.toMatch(/S101|S102|S103|S104|S1234/);
+    expect(abierta.globalconfig).not.toMatch(/S101|S102|S103|S104|S105/);
+  });
+
+  enTransaccion("incluye las reglas de TypeScript En prueba, con su ID de ESLint, fuera del .globalconfig (E8)", async (c) => {
+    const s2325 = await c.regla(Origen.Sonar, "csharpsquid:S2325");
+    const ts = await c.regla(Origen.Sonar, "typescript:S2325");
+    const lainco = await c.regla(Origen.Eslint, "lainco/no-algo");
+
+    const abierta = await abrir(c);
+
+    expect(abierta.reglas).toEqual([
+      { id: s2325, clave: "csharpsquid:S2325", diagnostico: "S2325" },
+      { id: lainco, clave: "lainco/no-algo", diagnostico: "lainco/no-algo" },
+      { id: ts, clave: "typescript:S2325", diagnostico: "ts:S2325" },
+    ]);
+    expect(abierta.globalconfig).toContain("dotnet_diagnostic.S2325.severity = warning");
+    expect(abierta.globalconfig).not.toMatch(/ts:|lainco\//);
+  });
+
+  enTransaccion("una corrida solo de TypeScript no tiene .globalconfig", async (c) => {
+    await c.regla(Origen.Eslint, "lainco/no-algo");
+
+    const abierta = await abrir(c);
+
+    expect(abierta.corrida).not.toBeNull();
+    expect(abierta.globalconfig).toBeNull();
   });
 
   enTransaccion("sin reglas En prueba no abre corrida", async (c) => {

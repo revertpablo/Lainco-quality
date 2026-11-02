@@ -12,7 +12,7 @@ export function describirMinimo({ minimo, cuentan, probableLocalmente }: { minim
 } {
   if (probableLocalmente === false) {
     return {
-      texto: "No está en SonarAnalyzer.CSharp: el job no la puede probar. Puede incorporarse sin prueba desde En análisis o En duda.",
+      texto: "No está en SonarAnalyzer.CSharp ni en eslint-plugin-sonarjs: el job no la puede probar. Puede incorporarse sin prueba desde En análisis o En duda.",
       cumple: false,
     };
   }

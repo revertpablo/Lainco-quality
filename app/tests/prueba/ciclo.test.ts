@@ -154,14 +154,19 @@ describe.skipIf(!url)("ciclo de vida con la prueba de reglas", async () => {
     expect((await c.mover(id, Estado.EnAnalisis, Estado.Incorporada)).ok).toBe(true);
   });
 
-  enTransaccion("una regla que el job de C# todavía no corre (TypeScript, ESLint) no queda trabada en prueba", async (c) => {
+  enTransaccion("las de TypeScript también necesitan el mínimo de corridas: el job las corre con ESLint (parte TypeScript)", async (c) => {
     for (const [origen, clave] of [
       [Origen.Sonar, "typescript:S1118"],
       [Origen.Eslint, "lainco/no-algo"],
     ] as const) {
       const id = await c.regla(origen, clave, Estado.EnPrueba);
-      expect((await c.mover(id, Estado.EnPrueba, Estado.Incorporada)).ok, clave).toBe(true);
+      expect(motivos(await c.mover(id, Estado.EnPrueba, Estado.Incorporada)), clave).toEqual(["faltanResultadosDePrueba"]);
     }
+  });
+
+  enTransaccion("una regla que el job no corre (Sonar para JavaScript) no queda trabada en prueba", async (c) => {
+    const id = await c.regla(Origen.Sonar, "javascript:S1118", Estado.EnPrueba);
+    expect((await c.mover(id, Estado.EnPrueba, Estado.Incorporada)).ok).toBe(true);
   });
 
   // ------------------------------------------------------------------ hacia En prueba

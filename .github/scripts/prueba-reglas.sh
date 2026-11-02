@@ -15,9 +15,12 @@
 #       la respuesta no trae corrida.
 #
 #   prueba-reglas.sh analizar <corrida.json> <owner/repo> <solucion|""> <analyzers> <trabajo>
-#       Clona el repositorio, lo compila con Prueba.targets y reduce los SARIF. Deja en
-#       <trabajo>/resultado.json lo que hay que mandarle a la app: los resultados, o el error
-#       si no se pudo (no compiló, no hay una única solución...).
+#       Clona el repositorio y prueba sus reglas: las de C# compilándolo con Prueba.targets
+#       (si la corrida tiene reglas de C# y el repositorio una solución), las de TypeScript
+#       con ESLint y prueba-eslint.mjs (si tiene reglas de TypeScript y archivos .ts; parte
+#       TypeScript de la 6.5). Deja en <trabajo>/resultado.json lo que hay que mandarle a la
+#       app: los resultados de los dos, con los lenguajes que se analizaron, o el error si no
+#       se pudo (no compiló, no hay una única solución...).
 #
 #   prueba-reglas.sh enviar <corrida.json> <resultado.json>
 #       Manda el resultado de un repositorio a la app
@@ -40,6 +43,9 @@
 #   PRUEBA_GIT_URL          De dónde clonar (por defecto https://github.com). Para probar
 #                           el script a mano con repositorios locales.
 #   GITHUB_API_URL          Por defecto https://api.github.com.
+#
+# Para la parte TypeScript, antes: `npm ci && npm run build` en src/ts (el plugin propio) y
+# `npm ci` en .github/prueba/eslint (ESLint, typescript-eslint y eslint-plugin-sonarjs).
 #
 # Los tokens no se escriben en la consola ni en archivos: van en encabezados.
 
@@ -174,41 +180,101 @@ analizar() {
   local commit
   commit="$(git -C "$clon" rev-parse HEAD)"
 
-  if [[ -z "$solucion" ]]; then
+  local hay_cs hay_ts lenguajes=()
+  hay_cs="$(jq -r '.globalconfig != null' "$corrida")"
+  hay_ts="$(jq -r '[.reglas[].diagnostico | select(test("^(ts:|lainco/)"))] | length > 0' "$corrida")"
+  rm -f "$trabajo/cs.json" "$trabajo/ts.json"
+
+  # C#: compilar con las reglas En prueba y reducir los SARIF.
+  if [[ "$hay_cs" == true ]]; then
     local soluciones
     soluciones="$(git -C "$clon" ls-files '*.sln' '*.slnx')"
-    if [[ "$(grep -c . <<<"$soluciones")" -ne 1 ]]; then
-      resultado_con_error "$trabajo" "$repositorio" "$commit" \
-        "Hay $(grep -c . <<<"$soluciones") soluciones; indicá cuál en PRUEBA_REPOSITORIOS (owner/repo:ruta/de/la.sln): $(tr '\n' ' ' <<<"$soluciones")"
+    if [[ -z "$solucion" && -z "$soluciones" && "$hay_ts" == true ]]; then
+      echo "$repositorio: sin solución .NET; se prueban solo las reglas de TypeScript."
+    else
+      if [[ -z "$solucion" ]]; then
+        if [[ "$(grep -c . <<<"$soluciones")" -ne 1 ]]; then
+          resultado_con_error "$trabajo" "$repositorio" "$commit" \
+            "Hay $(grep -c . <<<"$soluciones") soluciones; indicá cuál en PRUEBA_REPOSITORIOS (owner/repo:ruta/de/la.sln): $(tr '\n' ' ' <<<"$soluciones")"
+          return 0
+        fi
+        solucion="$soluciones"
+      fi
+      if [[ ! -f "$clon/$solucion" ]]; then
+        resultado_con_error "$trabajo" "$repositorio" "$commit" "No existe la solución $solucion."
+        return 0
+      fi
+
+      jq -r '.globalconfig' "$corrida" >"$trabajo/prueba.globalconfig"
+      echo "$repositorio ($commit): compilando $solucion..."
+      if ! (cd "$clon" && timeout "$LIMITE_DE_COMPILACION" dotnet build "$solucion" --no-incremental -nologo -v q \
+        -p:RestoreIgnoreFailedSources=true \
+        -p:CustomAfterMicrosoftCommonTargets="$DIR_PRUEBA/Prueba.targets" \
+        -p:LaincoPruebaAnalyzers="$carpeta_analyzers" \
+        -p:LaincoPruebaGlobalconfig="$trabajo/prueba.globalconfig" \
+        -p:LaincoPruebaSarif="$sarif") >"$log" 2>&1; then
+        local errores
+        errores="$(grep -E ': error [A-Z]+[0-9]+' "$log" | sed -E "s|$clon/||g" | sort -u | head -n 10 || true)"
+        resultado_con_error "$trabajo" "$repositorio" "$commit" "No compiló: ${errores:-$(tail -n 5 "$log")}"
+        return 0
+      fi
+
+      if ! node "$DIR_PRUEBA/reducir-sarif.mjs" --sarif "$sarif" --raiz "$clon" --repositorio "$repositorio" --commit "$commit" \
+        --diagnosticos "$(jq -r '[.reglas[].diagnostico | select(test("^(ts:|lainco/)") | not)] | join(",")' "$corrida")" \
+        --salida "$trabajo/cs.json" 2>"$trabajo/reduccion.log"; then
+        resultado_con_error "$trabajo" "$repositorio" "$commit" "No se pudieron leer los resultados: $(cat "$trabajo/reduccion.log")"
+        return 0
+      fi
+      cat "$trabajo/reduccion.log" >&2
+      lenguajes+=(cs)
+    fi
+  fi
+
+  # TypeScript: ESLint con las reglas En prueba (prueba-eslint.mjs).
+  if [[ "$hay_ts" == true ]]; then
+    if git -C "$clon" ls-files '*.ts' '*.tsx' '*.mts' '*.cts' | grep -q .; then
+      # Las reglas que necesitan tipos los toman de las dependencias del repositorio.
+      if [[ -f "$clon/package-lock.json" ]]; then
+        echo "$repositorio: instalando las dependencias (npm ci --ignore-scripts)..."
+        if ! (cd "$clon" && timeout "$LIMITE_DE_COMPILACION" npm ci --ignore-scripts --no-audit --no-fund) >"$trabajo/npm.log" 2>&1; then
+          aviso "$repositorio: npm ci falló; sigue sin dependencias (las reglas con tipos pueden reportar de menos). $(tail -n 3 "$trabajo/npm.log" | tr '\n' ' ')"
+        fi
+      fi
+      echo "$repositorio ($commit): ESLint..."
+      if ! node "$DIR_PRUEBA/prueba-eslint.mjs" --corrida "$corrida" --raiz "$clon" --salida "$trabajo/ts.json" 2>"$trabajo/eslint.log"; then
+        resultado_con_error "$trabajo" "$repositorio" "$commit" "ESLint falló: $(tail -n 5 "$trabajo/eslint.log" | tr '\n' ' ')"
+        return 0
+      fi
+      cat "$trabajo/eslint.log" >&2
+      lenguajes+=(ts)
+    elif [[ "$hay_cs" != true ]]; then
+      resultado_con_error "$trabajo" "$repositorio" "$commit" "No tiene archivos TypeScript: no hay nada que probar."
       return 0
     fi
-    solucion="$soluciones"
   fi
-  if [[ ! -f "$clon/$solucion" ]]; then
-    resultado_con_error "$trabajo" "$repositorio" "$commit" "No existe la solución $solucion."
+
+  if [[ ${#lenguajes[@]} -eq 0 ]]; then
+    resultado_con_error "$trabajo" "$repositorio" "$commit" "No hay nada que probar: no tiene una solución .NET ni archivos TypeScript."
     return 0
   fi
 
-  jq -r '.globalconfig' "$corrida" >"$trabajo/prueba.globalconfig"
-  echo "$repositorio ($commit): compilando $solucion..."
-  if ! (cd "$clon" && timeout "$LIMITE_DE_COMPILACION" dotnet build "$solucion" --no-incremental -nologo -v q \
-    -p:RestoreIgnoreFailedSources=true \
-    -p:CustomAfterMicrosoftCommonTargets="$DIR_PRUEBA/Prueba.targets" \
-    -p:LaincoPruebaAnalyzers="$carpeta_analyzers" \
-    -p:LaincoPruebaGlobalconfig="$trabajo/prueba.globalconfig" \
-    -p:LaincoPruebaSarif="$sarif") >"$log" 2>&1; then
-    local errores
-    errores="$(grep -E ': error [A-Z]+[0-9]+' "$log" | sed -E "s|$clon/||g" | sort -u | head -n 10 || true)"
-    resultado_con_error "$trabajo" "$repositorio" "$commit" "No compiló: ${errores:-$(tail -n 5 "$log")}"
-    return 0
-  fi
-
-  if ! node "$DIR_PRUEBA/reducir-sarif.mjs" --sarif "$sarif" --raiz "$clon" --repositorio "$repositorio" --commit "$commit" \
-    --diagnosticos "$(jq -r '[.reglas[].diagnostico] | join(",")' "$corrida")" --salida "$trabajo/resultado.json" 2>"$trabajo/reduccion.log"; then
-    resultado_con_error "$trabajo" "$repositorio" "$commit" "No se pudieron leer los resultados: $(cat "$trabajo/reduccion.log")"
-    return 0
-  fi
-  cat "$trabajo/reduccion.log" >&2
+  # Un solo resultado con todas las reglas de la corrida (la app las pide todas). Las del
+  # lenguaje que no se analizó van en cero, y lenguajesAnalizados le dice a la app que no
+  # se probaron (E10).
+  jq -n \
+    --slurpfile c "$corrida" \
+    --slurpfile cs "$([[ -f "$trabajo/cs.json" ]] && echo "$trabajo/cs.json" || echo /dev/null)" \
+    --slurpfile ts "$([[ -f "$trabajo/ts.json" ]] && echo "$trabajo/ts.json" || echo /dev/null)" \
+    --arg r "$repositorio" --arg k "$commit" \
+    --argjson l "$(printf '%s\n' "${lenguajes[@]}" | jq -R . | jq -s .)" '
+      ($cs[0] // {reglas: [], diagnosticosDisponibles: []}) as $a
+      | ($ts[0] // {reglas: [], diagnosticosDisponibles: []}) as $b
+      | (($a.reglas + $b.reglas) | map({key: .diagnostico, value: .}) | from_entries) as $por
+      | {repositorio: $r, commit: $k, estado: "ok",
+         diagnosticosDisponibles: (($a.diagnosticosDisponibles + $b.diagnosticosDisponibles) | unique),
+         lenguajesAnalizados: $l,
+         reglas: [$c[0].reglas[].diagnostico | $por[.] // {diagnostico: ., cantidad: 0, ubicaciones: []}]}' \
+    >"$trabajo/resultado.json"
 }
 
 enviar() {

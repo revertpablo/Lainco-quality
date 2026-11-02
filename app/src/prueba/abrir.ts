@@ -2,7 +2,7 @@ import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { corridaPrueba, estadoRegla, regla, reglaEnCorrida, repositorioEnCorrida } from "@/db/esquema";
-import { ErrorDePrueba, generarGlobalconfigDePrueba, idDeDiagnostico } from "@/dominio/prueba";
+import { ErrorDePrueba, generarGlobalconfigDePrueba, idDeDiagnostico, lenguajeDeDiagnostico } from "@/dominio/prueba";
 import { Estado, EstadoCorrida, Lenguaje, Origen } from "@/dominio/valores";
 
 import type { RepositorioAProbar } from "./configuracion";
@@ -12,9 +12,13 @@ import type { RepositorioAProbar } from "./configuracion";
  * empezar; la app decide qué se prueba y dónde, y le devuelve el `.globalconfig` con el que
  * compilar.
  *
- * Entran las reglas En prueba que el job puede correr: de C#, no deprecadas; de Sonar, las
- * que no se sabe que no están en SonarAnalyzer.CSharp (E7: null es "todavía no se sabe").
- * Sin ninguna, no abre corrida.
+ * Entran las reglas En prueba que el job puede correr, no deprecadas: las propias (Roslyn y
+ * ESLint) y las de Sonar que no se sabe que no están en SonarAnalyzer.CSharp o en
+ * eslint-plugin-sonarjs (E7: null es "todavía no se sabe"). Sin ninguna, no abre corrida.
+ *
+ * Las de TypeScript (parte TypeScript, E8) van en la misma corrida, con su ID de ESLint, y
+ * fuera del `.globalconfig`, que es solo para el compilador: una corrida sin reglas de C#
+ * no tiene `.globalconfig`.
  *
  * Una corrida anterior que siga en curso pasa a fallida: si el job pide otra, aquella ya no
  * va a terminar (el job anterior se cortó antes de mandar todos los resultados).
@@ -26,7 +30,7 @@ const LOCK_DE_APERTURA = 6_500_301;
 export interface ReglaDeLaCorrida {
   id: string;
   clave: string;
-  /** El ID con el que el compilador la reporta (S2325, LAIN001). */
+  /** El ID con el que el job la reporta (S2325, LAIN001, ts:S2325, lainco/no-algo). */
   diagnostico: string;
 }
 
@@ -68,17 +72,17 @@ export async function abrirCorrida({
       .where(
         and(
           eq(estadoRegla.estado, Estado.EnPrueba),
-          eq(regla.lenguaje, Lenguaje.CSharp),
           isNull(regla.deprecadaEn),
           or(
             eq(regla.origen, Origen.Roslyn),
+            eq(regla.origen, Origen.Eslint),
             and(eq(regla.origen, Origen.Sonar), or(isNull(regla.probableLocalmente), eq(regla.probableLocalmente, true))),
           ),
         ),
       );
 
-    // Solo las que el compilador reporta con un ID conocido (una clave Roslyn que no es
-    // LAIN### no se puede probar), en el orden del .globalconfig.
+    // Solo las que el job reporta con un ID conocido (una clave Roslyn que no es LAIN###,
+    // una regla de Sonar para JavaScript, no se pueden probar), ordenadas por ese ID.
     const reglas = candidatas
       .flatMap((r) => {
         try {
@@ -95,6 +99,8 @@ export async function abrirCorrida({
     if (reglas.length === 0) {
       return { corrida: null, reglas: [], repositorios: [], globalconfig: null };
     }
+
+    const reglasDeCSharp = reglas.filter((r) => lenguajeDeDiagnostico(r.diagnostico) === Lenguaje.CSharp);
 
     const [corrida] = await tx
       .insert(corridaPrueba)
@@ -113,7 +119,7 @@ export async function abrirCorrida({
       corrida,
       reglas: reglas.map(({ id, clave, diagnostico }) => ({ id, clave, diagnostico })),
       repositorios: [...repositorios],
-      globalconfig: generarGlobalconfigDePrueba(reglas),
+      globalconfig: reglasDeCSharp.length > 0 ? generarGlobalconfigDePrueba(reglasDeCSharp) : null,
     };
   });
 }

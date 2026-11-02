@@ -55,7 +55,7 @@ async function PanelDePrueba() {
 
         <Panel titulo={delJob.length === 0 ? "Reglas en prueba" : `Reglas en prueba (${delJob.length})`} id="reglas">
           {delJob.length === 0 ? (
-            <p className="px-5 py-4 text-sm text-tenue">No hay reglas de C# En prueba: el job no tiene nada que correr.</p>
+            <p className="px-5 py-4 text-sm text-tenue">No hay reglas En prueba que el job pueda correr.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm" data-tabla="reglas-en-prueba">
@@ -85,8 +85,8 @@ async function PanelDePrueba() {
           )}
           {fueraDelJob.length > 0 && (
             <p className="border-t border-linea px-5 py-3 text-sm text-tenue">
-              {fueraDelJob.length === 1 ? "1 regla En prueba no es" : `${fueraDelJob.length} reglas En prueba no son`} de C#: el job no las corre
-              (las de TypeScript se suman con la Fase 5).
+              {fueraDelJob.length === 1 ? "1 regla En prueba no es" : `${fueraDelJob.length} reglas En prueba no son`} de C# ni de
+              TypeScript: el job no las corre.
             </p>
           )}
         </Panel>

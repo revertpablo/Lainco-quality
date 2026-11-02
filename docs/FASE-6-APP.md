@@ -335,6 +335,34 @@ Como en la parte Roslyn: `lainco/no-hardcoded-secrets` está hoy en `warn` a man
 
 ---
 
+## 8 sexies. Plan de implementación de la entrega 6.5 — En prueba (parte TypeScript)
+
+Los mismos criterios que la parte C# (sección 8 quater), para las reglas de Sonar para
+TypeScript y las ESLint propias. Va en el **mismo job y la misma corrida** que C#.
+
+### Decisiones (2026-11-02)
+
+| # | Decisión |
+|---|---|
+| E8 | **El ID de la prueba lleva el lenguaje.** Una regla de Sonar para TypeScript se reporta como `ts:S1481` (la de C# sigue siendo `S1481`, y las dos pueden estar en la misma corrida); una ESLint propia, con su clave (`lainco/no-hardcoded-secrets`). El `.globalconfig` de prueba es solo para el compilador: una corrida sin reglas de C# no tiene. |
+| E9 | **El mapeo de claves sale de eslint-plugin-sonarjs** (verificado el 2026-11-02 con la 4.2.2: las 295 reglas traen su clave de Sonar en `meta.docs.url`, `.../rspec/S101/javascript`). No hay tabla a mano. El job informa como disponibles todas las del plugin (`ts:S####`) y las propias; con eso la app marca `probableLocalmente` en las reglas de Sonar para TypeScript, como E7 en C#. Las que no están en el plugin no se pueden probar. |
+| E10 | **Cada repositorio, sus lenguajes.** El job prueba C# si la corrida tiene reglas de C# y el repositorio una solución, y TypeScript si tiene reglas de TypeScript y archivos `.ts`. El resultado dice qué lenguajes se analizaron (`lenguajesAnalizados`): las reglas de los otros no tienen resultado (no figuran con cero). Sin el campo, como antes. |
+| E11 | **ESLint corre con la configuración de la prueba, no con la del repositorio**: solo las reglas en prueba, en `warn`, con `eslint-plugin-sonarjs` y `@lainco/eslint-plugin` compilado desde este repositorio (es privado en npm; el job no necesita token de npm). Versiones fijas en `.github/prueba/eslint/package.json`. Con un `tsconfig.json` en la raíz, las reglas que necesitan tipos los tienen (y el job instala las dependencias del repositorio con `npm ci --ignore-scripts`); sin él, esas reglas no reportan. |
+
+Consecuencia en el ciclo de vida: desde esta parte, una regla de TypeScript En prueba
+necesita el mínimo de corridas para pasar a Incorporada, como una de C# (E3). Las que el
+job no corre (normas de IA, Sonar para JavaScript, D5.1) siguen sin pedirlo.
+
+### Pasos
+
+| # | Paso | Estado |
+|---|---|---|
+| 1 | App: la corrida incluye las reglas de TypeScript En prueba (E8); la ingesta acepta sus IDs y `lenguajesAnalizados` (E10) y marca las de Sonar para TypeScript que se pueden probar (E9). | **Hecho (2026-11-02)**: `src/dominio/prueba.ts` (`idDeDiagnostico`, `claveDeDiagnostico`, `lenguajeDeDiagnostico`), `src/prueba/abrir.ts`, `src/prueba/http.ts`, `src/prueba/ingesta.ts`, y los textos de las pantallas. 14 tests nuevos o cambiados (1040 en total, contra Postgres; typecheck, lint y build limpios). |
+| 2 | Job: `.github/prueba/prueba-eslint.mjs` (mapeo, ESLint y reducción), sus herramientas en `.github/prueba/eslint/`, `analizar` del script con las dos partes y el workflow. | **Hecho (2026-11-02)**: 7 tests (`node --test`). Verificado en local: sobre `samples/ts`, los 3 issues de `lainco/no-hardcoded-secrets` en sus líneas; una regla con tipos (`ts:S1128`) no reporta sin `tsconfig.json` y encuentra el import sin usar con él; `analizar` contra un repositorio git local, con una corrida solo de TypeScript y con una mixta (C# salteado por falta de solución, sus reglas en cero y `lenguajesAnalizados: ["ts"]`); los dos resultados pasan el esquema de la app. |
+| 3 | Punta a punta en GitHub: una regla de TypeScript En prueba, el workflow corre, la app muestra sus issues y la tasa. | Pendiente: necesita la app desplegada con estos cambios. |
+
+---
+
 ## 9. Puntos a confirmar
 
 | # | Punto | Por qué importa |

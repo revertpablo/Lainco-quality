@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import type { Db } from "@/db/cliente";
@@ -56,7 +56,7 @@ describe.skipIf(!url)("ingesta de resultados de prueba", async () => {
     tx: Db;
     token: string;
     corridaId: string;
-    reglas: { lain: string; s1118: string; s9001: string; s100: string; s101: string; ts: string };
+    reglas: { lain: string; s1118: string; s9001: string; s100: string; s101: string; ts: string; lainco: string; ts2: string };
     /** Manda un resultado; devuelve la respuesta y su cuerpo. */
     enviar(cuerpo: unknown, opciones?: { corridaId?: string; token?: string; ahora?: Date }): Promise<{ status: number; json: Record<string, unknown> }>;
     /** Abre otra corrida (la anterior queda fallida si seguía en curso). */
@@ -82,7 +82,10 @@ describe.skipIf(!url)("ingesta de resultados de prueba", async () => {
           s9001: await nueva(Origen.Sonar, "csharpsquid:S9001", Estado.EnPrueba),
           s100: await nueva(Origen.Sonar, "csharpsquid:S100", Estado.EnAnalisis),
           s101: await nueva(Origen.Sonar, "csharpsquid:S101", Estado.EnAnalisis),
-          ts: await nueva(Origen.Sonar, "typescript:S1118", Estado.EnPrueba, "ts"),
+          // En análisis: la corrida de estos tests es de C#. Los de TypeScript la ponen En prueba.
+          ts: await nueva(Origen.Sonar, "typescript:S1118", Estado.EnAnalisis, "ts"),
+          lainco: await nueva(Origen.Eslint, "lainco/no-algo", Estado.EnAnalisis, "ts"),
+          ts2: await nueva(Origen.Sonar, "typescript:S2", Estado.EnAnalisis, "ts"),
         };
         const repositorios = [
           { repositorio: "lainco/dico", solucion: null },
@@ -179,6 +182,64 @@ describe.skipIf(!url)("ingesta de resultados de prueba", async () => {
     expect(marcadas[0].p).toBeNull();
     // Y la S1118 tampoco se dio por no probada: sin lista de Sonar no se sabe.
     expect(await c.tx.select().from(resultadoPrueba).where(eq(resultadoPrueba.reglaId, c.reglas.s1118))).toHaveLength(1);
+  });
+
+  // ------------------------------------------------------- TypeScript (parte ESLint, E8 a E10)
+
+  /** Pone En prueba las reglas de TypeScript y abre otra corrida, que las incluye. */
+  async function conTypeScript(c: Contexto): Promise<string> {
+    await c.tx.update(estadoRegla).set({ estado: Estado.EnPrueba }).where(inArray(estadoRegla.reglaId, [c.reglas.ts, c.reglas.lainco]));
+    return c.abrirOtra(DESPUES);
+  }
+  const reglasTs = [
+    { diagnostico: "lainco/no-algo", cantidad: 1, ubicaciones: [u("web/config.ts", "Secreto hardcodeado en 'API_KEY'", 5)] },
+    { diagnostico: "ts:S1118", cantidad: 0, ubicaciones: [] },
+  ];
+  const reglasCs = ok().reglas;
+
+  enTransaccion("guarda los resultados de las reglas de TypeScript con su ID de ESLint (E8)", async (c) => {
+    const corridaId = await conTypeScript(c);
+
+    const { status, json } = await c.enviar(
+      ok({ diagnosticosDisponibles: [...DISPONIBLES, "ts:S1118", "lainco/no-algo"], lenguajesAnalizados: ["cs", "ts"] }, [...reglasCs, ...reglasTs]),
+      { corridaId },
+    );
+
+    expect(status).toBe(200);
+    expect(json).toMatchObject({ resultados: 4, muestras: 3 });
+    const resultados = await c.tx.select().from(resultadoPrueba).where(eq(resultadoPrueba.corridaId, corridaId));
+    expect(resultados.filter((r) => [c.reglas.ts, c.reglas.lainco].includes(r.reglaId)).map((r) => [r.reglaId, r.cantidad]).sort()).toEqual(
+      [
+        [c.reglas.lainco, 1],
+        [c.reglas.ts, 0],
+      ].sort(),
+    );
+    expect((await c.muestras(c.reglas.lainco)).map((m) => [m.archivo, m.mensaje])).toEqual([["web/config.ts", "Secreto hardcodeado en 'API_KEY'"]]);
+  });
+
+  enTransaccion("en un repositorio sin C#, las reglas de C# no tienen resultado (E10)", async (c) => {
+    const corridaId = await conTypeScript(c);
+
+    await c.enviar(ok({ diagnosticosDisponibles: ["ts:S1118", "lainco/no-algo"], lenguajesAnalizados: ["ts"] }, [
+      ...reglasCs.map((r) => ({ ...r, cantidad: 0, ubicaciones: [] })),
+      ...reglasTs,
+    ]), { corridaId });
+
+    const resultados = await c.tx.select().from(resultadoPrueba).where(eq(resultadoPrueba.corridaId, corridaId));
+    expect(resultados.map((r) => r.reglaId).sort()).toEqual([c.reglas.lainco, c.reglas.ts].sort());
+  });
+
+  enTransaccion("marca qué reglas de Sonar para TypeScript se pueden probar, sin tocar las de C# (E9)", async (c) => {
+    const corridaId = await conTypeScript(c);
+
+    await c.enviar(ok({ diagnosticosDisponibles: ["ts:S1118", "lainco/no-algo"], lenguajesAnalizados: ["ts"] }, [...reglasCs, ...reglasTs]), { corridaId });
+
+    const probable = async (id: string) => (await c.tx.select({ p: regla.probableLocalmente }).from(regla).where(eq(regla.id, id)))[0].p;
+    expect(await probable(c.reglas.ts)).toBe(true);
+    expect(await probable(c.reglas.ts2)).toBe(false);
+    // Sin ninguna de Sonar para C# en la lista, las de C# no se tocan.
+    expect(await probable(c.reglas.s101)).toBeNull();
+    expect(await probable(c.reglas.lainco)).toBeNull();
   });
 
   enTransaccion("un repositorio que no se pudo analizar queda con su error", async (c) => {

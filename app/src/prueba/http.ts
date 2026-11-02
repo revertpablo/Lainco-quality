@@ -133,7 +133,12 @@ const ubicacion = z.strictObject({
 
 const resultadoDeRegla = z
   .strictObject({
-    diagnostico: z.string().regex(/^(S\d+|LAIN\d{3})$/, "Tiene que ser un ID de Sonar (S####) o propio (LAIN###)."),
+    diagnostico: z
+      .string()
+      .regex(
+        /^(S\d+|LAIN\d{3}|ts:S\d+|lainco\/[a-z0-9]+(-[a-z0-9]+)*)$/,
+        "Tiene que ser un ID de Sonar (S####, ts:S####) o propio (LAIN###, lainco/<nombre>).",
+      ),
     cantidad: z.int().min(0),
     ubicaciones: z.array(ubicacion).max(UBICACIONES_POR_REGLA),
   })
@@ -146,6 +151,11 @@ export const cuerpoDeResultado = z.discriminatedUnion("estado", [
     commit,
     estado: z.literal("ok"),
     diagnosticosDisponibles: z.array(z.string().max(100)).max(10_000),
+    /**
+     * Qué lenguajes se analizaron en el repositorio (E10): las reglas de los otros no tienen
+     * resultado. Sin el campo, como antes de la parte TypeScript: todos.
+     */
+    lenguajesAnalizados: z.array(z.enum(["cs", "ts"])).min(1).optional(),
     reglas: z.array(resultadoDeRegla).max(5_000),
   }),
   z.strictObject({

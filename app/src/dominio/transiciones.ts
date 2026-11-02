@@ -232,7 +232,7 @@ export const MENSAJES_DE_RECHAZO: Readonly<Record<MotivoDeRechazo, string>> = {
   noAdmiteOperacionMasiva: "Este cambio de estado se hace de a una regla, no en una operación masiva.",
   parametroDesconocido: "Se eligió un valor para un parámetro que la regla no tiene.",
   severidadNoSeElige: "La severidad de una regla propia la fija la regla: no se elige al incorporarla.",
-  noSePuedeProbar: "La regla no está en SonarAnalyzer.CSharp: el job de prueba no la puede correr. Puede incorporarse sin prueba desde En análisis o En duda.",
+  noSePuedeProbar: "La regla no está en SonarAnalyzer.CSharp ni en eslint-plugin-sonarjs: el job de prueba no la puede correr. Puede incorporarse sin prueba desde En análisis o En duda.",
 };
 
 /**
