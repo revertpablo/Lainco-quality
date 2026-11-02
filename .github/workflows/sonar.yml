@@ -3,8 +3,12 @@
 # El objetivo de esta fase es validar el circuito completo: que los issues de las
 # reglas LAIN lleguen a Sonar como issues externos y se puedan gestionar ahí.
 #
-# Qué se analiza: solo la solución de ejemplo. El código de los analyzers
-# (src/dotnet) todavía no se analiza; se suma cuando el circuito esté validado.
+# Qué se analiza: solo las samples. La C# (samples/SampleSolution), con los issues de
+# Roslyn que importa el scanner de .NET, y desde la Fase 5 la TypeScript (samples/ts), con
+# el reporte de ESLint (sonar.eslint.reportPaths). Las dos van al mismo proyecto de Sonar
+# (decisión T4 de docs/FASE-5.md): el scanner de .NET, desde la versión 8, también analiza
+# los archivos de otros lenguajes (sonar.scanner.scanAll). El código de los paquetes
+# (src/, tools/) y la app no se analizan: quedan en sonar.exclusions.
 
 name: Sonar
 
@@ -40,6 +44,13 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/ts/package-lock.json
+
       - name: Cachear el SonarScanner
         uses: actions/cache@v4
         with:
@@ -58,6 +69,23 @@ jobs:
       - name: Empaquetar Lainco.Analyzers
         run: dotnet pack src/dotnet/Lainco.Analyzers.Package -c Release -o artifacts/nupkg
 
+      # Lo mismo para TypeScript: la sample usa @lainco/eslint-config compilado desde acá.
+      - name: Compilar los paquetes de ESLint
+        working-directory: src/ts
+        run: |
+          npm ci
+          npm run build
+
+      # Con CI=true (lo define GitHub Actions) la configuración no oculta los issues
+      # aceptados: tienen que seguir llegando a Sonar. ESLint termina con 0 aunque haya
+      # advertencias; las reglas propias nunca son 'error'.
+      - name: ESLint de la sample TypeScript
+        run: >-
+          src/ts/node_modules/.bin/eslint
+          --config samples/ts/eslint.config.mjs
+          --format json --output-file eslint-report.json
+          samples/ts
+
       - name: Sonar — begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -66,7 +94,9 @@ jobs:
             /k:"revertpablo_Lainco-quality" \
             /o:"revertpablo" \
             /d:sonar.token="$SONAR_TOKEN" \
-            /d:sonar.host.url="https://sonarcloud.io"
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.eslint.reportPaths="eslint-report.json" \
+            /d:sonar.exclusions="src/**,tools/**,app/**,.github/**"
 
       - name: Build de la sample
         run: dotnet build samples/SampleSolution/SampleSolution.sln --no-incremental

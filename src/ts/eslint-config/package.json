@@ -1,0 +1,47 @@
+{
+  "name": "@lainco/eslint-config",
+  "version": "0.1.0",
+  "description": "Configuración compartida de ESLint de Lainco: enciende solo las reglas elegidas por el equipo. Ver docs/FASE-5.md.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "reglas.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lainco/eslint-plugin": "0.1.0",
+    "typescript-eslint": "8.72.1"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0 || ^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/revertpablo/Lainco-quality.git",
+    "directory": "src/ts/eslint-config"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

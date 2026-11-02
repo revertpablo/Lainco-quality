@@ -98,12 +98,9 @@ Y crear el release `v<VERSION>` con `Lainco.Analyzers.<VERSION>.nupkg` y
 
 ## npm — `@lainco/eslint-plugin` en npmjs.com
 
-Recién hace falta en la **Fase 5**. Dos puntos a decidir antes:
-
-| Punto | Detalle |
-|---|---|
-| Público o privado | En npmjs.com, un paquete con scope `@lainco` es **público y gratuito** por defecto. Para publicarlo privado hace falta una organización paga. |
-| Reservar el scope | Conviene crear la organización `lainco` en npmjs.com antes de que la tome otro, aunque todavía no se publique nada. |
+Recién hace falta en la **Fase 5**. Decidido (T2 de `FASE-5.md`): se publica **privado**
+en la organización paga `lainco` de npmjs.com, donde Lainco ya publica sus paquetes Node
+(`publishConfig.access: restricted`). El workflow de publicación es el paso 6.
 
 ---
 

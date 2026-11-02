@@ -82,6 +82,22 @@ public class ClienteSonarTests
     }
 
     [Fact]
+    public async Task Devuelve_tambien_las_reglas_ESLint_propias()
+    {
+        // En un repositorio mixto, sonar-sync de .NET y el de Node escriben el mismo
+        // archivo: los dos guardan las reglas de los dos motores (docs/FASE-5.md, T3).
+        ServidorSonarFalso servidor = QueResponde(Pagina(1, 4,
+            Issue("external_roslyn:LAIN004", "A.cs", "a"),
+            Issue("external_eslint_repo:lainco/no-hardcoded-secrets", "web/config.ts", "Secreto hardcodeado en 'API_KEY'"),
+            Issue("external_eslint_repo:no-debugger", "web/config.ts", "Unexpected 'debugger' statement."),
+            Issue("typescript:S1481", "web/config.ts", "Remove this unused variable.")));
+
+        IReadOnlyList<IssueAceptado> issues = await Buscar(servidor, OpcionesDePrueba());
+
+        Assert.Equal(new[] { "LAIN004", "lainco/no-hardcoded-secrets" }, issues.Select(issue => issue.Regla).ToArray());
+    }
+
+    [Fact]
     public async Task Devuelve_la_ruta_relativa_del_archivo_y_el_mensaje()
     {
         ServidorSonarFalso servidor = QueResponde(Pagina(1, 1,

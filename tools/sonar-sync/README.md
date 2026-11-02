@@ -77,9 +77,11 @@ Un `GET api/issues/search` con `componentKeys=<proyecto>` e
 `issueStatuses=ACCEPTED,FALSE_POSITIVE`, de a 500 issues por página (el máximo de la API),
 hasta cubrir el `paging.total`.
 
-El filtro de reglas se hace **del lado de la herramienta**: solo quedan las reglas
-`external_<motor>:LAIN###`. Las reglas de Sonar (`csharpsquid:...`) y las de los analyzers
-del SDK (`external_roslyn:CA...`) se descartan.
+El filtro de reglas se hace **del lado de la herramienta**: solo quedan las reglas propias,
+`external_<motor>:LAIN###` y `external_<motor>:lainco/<nombre>` (ESLint). Van las de los
+dos motores porque en un repositorio mixto la versión Node (`lainco-sonar-sync`, Fase 5)
+escribe el mismo archivo. Las reglas de Sonar (`csharpsquid:...`) y las de otros orígenes
+(`external_roslyn:CA...`, `external_eslint_repo:no-debugger`) se descartan.
 
 La API no entrega más de **10.000 issues por consulta**. Si el total de aceptados del
 proyecto lo supera, la herramienta **falla** en vez de generar un archivo incompleto.
@@ -223,6 +225,3 @@ así). Roslyn exige declararlos de antemano: **al crear una regla nueva hay que 
 la lista de `SupresorDeAceptados`**. Un test (`Cada_regla_LAIN_tiene_su_supresion`) falla
 si falta alguna.
 
-## Pendiente
-
-- **Reglas de ESLint** (Fase 5): cuando existan, habrá que sumar `lainco/<regla>` al filtro.

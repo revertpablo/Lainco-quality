@@ -1,0 +1,51 @@
+{
+  "name": "@lainco/eslint-plugin",
+  "version": "0.1.0",
+  "description": "Reglas propias de Lainco para TypeScript. Ver docs/FASE-5.md.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsx scripts/generar-catalogo.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "8.72.1"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0 || ^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/parser": "8.72.1",
+    "@typescript-eslint/rule-tester": "8.72.1",
+    "eslint": "10.14.0",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/revertpablo/Lainco-quality.git",
+    "directory": "src/ts/eslint-plugin"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "bin": {
+    "lainco-sonar-sync": "./dist/aceptados/cli.js"
+  }
+}

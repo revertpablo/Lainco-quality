@@ -1,0 +1,52 @@
+# Fase 5 — TypeScript
+
+Replicar para TypeScript el circuito que las fases 1, 2 y 4 armaron para C#: reglas propias
+en el IDE, issues en SonarQube Cloud, quality gate, y los issues aceptados ocultos en el
+IDE. Tareas y criterio de aceptación en `PLAN.md`, Fase 5.
+
+## Decisiones (2026-11-02)
+
+| # | Decisión |
+|---|---|
+| T1 | **Primera regla: `lainco/no-hardcoded-secrets`.** Cumple el papel de LAIN004 en la Fase 1: valida el circuito. Se eligió una regla que no trae ningún preset (`eslint:recommended`, typescript-eslint, React) y que es esencial en la industria (OWASP A07, credenciales embebidas). Detalle en `rules/lainco/no-hardcoded-secrets.md`. |
+| T2 | **npm privado en la organización `lainco` de npmjs.com** (paga), donde Lainco ya publica sus paquetes Node. Precisa D7: el scope `@lainco` existe y los paquetes son privados (`publishConfig.access: restricted`). |
+| T3 | **`sonar-sync` en Node, dentro de `@lainco/eslint-plugin`.** Un repositorio solo TypeScript no tiene por qué tener el SDK de .NET. Mismo formato de `sonar-accepted.json`, misma variable de token (`LAINCO_SONAR_TOKEN`), mismas reglas de cache y de falla silenciosa que la versión .NET. |
+| T4 | **La sample TypeScript vive en `samples/ts` y se analiza en el mismo proyecto de Sonar que la sample C#.** Así el repositorio es mixto y cubre la tarea 5 (convivencia con el scanner de .NET). |
+| T5 | **Símbolo calificado en TypeScript = nombre calificado dentro del módulo.** TypeScript no tiene namespaces de assembly: el mensaje lleva la cadena de nombres desde el nivel del módulo hasta el símbolo (`DbConfig.password`, `config.db.password`, `Conexion.abrir.token`). La ruta del archivo no va en el mensaje: ya es parte del issue, y el Processor matchea por archivo + regla + mensaje, igual que el suppressor. |
+| T6 | **La documentación de una regla ESLint está en `docs/rules/lainco/<nombre>.md`**, es decir `docs/rules/<ID>.md` con el ID tal cual. `meta.docs.url` apunta ahí. |
+| T7 | **Las reglas ESLint también nacen apagadas.** En ESLint ninguna regla de un plugin corre si la configuración no la nombra, así que R6 se cumple sin hacer nada: las enciende `@lainco/eslint-config`, que en la entrega 6.4 (parte ESLint) va a generar la app. Mientras tanto, como el `.globalconfig` en la Fase 1, se escribe a mano. Severidad por defecto `warn` (en el catálogo, `warning`); nunca `error`. |
+
+## Pasos
+
+| # | Paso | Estado |
+|---|---|---|
+| 1 | `src/ts/eslint-plugin`: scaffold (typescript-eslint `RuleCreator`, build con `tsc`, tests con `RuleTester` sobre vitest) y la regla `lainco/no-hardcoded-secrets`, tests primero, con su documentación. | **Hecho (2026-11-02)**: ESLint 10, typescript-eslint 8.72, TypeScript 6.0 (typescript-eslint todavía no admite la 7). La regla mira variables, properties de clase (también `this.x =`), objetos literales, asignaciones a miembros y valores por defecto; un nombre es de un secreto si su última palabra lo es, y el valor tiene que ser un texto no vacío y sin espacios. 48 tests (22 negativos, 26 positivos). Verificado con ESLint real sobre el plugin compilado. |
+| 2 | Catálogo `reglas-eslint.json` generado en el build del plugin, con el formato de `catalogo-de-reglas.md`. Falla si una regla no tiene documentación, si su ID no es `lainco/<kebab>` o si su `meta.docs.url` no lleva a su documentación. | **Hecho (2026-11-02)**: `scripts/catalogo.ts` y `scripts/generar-catalogo.ts`, al final de `npm run build`; deja `dist/reglas-eslint.json`. Además de lo pedido, falla si la regla no tiene título o categoría, si declara `meta.docs.recommended` (T7) o si un mensaje no lleva `{{simbolo}}`. 11 tests, uno sobre las reglas reales. El catálogo generado pasa el validador de la app (`leerCatalogo` de `app/src/catalogo/formato.ts`). |
+| 3 | `src/ts/eslint-config`: flat config que registra el plugin y enciende solo las reglas elegidas. Sin `recommended` de ESLint ni de typescript-eslint. | **Hecho (2026-11-02)**: las reglas y su severidad están en `reglas.json` (hoy a mano, `lainco/no-hardcoded-secrets` en `warn`; en la 6.4 lo va a generar la app). Solo admite `warn` u `off` y rechaza una regla que no existe. Registra los plugins `lainco` y `@typescript-eslint` sin encender nada de ellos; analiza `.ts`, `.tsx`, `.js` y variantes. Tests con ESLint real: corre la regla elegida y no corre ninguna recomendada (`debugger`, `any`, `var`). |
+| 4 | `sonar-sync` en Node (T3) y el Processor con `postprocess()`, activo solo fuera de CI. | **Hecho (2026-11-02)**: `lainco-sonar-sync` (en el plugin) repite la versión .NET: opciones, códigos de salida, candado (con vencimiento a los 2 minutos, porque Node no borra el archivo al morir el proceso), pausa de 15 minutos tras una falla y el mismo formato de archivo. Las **dos** versiones guardan ahora las reglas propias de los dos motores (`LAIN###` y `lainco/...`): en un repositorio mixto escriben el mismo archivo y, si no, se pisarían. El processor `lainco/aceptados` oculta por archivo + regla + mensaje, nunca en CI ni con `LAINCO_SUPPRESS_ACCEPTED=false`. Como ESLint no tiene un "antes del build", la configuración lanza la sincronización **en segundo plano** al cargarse (si el archivo tiene más de 8 horas); la clave del proyecto sale de `sonar-project.properties` o de `configurar({ sonar })`. Tests: 60 en el plugin y 5 en la config para esto, más uno nuevo en .NET (37 en total). Verificado con la CLI de ESLint sobre un repositorio de prueba (en local el aceptado se oculta; con `CI=true` el reporte JSON lo trae) y `lainco-sonar-sync` contra SonarCloud (sin token: código 1; token rechazado: código 2). Uso en `src/ts/README.md`. |
+| 5 | `samples/ts` con violaciones conocidas; en el workflow de Sonar, `eslint -f json -o eslint-report.json` y `sonar.eslint.reportPaths`. Verificar la convivencia con el scanner de .NET. | **Hecho y verificado en Sonar (2026-11-02, PR #4)**: el análisis del PR trajo exactamente los 3 issues de la sample como `external_eslint_repo:lainco/no-hardcoded-secrets` (la clave que esperan los dos sonar-sync), con el símbolo en el mensaje y en sus líneas, y ningún otro; el quality gate falló con `new_violations = 3`, como tiene que pasar. El scanner de .NET **sí indexa** los `.ts` que no son de un proyecto MSBuild: no hizo falta el plan B. Detalle de la implementación: `samples/ts` con 3 violaciones marcadas (`// >>> lainco/...`) y 4 contraejemplos (README de la sample). Consume `@lainco/eslint-config` compilado desde `src/ts`, como la sample C# consume el paquete del feed local, con la clave del proyecto por `configurar({ sonar })`. En `sonar.yml`: Node 22, `npm ci` + build de `src/ts`, ESLint con `-f json` (con `CI=true` no se oculta nada) y, en el `begin`, `sonar.eslint.reportPaths` y `sonar.exclusions` para `src/`, `tools/`, `app/` y `.github/`. La convivencia se apoya en el análisis multilenguaje del scanner de .NET 8+ (`sonar.scanner.scanAll`, activo por defecto), que también indexa los archivos que no pertenecen a un proyecto MSBuild; la documentación no lo dice explícitamente para archivos sueltos, así que **se confirma en el paso 7**: si los `.ts` no aparecen en Sonar, el plan B es incluirlos en un proyecto de la sample (`<Content Include>`). Verificado en local: los pasos nuevos del workflow dan un reporte con exactamente las 3 violaciones, y el YAML es válido. Los valores de ejemplo no se parecen a claves de ningún proveedor, para que el escaneo de secretos de GitHub no bloquee el push. |
+| 6 | Publicación: workflow que publica el plugin y la config en npm (T2) y crea el release con `reglas-eslint.json`. | Pendiente |
+| 7 | Verificación de punta a punta contra SonarQube Cloud: los criterios de las fases 2 y 4, para TypeScript. | **En curso**. Ver la tabla de abajo. |
+
+## Criterios de aceptación (fases 2 y 4, para TypeScript)
+
+| Criterio | Estado |
+|---|---|
+| El issue de `lainco/no-hardcoded-secrets` aparece en Sonar como issue externo | ✅ PR #4 |
+| El PR con una violación nueva hace fallar el quality gate | ✅ PR #4 (`new_violations = 3`) |
+| No aparece ningún issue que no sea de una regla elegida | ✅ en el PR #4. Ver la nota sobre JavaScript |
+| Un issue aceptado sigue aceptado después de moverse de línea | ⬜ Necesita que un revisor acepte un issue en Sonar |
+| Aceptar un issue en Sonar y sincronizar hace que desaparezca del IDE | ⬜ Necesita un issue aceptado y un `LAINCO_SONAR_TOKEN` real |
+| En CI el issue sigue llegando a Sonar y sigue figurando como aceptado | ⬜ Igual que el anterior |
+| Sin token o sin red, ESLint funciona igual | ✅ Tests y prueba contra SonarCloud (códigos 1 y 2, ESLint sigue) |
+
+### Nota: JavaScript no tiene perfil propio
+
+Para Sonar, **JavaScript es un lenguaje distinto de TypeScript, con su propio Quality
+Profile**, y en la Fase 0 solo se crearon `Lainco C#` y `Lainco Typescript`. Como el scanner
+de .NET indexa todos los archivos del repositorio, los `.js`/`.mjs` se analizan con el perfil
+por defecto de JavaScript (Sonar way): en `main` hay issues abiertos `javascript:S2871` y
+`jssecurity:S8707` sobre `.github/prueba/reducir-sarif.mjs`, que nadie eligió. Desde este PR
+`.github/**` queda en `sonar.exclusions`, pero el hueco sigue: **hace falta un perfil
+`Lainco JavaScript` vacío y default** (paso manual en SonarQube Cloud, como en la Fase 0) y
+que la app lo gestione igual que los otros dos (decisión pendiente, D5.1). |
