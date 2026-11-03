@@ -2,7 +2,7 @@ import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { corridaPrueba, muestraPrueba, regla, reglaEnCorrida, repositorioEnCorrida, resultadoPrueba } from "@/db/esquema";
-import { elegirMuestras, idDeDiagnostico, identidadDeMuestra } from "@/dominio/prueba";
+import { elegirMuestras, idDeDiagnostico, identidadDeMuestra, lenguajeDeDiagnostico } from "@/dominio/prueba";
 import { EstadoCorrida, EstadoRepositorioPrueba, EvaluacionMuestra, Lenguaje, Origen } from "@/dominio/valores";
 
 /**
@@ -33,6 +33,8 @@ export type ResultadoRecibido =
       commit: string;
       estado: "ok";
       diagnosticosDisponibles: string[];
+      /** Qué lenguajes se analizaron (E10). Sin el campo, todos. */
+      lenguajesAnalizados?: ("cs" | "ts")[];
       reglas: { diagnostico: string; cantidad: number; ubicaciones: UbicacionRecibida[] }[];
     }
   | { repositorio: string; commit?: string; estado: "error"; error: string };
@@ -55,14 +57,22 @@ type Transaccion = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 const ID_SONAR = /^S\d+$/;
 const ID_LAIN = /^LAIN\d{3}$/;
+/** Las de TypeScript (E8): de Sonar con el lenguaje adelante, y las ESLint propias. */
+const ID_SONAR_TS = /^ts:S\d+$/;
+const ID_LAINCO = /^lainco\//;
+const FAMILIAS = [ID_SONAR, ID_LAIN, ID_SONAR_TS, ID_LAINCO];
 
 /**
  * Si la regla se probó: su ID está entre los que trae el compilador. Si el job no informó
  * ninguno de esa familia (Sonar o propias), no se sabe: se da por probada, así un error del
  * job no hace pasar todas las reglas por "no se pueden probar".
  */
-function seProbo(diagnostico: string, disponibles: ReadonlySet<string>): boolean {
-  const familia = ID_SONAR.test(diagnostico) ? ID_SONAR : ID_LAIN;
+function seProbo(diagnostico: string, disponibles: ReadonlySet<string>, lenguajes: readonly string[] | undefined): boolean {
+  // E10: un repositorio sin C# no prueba las reglas de C#, ni uno sin TypeScript las de TypeScript.
+  if (lenguajes && !lenguajes.includes(lenguajeDeDiagnostico(diagnostico))) {
+    return false;
+  }
+  const familia = FAMILIAS.find((f) => f.test(diagnostico)) ?? ID_LAIN;
   const hayDeLaFamilia = [...disponibles].some((id) => familia.test(id));
   return !hayDeLaFamilia || disponibles.has(diagnostico);
 }
@@ -140,7 +150,7 @@ export async function registrarResultado({
       await marcarProbablesLocalmente(tx, disponibles);
 
       for (const r of resultado.reglas) {
-        if (!seProbo(r.diagnostico, disponibles)) {
+        if (!seProbo(r.diagnostico, disponibles, resultado.lenguajesAnalizados)) {
           continue;
         }
         const reglaId = porDiagnostico.get(r.diagnostico)!;
@@ -177,16 +187,25 @@ export async function registrarResultado({
  * Para todas las del inventario, no solo las de la corrida: así una regla que no está en
  * SonarAnalyzer.CSharp no puede entrar a En prueba (paso 7). Sin ninguna de Sonar en la
  * lista no se toca nada (sería un error del job, no que falten todas).
+ *
+ * Lo mismo para TypeScript (E9) con las de eslint-plugin-sonarjs (`ts:S####`), por separado:
+ * un repositorio sin C# no dice nada de las de C#, ni uno sin TypeScript de las de TypeScript.
  */
 async function marcarProbablesLocalmente(tx: Transaccion, disponibles: ReadonlySet<string>): Promise<void> {
-  const claves = [...disponibles].filter((id) => ID_SONAR.test(id)).map((id) => `csharpsquid:${id}`);
-  if (claves.length === 0) {
-    return;
+  const porLenguaje = [
+    { lenguaje: Lenguaje.CSharp, prefijo: "csharpsquid:", ids: [...disponibles].filter((id) => ID_SONAR.test(id)) },
+    { lenguaje: Lenguaje.TypeScript, prefijo: "typescript:", ids: [...disponibles].filter((id) => ID_SONAR_TS.test(id)).map((id) => id.slice("ts:".length)) },
+  ];
+  for (const { lenguaje, prefijo, ids } of porLenguaje) {
+    if (ids.length === 0) {
+      continue;
+    }
+    const claves = ids.map((id) => `${prefijo}${id}`);
+    await tx
+      .update(regla)
+      .set({ probableLocalmente: sql`${inArray(regla.clave, claves)}` })
+      .where(and(eq(regla.origen, Origen.Sonar), eq(regla.lenguaje, lenguaje), sql`${regla.clave} like ${`${prefijo}%`}`));
   }
-  await tx
-    .update(regla)
-    .set({ probableLocalmente: sql`${inArray(regla.clave, claves)}` })
-    .where(and(eq(regla.origen, Origen.Sonar), eq(regla.lenguaje, Lenguaje.CSharp), sql`${regla.clave} like 'csharpsquid:%'`));
 }
 
 /** Guarda las muestras de una regla en un repositorio; devuelve cuántas. */

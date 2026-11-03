@@ -1,4 +1,4 @@
-import { EstadoCorrida, EvaluacionMuestra, Origen } from "./valores";
+import { EstadoCorrida, EvaluacionMuestra, Lenguaje, Origen } from "./valores";
 
 /**
  * El estado En prueba (entrega 6.5, parte C#) sin base ni red: el `.globalconfig` con el que
@@ -7,6 +7,10 @@ import { EstadoCorrida, EvaluacionMuestra, Origen } from "./valores";
  * muestra (E1), la tasa de falsos positivos y las corridas que cuentan para el mínimo (E3).
  *
  * Ver docs/FASE-6-APP.md, sección 8 quater, y docs/FASE-6.md, sección 8.
+ *
+ * Parte TypeScript (FASE-6-APP.md, sección 8 sexies): las reglas de Sonar para TypeScript y
+ * las ESLint propias se prueban con ESLint en el mismo job y la misma corrida. Su ID lleva el
+ * lenguaje (`ts:S1481`) para no chocar con el de la misma regla de C# (`S1481`), decisión E8.
  */
 
 export class ErrorDePrueba extends Error {}
@@ -16,24 +20,44 @@ const SONAR_CS = /^csharpsquid:(S\d+)$/;
 const ID_SONAR = /^S\d+$/;
 /** Una regla Roslyn propia: la clave es el ID del diagnóstico. */
 const LAIN = /^LAIN\d{3}$/;
+/** Una regla de Sonar para TypeScript (`typescript:S1481`): en la prueba, `ts:S1481` (E8). */
+const SONAR_TS = /^typescript:(S\d+)$/;
+const ID_SONAR_TS = /^ts:(S\d+)$/;
+/** Una regla ESLint propia: la clave es el ID de la regla en ESLint. */
+const LAINCO = /^lainco\/[a-z0-9]+(-[a-z0-9]+)*$/;
 
 interface ReglaAProbar {
   origen: Origen;
   clave: string;
 }
 
-/** El ID con el que el compilador reporta la regla. Solo hay de C# (alcance de la 6.5). */
+/**
+ * El ID con el que el job reporta la regla: el del compilador para C#, `ts:S####` o la clave
+ * ESLint para TypeScript.
+ */
 export function idDeDiagnostico({ origen, clave }: ReglaAProbar): string {
   if (origen === Origen.Sonar) {
     const id = SONAR_CS.exec(clave)?.[1];
     if (id) {
       return id;
     }
+    const deTs = SONAR_TS.exec(clave)?.[1];
+    if (deTs) {
+      return `ts:${deTs}`;
+    }
   }
   if (origen === Origen.Roslyn && LAIN.test(clave)) {
     return clave;
   }
-  throw new ErrorDePrueba(`La regla ${clave} (${origen}) no se prueba con el job de C#.`);
+  if (origen === Origen.Eslint && LAINCO.test(clave)) {
+    return clave;
+  }
+  throw new ErrorDePrueba(`La regla ${clave} (${origen}) no se prueba con el job.`);
+}
+
+/** El lenguaje de un ID de diagnóstico: C# lo prueba el compilador; TypeScript, ESLint. */
+export function lenguajeDeDiagnostico(id: string): Lenguaje {
+  return ID_SONAR_TS.test(id) || LAINCO.test(id) ? Lenguaje.TypeScript : Lenguaje.CSharp;
 }
 
 /** La regla del inventario de un `ruleId` del SARIF, o null si no es de una regla que la app conoce. */
@@ -43,6 +67,13 @@ export function claveDeDiagnostico(ruleId: string): ReglaAProbar | null {
   }
   if (LAIN.test(ruleId)) {
     return { origen: Origen.Roslyn, clave: ruleId };
+  }
+  const deTs = ID_SONAR_TS.exec(ruleId)?.[1];
+  if (deTs) {
+    return { origen: Origen.Sonar, clave: `typescript:${deTs}` };
+  }
+  if (LAINCO.test(ruleId)) {
+    return { origen: Origen.Eslint, clave: ruleId };
   }
   return null;
 }
@@ -59,6 +90,10 @@ export function claveDeDiagnostico(ruleId: string): ReglaAProbar | null {
  */
 export function generarGlobalconfigDePrueba(reglas: readonly ReglaAProbar[]): string {
   const ids = [...new Set(reglas.map(idDeDiagnostico))].sort();
+  const deTs = ids.filter((id) => lenguajeDeDiagnostico(id) !== Lenguaje.CSharp);
+  if (deTs.length > 0) {
+    throw new ErrorDePrueba(`El .globalconfig de prueba es solo para C#: ${deTs.join(", ")} se prueban con ESLint.`);
+  }
   return [
     "# Configuración de prueba de reglas, generada por la app de catálogo (entrega 6.5).",
     "# La usa el job de prueba al compilar cada repositorio. No se edita a mano.",
@@ -179,7 +214,7 @@ export function elegirMuestras<T extends { archivo: string; mensaje: string }>(
   return [...primero, ...despues].slice(0, maximo).map(([, u]) => u);
 }
 
-/** Si el job de prueba de C# puede correr la regla (alcance de la 6.5): de Sonar para C# o LAIN###. */
+/** Si el job de prueba puede correr la regla: de Sonar para C# o TypeScript, LAIN### o lainco/... */
 export function seProbaConElJob(regla: ReglaAProbar): boolean {
   try {
     idDeDiagnostico(regla);

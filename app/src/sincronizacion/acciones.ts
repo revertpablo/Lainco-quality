@@ -9,6 +9,7 @@ import { clienteSonarDesdeEntorno } from "@/sonar/configuracion";
 
 import type { ResumenDeSincronizacion } from "./corrida";
 import { describirResumenes } from "./resumen";
+import { sincronizarEslint } from "./sincronizarEslint";
 import { sincronizarRoslyn } from "./sincronizarRoslyn";
 import { sincronizarSonar } from "./sincronizarSonar";
 
@@ -19,11 +20,11 @@ export interface ResultadoDelBoton {
 
 /**
  * Botón "Sincronizar ahora" (FASE-6.md, sección 3: "ejecutable a demanda desde la app"):
- * sincroniza todos los orígenes, Sonar y Roslyn (entrega 6.4), a la vez. Lo puede usar
+ * sincroniza todos los orígenes, Sonar, Roslyn y ESLint (entrega 6.4), a la vez. Lo puede usar
  * cualquier usuario con sesión: no cambia el estado de ninguna regla.
  *
- * Si falta la configuración de un origen, ese origen dice por qué y el otro se sincroniza
- * igual.
+ * Si falta la configuración de un origen, ese origen dice por qué y los otros se
+ * sincronizan igual.
  */
 export async function sincronizarAhora(): Promise<ResultadoDelBoton> {
   const usuario = await exigirUsuario();
@@ -32,6 +33,7 @@ export async function sincronizarAhora(): Promise<ResultadoDelBoton> {
   const corridas = await Promise.all([
     corridaDe("Sonar", () => sincronizarSonar({ db, sonar: clienteSonarDesdeEntorno(), disparadaPorId: usuario.id })),
     corridaDe("Roslyn", () => sincronizarRoslyn({ db, github: clienteGitHubDesdeEntorno(), disparadaPorId: usuario.id })),
+    corridaDe("ESLint", () => sincronizarEslint({ db, github: clienteGitHubDesdeEntorno(), disparadaPorId: usuario.id })),
   ]);
 
   refresh();

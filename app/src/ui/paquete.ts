@@ -23,13 +23,25 @@ export interface DescripcionDePr {
  * la última sincronización de Roslyn): hasta que el workflow publica la versión y la app
  * la sincroniza, el cambio todavía no llegó a los repositorios.
  */
-export function describirPr(pr: PrParaDescribir, versionPublicada: string | null, fecha: (d: Date) => string): DescripcionDePr {
+export function describirPr(
+  pr: PrParaDescribir,
+  versionPublicada: string | null,
+  fecha: (d: Date) => string,
+  /**
+   * @lainco/eslint-config: la app no ve las versiones publicadas en npm (es privado), y la
+   * sincronización trae la del plugin, no la de la config. Mergeado, lo publica el workflow.
+   */
+  sinVersionPublicada = false,
+): DescripcionDePr {
   const propone = pr.version ? ` la ${pr.version}` : "";
   switch (pr.estado) {
     case EstadoPr.Abierto:
       return { texto: `Abierto: propone${propone || " una versión nueva"}. Al mergearlo, se publica.`, tono: "alerta" };
     case EstadoPr.Mergeado: {
       const mergeado = `Mergeado el ${fecha(pr.mergeadoEn!)}`;
+      if (sinVersionPublicada) {
+        return { texto: pr.version ? `${mergeado}: el workflow publica la ${pr.version} en npm.` : `${mergeado}.`, tono: "normal" };
+      }
       if (!pr.version || (versionPublicada !== null && compararVersiones(versionPublicada, pr.version) >= 0)) {
         return { texto: pr.version ? `${mergeado}: la ${pr.version} ya está publicada.` : `${mergeado}.`, tono: "normal" };
       }

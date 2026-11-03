@@ -131,6 +131,9 @@ a mano: `npx drizzle-kit generate --custom --name <nombre>` crea el archivo vac�
 | `0011_tokens_de_servicio` | Entrega 6.5, paso 1: `tokenServicio` (los tokens con los que los jobs de CI entran a `/api/ci/`: hash, prefijo, alcance, vencimiento, último uso y baja) y su tabla de referencia `alcanceToken`, con el alcance `prueba`. |
 | `0012_corridas_de_prueba` | Entrega 6.5, paso 2: `corridaPrueba` (cada corrida del job de prueba), `reglaEnCorrida` y `repositorioEnCorrida` (qué probó y dónde, y cómo le fue a cada repositorio), `resultadoPrueba` (issues por regla y repositorio, cero incluido) y `muestraPrueba` (referencias al código para evaluar, sin código; una por regla, repositorio, archivo y mensaje). Tablas de referencia `estadoCorrida`, `estadoRepositorioPrueba` y `evaluacionMuestra`, con sus valores. |
 
+| `0013_en_analisis_y_en_duda` | "A revisar" pasa a llamarse En análisis (`enAnalisis`) y se agrega el estado En duda. |
+| `0014_paquete_eslint` | Entrega 6.4, parte ESLint (L4): `prConfiguracion.paquete` y `revisionPaquete.paquete` (`roslyn` o `eslint`; los existentes quedan en `roslyn`) y el tipo de desvío `reglasEslintDistintas`. |
+
 Las tablas de las entregas siguientes (sugerencias de IA, relaciones) se agregan con su propia migración cuando se implementan.
 
 `.env.example` lista las variables que hacen falta. Nunca se commitean valores reales.

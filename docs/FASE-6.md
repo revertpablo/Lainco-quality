@@ -256,6 +256,7 @@ Probar una regla no puede afectar el quality gate de producción. Tampoco convie
 
 - C#: los IDs de `SonarAnalyzer.CSharp` coinciden con las claves de Sonar (`S2325` ↔ `csharpsquid:S2325`).
 - TypeScript: los nombres de regla de `eslint-plugin-sonarjs` no coinciden con las claves de Sonar. Hay que construir y mantener un mapeo; verificar si el plugin expone la clave de Sonar en su metadata para generarlo automáticamente.
+  **Verificado (2026-11-02)**: sí, la expone en `meta.docs.url` (las 295 reglas de la 4.2.2); el mapeo se genera solo. Ver `FASE-6-APP.md`, sección 8 sexies (E9).
 - Algunas reglas de Sonar no existen en estos paquetes (por ejemplo, las que dependen de análisis que solo hace el motor de Sonar). Se marcan como **"no probable localmente"**: pueden pasar de En análisis (o En duda) a Incorporada sin prueba.
 
 ### Qué muestra la app por regla en prueba

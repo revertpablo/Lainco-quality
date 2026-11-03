@@ -32,7 +32,7 @@ export function SeccionPrueba({ prueba, enPrueba, seProbaConElJob }: { prueba: P
       </h2>
       <div className="flex flex-col gap-5 px-5 py-4 text-sm lg:px-7">
         {!seProbaConElJob ? (
-          <p className="text-tenue">El job de prueba corre reglas de C# (de Sonar y propias). Las de TypeScript se suman con la Fase 5.</p>
+          <p className="text-tenue">El job de prueba corre reglas de C# y de TypeScript, de Sonar y propias. Esta no es de ninguno de los dos.</p>
         ) : (
           <>
             {enPrueba && (

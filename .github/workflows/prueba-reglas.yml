@@ -12,6 +12,9 @@
 #   3. Por cada repositorio: lo clona, lo compila con .github/prueba/Prueba.targets (agrega
 #      los analyzers y el .globalconfig sin tocar el repositorio), reduce los SARIF y manda
 #      el resultado. Un repositorio que no compila queda con su error y sigue el próximo.
+#      Las reglas de TypeScript (de Sonar, con eslint-plugin-sonarjs, y las propias) las
+#      corre ESLint con .github/prueba/prueba-eslint.mjs, en los repositorios que tienen
+#      archivos .ts (entrega 6.5, parte TypeScript).
 #
 # Los pasos están en .github/scripts/prueba-reglas.sh. Configuración (app/README.md,
 # "Prueba de reglas"):
@@ -70,8 +73,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Probar el reductor de SARIF
+      - name: Probar los reductores (SARIF y ESLint)
         run: node --test .github/prueba/*.test.mjs
+
+      # La parte TypeScript: @lainco/eslint-plugin desde este repositorio (es privado en npm)
+      # y ESLint con eslint-plugin-sonarjs, en las versiones fijas de .github/prueba/eslint.
+      - name: Compilar @lainco/eslint-plugin
+        working-directory: src/ts
+        run: |
+          npm ci
+          npm run build --workspace eslint-plugin
+
+      - name: Instalar ESLint para la prueba
+        working-directory: .github/prueba/eslint
+        run: npm ci
 
       - name: Probar las reglas
         # Con bash: desde Windows el script llega a git sin permiso de ejecución.

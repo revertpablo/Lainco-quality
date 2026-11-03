@@ -3,11 +3,13 @@ import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { Db } from "@/db/cliente";
 import { decision, estado, estadoRegla, prConfiguracion, publicacion, regla, usuario } from "@/db/esquema";
 import { despuesDeFallar, type TipoDeFalla } from "@/dominio/publicacion";
-import { AccionPublicacion, DestinoPublicacion, Estado, EstadoPr, EstadoPublicacion, Origen } from "@/dominio/valores";
+import { AccionPublicacion, DestinoPublicacion, Estado, EstadoPr, EstadoPublicacion, Origen, type OrigenDePaquete } from "@/dominio/valores";
 import { ErrorDeGitHub, type ClienteGitHub, type PrDeGitHub } from "@/github/cliente";
 
-import { ErrorDeGlobalconfig, generarGlobalconfig } from "./globalconfig";
-import { cuerpoDelPr, ErrorDelPr, planDelPr, RUTAS, tituloDelPr, type ArchivosDeMain, type DecisionDeRegla } from "./pr";
+import { ErrorDeGlobalconfig } from "./globalconfig";
+import { PAQUETE_ROSLYN, type DefinicionDelPaquete } from "./paquetes";
+import { cuerpoDelPr, ErrorDelPr, type DecisionDeRegla } from "./pr";
+import { ErrorDeReglasJson } from "./reglasJson";
 
 /**
  * Publicar en el paquete (entrega 6.4, paso 6; decisiones R4 y R5): lleva al
@@ -31,13 +33,14 @@ import { cuerpoDelPr, ErrorDelPr, planDelPr, RUTAS, tituloDelPr, type ArchivosDe
  * publique la versión es el seguimiento del paso 7. Si GitHub falla, se reintenta como la
  * publicación en Sonar (src/dominio/publicacion.ts). Dos corridas a la vez no se pisan: la
  * segunda espera el lock y, si la primera publicó todo, no encuentra nada pendiente.
+ *
+ * Lo mismo para @lainco/eslint-config y su `reglas.json` (entrega 6.4, parte ESLint,
+ * decisión L3): cada paquete tiene su PR, su rama y su lock, y toma solo las
+ * publicaciones de las reglas de su origen (./paquetes.ts).
  */
 
-/** La rama del PR de configuración (R5). */
-export const RAMA_DEL_PR = "catalogo/globalconfig";
-
-/** Identifica el lock de la publicación en el paquete (pg_advisory_xact_lock). */
-const LOCK_PUBLICAR_PAQUETE = 6_400_601;
+/** La rama del PR de configuración de Lainco.Analyzers (R5). */
+export const RAMA_DEL_PR = PAQUETE_ROSLYN.rama;
 
 export interface OpcionesDePublicacionDelPaquete {
   db: Db;
@@ -54,6 +57,8 @@ export interface OpcionesDePublicacionDelPaquete {
    * paquete (paso 7), cuando main cambió por fuera de la app.
    */
   forzar?: boolean;
+  /** Qué paquete. Por defecto, Lainco.Analyzers. */
+  paquete?: DefinicionDelPaquete;
 }
 
 export interface ResumenDelPaquete {
@@ -73,47 +78,50 @@ export async function publicarPaquete({
   base = "main",
   sinEsperar = false,
   forzar = false,
+  paquete = PAQUETE_ROSLYN,
 }: OpcionesDePublicacionDelPaquete): Promise<ResumenDelPaquete> {
   const resumen: ResumenDelPaquete = { publicadas: 0, reprogramadas: 0, fallidas: 0, pr: null, version: null, error: null };
 
   return db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(${LOCK_PUBLICAR_PAQUETE})`);
+    await tx.execute(sql`select pg_advisory_xact_lock(${paquete.lockPublicar})`);
 
     const pendientes = await tx
       .select({ id: publicacion.id, intentos: publicacion.intentos, reglaId: publicacion.reglaId })
       .from(publicacion)
+      .innerJoin(regla, eq(regla.id, publicacion.reglaId))
       .where(
         and(
           eq(publicacion.destino, DestinoPublicacion.PrConfiguracion),
+          eq(regla.origen, paquete.origen),
           eq(publicacion.estado, EstadoPublicacion.Pendiente),
           sinEsperar ? undefined : lte(publicacion.proximoIntentoEn, sql`now()`),
         ),
       )
       .orderBy(asc(publicacion.creadaEn))
-      .for("update", { skipLocked: true });
+      .for("update", { of: publicacion, skipLocked: true });
     if (pendientes.length === 0 && !forzar) {
       return resumen;
     }
 
-    const reglas = await reglasDelPaquete(tx);
+    const reglas = await reglasDelPaquete(tx, paquete.origen);
 
     let pr: PrDeGitHub | null;
     try {
-      const globalconfig = generarGlobalconfig(reglas);
+      const generado = paquete.generar(reglas);
 
       const commitBase = await github.commitDeRama(base);
       if (!commitBase) {
         throw new ErrorDelPr(`No existe la rama ${base} en el repositorio.`);
       }
-      const main = await leerDeMain(github, commitBase, base);
-      const plan = planDelPr({ main, globalconfig });
-      const abierto = await github.prAbierto(RAMA_DEL_PR);
+      const main = await leerDeMain(github, commitBase, base, paquete);
+      const plan = paquete.plan(main, generado);
+      const abierto = await github.prAbierto(paquete.rama);
 
       if (!plan) {
         // main ya tiene lo que dice la app: un PR abierto ya no propone nada.
         if (abierto) {
           await github.actualizarPr(abierto.numero, {
-            cuerpo: `Se cerró solo: \`${base}\` ya tiene el \`.globalconfig\` que dice el catálogo de reglas.`,
+            cuerpo: `Se cerró solo: \`${base}\` ya tiene el \`${paquete.archivo}\` que dice el catálogo de reglas.`,
             cerrar: true,
           });
           await tx
@@ -123,29 +131,29 @@ export async function publicarPaquete({
         }
         pr = null;
       } else {
-        const decisiones = await ultimasDecisiones(tx, plan.cambios.map((c) => c.clave));
-        const titulo = tituloDelPr(plan.version);
-        const cuerpo = cuerpoDelPr({ ...plan, decisiones });
+        const decisiones = await ultimasDecisiones(tx, plan.cambios.map((c) => c.clave), paquete.origen);
+        const titulo = paquete.titulo(plan.version);
+        const cuerpo = cuerpoDelPr({ ...plan, decisiones, paquete });
 
         const commit = await github.crearCommit({ base: commitBase, mensaje: titulo, archivos: plan.archivos });
-        if (await github.commitDeRama(RAMA_DEL_PR)) {
-          await github.moverRama(RAMA_DEL_PR, commit);
+        if (await github.commitDeRama(paquete.rama)) {
+          await github.moverRama(paquete.rama, commit);
         } else {
-          await github.crearRama(RAMA_DEL_PR, commit);
+          await github.crearRama(paquete.rama, commit);
         }
 
         if (abierto) {
           await github.actualizarPr(abierto.numero, { titulo, cuerpo });
           pr = abierto;
         } else {
-          pr = await github.crearPr({ titulo, cuerpo, rama: RAMA_DEL_PR, base });
+          pr = await github.crearPr({ titulo, cuerpo, rama: paquete.rama, base });
         }
         resumen.version = plan.version;
 
         // El seguimiento (paso 7) arranca acá: abierto, con la versión que propone.
         await tx
           .insert(prConfiguracion)
-          .values({ numero: pr.numero, url: pr.url, version: plan.version })
+          .values({ numero: pr.numero, paquete: paquete.origen, url: pr.url, version: plan.version })
           .onConflictDoUpdate({
             target: prConfiguracion.numero,
             set: { url: pr.url, version: plan.version, estado: EstadoPr.Abierto, actualizadoEn: sql`now()`, mergeadoEn: null, cerradoEn: null },
@@ -196,27 +204,30 @@ export async function publicarPaquete({
   });
 }
 
-async function leerDeMain(github: OpcionesDePublicacionDelPaquete["github"], commit: string, base: string): Promise<ArchivosDeMain> {
-  const leer = async (ruta: string) => {
-    const contenido = await github.leerArchivo(ruta, commit);
-    if (contenido === null) {
-      throw new ErrorDelPr(`No está ${ruta} en ${base}.`);
-    }
-    return contenido;
-  };
-  const [globalconfig, csproj, shipped, unshipped] = await Promise.all([
-    leer(RUTAS.globalconfig),
-    leer(RUTAS.csproj),
-    leer(RUTAS.shipped),
-    leer(RUTAS.unshipped),
-  ]);
-  return { globalconfig, csproj, shipped, unshipped };
+/** Los archivos de main que necesita el plan del paquete, por ruta. */
+async function leerDeMain(
+  github: OpcionesDePublicacionDelPaquete["github"],
+  commit: string,
+  base: string,
+  paquete: DefinicionDelPaquete,
+): Promise<Map<string, string>> {
+  const rutas = [paquete.rutas.configuracion, paquete.rutas.version, ...paquete.rutas.otras];
+  const contenidos = await Promise.all(
+    rutas.map(async (ruta) => {
+      const contenido = await github.leerArchivo(ruta, commit);
+      if (contenido === null) {
+        throw new ErrorDelPr(`No está ${ruta} en ${base}.`);
+      }
+      return [ruta, contenido] as const;
+    }),
+  );
+  return new Map(contenidos);
 }
 
 type Transaccion = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
-/** Las reglas Roslyn con su estado: de lo que sale el `.globalconfig`. */
-export function reglasDelPaquete(db: Pick<Db, "select">) {
+/** Las reglas propias de un origen con su estado: de lo que sale el archivo de configuración. */
+export function reglasDelPaquete(db: Pick<Db, "select">, origen: OrigenDePaquete = Origen.Roslyn) {
   return db
     .select({
       id: regla.id,
@@ -228,14 +239,14 @@ export function reglasDelPaquete(db: Pick<Db, "select">) {
     })
     .from(regla)
     .innerJoin(estadoRegla, eq(estadoRegla.reglaId, regla.id))
-    .where(eq(regla.origen, Origen.Roslyn));
+    .where(eq(regla.origen, origen));
 }
 
 /**
- * Para la descripción del PR, la decisión que explica el estado de cada regla Roslyn: la
- * última que la llevó al estado en que está.
+ * Para la descripción del PR, la decisión que explica el estado de cada regla del paquete:
+ * la última que la llevó al estado en que está.
  */
-async function ultimasDecisiones(tx: Transaccion, claves: string[]): Promise<Map<string, DecisionDeRegla>> {
+async function ultimasDecisiones(tx: Transaccion, claves: string[], origen: OrigenDePaquete): Promise<Map<string, DecisionDeRegla>> {
   if (claves.length === 0) return new Map();
   const filas = await tx
     .selectDistinctOn([regla.id], {
@@ -251,7 +262,7 @@ async function ultimasDecisiones(tx: Transaccion, claves: string[]): Promise<Map
     .innerJoin(estado, eq(estado.codigo, decision.estadoNuevo))
     .innerJoin(usuario, eq(usuario.id, decision.autorId))
     .innerJoin(estadoRegla, and(eq(estadoRegla.reglaId, regla.id), eq(estadoRegla.estado, decision.estadoNuevo)))
-    .where(and(eq(regla.origen, Origen.Roslyn), inArray(regla.clave, claves)))
+    .where(and(eq(regla.origen, origen), inArray(regla.clave, claves)))
     .orderBy(regla.id, desc(decision.fecha));
   return new Map(filas.map(({ clave, ...d }) => [clave, d]));
 }
@@ -264,7 +275,7 @@ async function ultimasDecisiones(tx: Transaccion, claves: string[]): Promise<Map
  */
 function clasificar(e: unknown): { falla: TipoDeFalla; mensaje: string } {
   const mensaje = e instanceof Error ? e.message : String(e);
-  if (e instanceof ErrorDelPr || e instanceof ErrorDeGlobalconfig) {
+  if (e instanceof ErrorDelPr || e instanceof ErrorDeGlobalconfig || e instanceof ErrorDeReglasJson) {
     return { falla: "permanente", mensaje };
   }
   if (e instanceof ErrorDeGitHub) {

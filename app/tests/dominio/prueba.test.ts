@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   claveDeDiagnostico,
+  lenguajeDeDiagnostico,
   corridasQueCuentan,
   corridasQueFaltan,
   elegirMuestras,
@@ -35,13 +36,32 @@ describe("idDeDiagnostico", () => {
     expect(idDeDiagnostico(roslyn("LAIN001"))).toBe("LAIN001");
   });
 
+  it("una regla de Sonar para TypeScript lleva el lenguaje, para no chocar con la de C# (E8)", () => {
+    expect(idDeDiagnostico({ origen: Origen.Sonar, clave: "typescript:S1481" })).toBe("ts:S1481");
+  });
+
+  it("una regla ESLint propia es su clave", () => {
+    expect(idDeDiagnostico({ origen: Origen.Eslint, clave: "lainco/no-hardcoded-secrets" })).toBe("lainco/no-hardcoded-secrets");
+  });
+
   it.each([
-    ["de Sonar para TypeScript", { origen: Origen.Sonar, clave: "typescript:S1234" }],
-    ["de ESLint", { origen: Origen.Eslint, clave: "lainco/no-algo" }],
     ["norma de IA", { origen: Origen.NormaIa, clave: "LAIN-D012" }],
     ["Roslyn con otra forma", roslyn("CA1822")],
-  ])("una regla %s no se puede probar con el job de C#", (_caso, regla) => {
+    ["de Sonar para JavaScript (D5.1)", { origen: Origen.Sonar, clave: "javascript:S1481" }],
+    ["ESLint con otra forma", { origen: Origen.Eslint, clave: "no-debugger" }],
+  ])("una regla %s no se puede probar con el job", (_caso, regla) => {
     expect(() => idDeDiagnostico(regla)).toThrow(ErrorDePrueba);
+  });
+});
+
+describe("lenguajeDeDiagnostico", () => {
+  it.each([
+    ["S2325", "cs"],
+    ["LAIN001", "cs"],
+    ["ts:S1481", "ts"],
+    ["lainco/no-hardcoded-secrets", "ts"],
+  ])("%s es de %s", (id, lenguaje) => {
+    expect(lenguajeDeDiagnostico(id)).toBe(lenguaje);
   });
 });
 
@@ -49,9 +69,11 @@ describe("claveDeDiagnostico", () => {
   it("traduce el ruleId del SARIF a la regla del inventario", () => {
     expect(claveDeDiagnostico("S2325")).toEqual(sonar("S2325"));
     expect(claveDeDiagnostico("LAIN001")).toEqual(roslyn("LAIN001"));
+    expect(claveDeDiagnostico("ts:S1481")).toEqual({ origen: Origen.Sonar, clave: "typescript:S1481" });
+    expect(claveDeDiagnostico("lainco/no-hardcoded-secrets")).toEqual({ origen: Origen.Eslint, clave: "lainco/no-hardcoded-secrets" });
   });
 
-  it.each(["CS0168", "CA1822", "IDE0005", "AD0001", "s2325", "LAIN01", ""])("%s no es de una regla del inventario", (id) => {
+  it.each(["CS0168", "CA1822", "IDE0005", "AD0001", "s2325", "LAIN01", "", "sonarjs/no-unused-vars", "js:S1481"])("%s no es de una regla del inventario", (id) => {
     expect(claveDeDiagnostico(id)).toBeNull();
   });
 });
@@ -263,11 +285,12 @@ describe("elegirMuestras", () => {
 });
 
 describe("seProbaConElJob", () => {
-  it("las de Sonar para C# y las LAIN, sí; las demás, no", () => {
+  it("las de Sonar para C# y TypeScript, las LAIN y las lainco/, sí; las demás, no", () => {
     expect(seProbaConElJob(sonar("S1118"))).toBe(true);
     expect(seProbaConElJob(roslyn("LAIN001"))).toBe(true);
-    expect(seProbaConElJob({ origen: Origen.Sonar, clave: "typescript:S1118" })).toBe(false);
-    expect(seProbaConElJob({ origen: Origen.Eslint, clave: "lainco/no-algo" })).toBe(false);
+    expect(seProbaConElJob({ origen: Origen.Sonar, clave: "typescript:S1118" })).toBe(true);
+    expect(seProbaConElJob({ origen: Origen.Eslint, clave: "lainco/no-algo" })).toBe(true);
+    expect(seProbaConElJob({ origen: Origen.Sonar, clave: "javascript:S1118" })).toBe(false);
     expect(seProbaConElJob({ origen: Origen.NormaIa, clave: "LAIN-D012" })).toBe(false);
   });
 });

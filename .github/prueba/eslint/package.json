@@ -1,0 +1,13 @@
+{
+  "name": "lainco-prueba-eslint",
+  "private": true,
+  "description": "Herramientas de la parte TypeScript del job de prueba de reglas (entrega 6.5). Las usa ../prueba-eslint.mjs. Versiones fijas: las reglas de Sonar se prueban con esta versión de eslint-plugin-sonarjs.",
+  "type": "module",
+  "dependencies": {
+    "@lainco/eslint-plugin": "file:../../../src/ts/eslint-plugin",
+    "eslint": "10.14.0",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

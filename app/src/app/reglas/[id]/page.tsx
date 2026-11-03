@@ -9,7 +9,7 @@ import { aParametros, leerFiltros } from "@/dominio/filtros";
 import { seProbaConElJob } from "@/dominio/prueba";
 import { destinoDePublicacion } from "@/dominio/publicacion";
 import { MENSAJES_DE_RECHAZO, seEligeLaSeveridad, transicionesDisponibles } from "@/dominio/transiciones";
-import { DestinoPublicacion, Estado, Rol } from "@/dominio/valores";
+import { DestinoPublicacion, Estado, Origen, Rol } from "@/dominio/valores";
 import { opcionesDeFiltro } from "@/inventario/consulta";
 import { publicarPaqueteAhora } from "@/paquete/acciones";
 import { minimoDeCorridas } from "@/prueba/configuracion";
@@ -78,12 +78,14 @@ async function Detalle({ params, searchParams }: PageProps<"/reglas/[id]">) {
   const disponibles = transicionesDisponibles(regla.estado, usuario.rol);
   const destino = destinoDePublicacion(regla.origen);
   const enSonar = describirEstadoEnSonar(publicada, regla.estado, (d) => fechaCorta.format(d));
-  // Reglas propias (entrega 6.4): la severidad con la que va al .globalconfig es la de la regla.
+  // Reglas propias (entrega 6.4): la severidad con la que va al .globalconfig (o al
+  // reglas.json, si es de ESLint) es la de la regla.
   const enElPaquete = describirEstadoEnPaquete(
     publicada,
     regla.estado,
     regla.severidadAsignada ?? regla.severidadDefault,
     (d) => fechaCorta.format(d),
+    regla.origen === Origen.Eslint,
   );
 
   // Lo que la prueba de reglas no deja hacer todavía (entrega 6.5): se avisa al elegirlo.

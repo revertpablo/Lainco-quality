@@ -1,18 +1,20 @@
 import "server-only";
 
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import type { Db } from "@/db/cliente";
 import { desvio, estadoPr, prConfiguracion, publicacion, revisionPaquete, sincronizacion, usuario } from "@/db/esquema";
-import { DestinoPublicacion, EstadoSincronizacion, Origen, type EstadoPr, type EstadoSincronizacion as TipoEstadoSincronizacion } from "@/dominio/valores";
+import { DESVIOS_DEL_PAQUETE, DestinoPublicacion, EstadoSincronizacion, type EstadoPr, type EstadoSincronizacion as TipoEstadoSincronizacion } from "@/dominio/valores";
 import { fallidaVigente, publicacionesSinPublicar, type PublicacionParaMostrar } from "@/publicacion/consultas";
 
-import { DESVIO_DEL_PAQUETE, type DetalleDelDesvioDelPaquete } from "./revisar";
+import { PAQUETE_ROSLYN, type DefinicionDelPaquete } from "./paquetes";
+import type { DetalleDelDesvioDelPaquete } from "./revisar";
 
 /**
  * Lo que muestra la pantalla Paquete (entrega 6.4, paso 7) y el aviso de su sección en el
  * encabezado: la versión publicada, los PRs de configuración, lo que falta pasar al
- * paquete y el desvío, si hay.
+ * paquete y el desvío, si hay. Uno por paquete: Lainco.Analyzers y @lainco/eslint-config
+ * (entrega 6.4, parte ESLint, L4).
  */
 
 export interface PrParaMostrar {
@@ -29,7 +31,7 @@ export interface PrParaMostrar {
 }
 
 export interface EstadoDelPaquete {
-  /** La versión de la última sincronización de Roslyn que terminó bien: `Lainco.Analyzers 0.1.1`. */
+  /** La versión de la última sincronización del origen que terminó bien: `Lainco.Analyzers 0.1.1`. */
   publicada: { version: string; sincronizadaEn: Date } | null;
   ultimaRevision: {
     iniciadaEn: Date;
@@ -45,12 +47,12 @@ export interface EstadoDelPaquete {
   desvio: { id: string; detalle: DetalleDelDesvioDelPaquete | null; detectadoEn: Date; vistoEn: Date } | null;
 }
 
-export async function estadoDelPaquete(db: Db): Promise<EstadoDelPaquete> {
+export async function estadoDelPaquete(db: Db, paquete: DefinicionDelPaquete = PAQUETE_ROSLYN): Promise<EstadoDelPaquete> {
   const [[publicada], [ultimaRevision], prs, sinPasar, [abierto]] = await Promise.all([
     db
       .select({ version: sincronizacion.version, sincronizadaEn: sincronizacion.iniciadaEn })
       .from(sincronizacion)
-      .where(and(eq(sincronizacion.origen, Origen.Roslyn), eq(sincronizacion.estado, EstadoSincronizacion.Ok)))
+      .where(and(eq(sincronizacion.origen, paquete.origen), eq(sincronizacion.estado, EstadoSincronizacion.Ok)))
       .orderBy(desc(sincronizacion.iniciadaEn))
       .limit(1),
     db
@@ -64,6 +66,7 @@ export async function estadoDelPaquete(db: Db): Promise<EstadoDelPaquete> {
       })
       .from(revisionPaquete)
       .leftJoin(usuario, eq(usuario.id, revisionPaquete.disparadaPorId))
+      .where(eq(revisionPaquete.paquete, paquete.origen))
       .orderBy(desc(revisionPaquete.iniciadaEn))
       .limit(1),
     db
@@ -81,13 +84,14 @@ export async function estadoDelPaquete(db: Db): Promise<EstadoDelPaquete> {
       })
       .from(prConfiguracion)
       .innerJoin(estadoPr, eq(estadoPr.codigo, prConfiguracion.estado))
+      .where(eq(prConfiguracion.paquete, paquete.origen))
       .orderBy(desc(prConfiguracion.numero))
       .limit(5),
-    publicacionesSinPublicar(db, DestinoPublicacion.PrConfiguracion),
+    publicacionesSinPublicar(db, DestinoPublicacion.PrConfiguracion, paquete.origen),
     db
       .select({ id: desvio.id, detalle: desvio.detalle, detectadoEn: desvio.detectadoEn, vistoEn: desvio.vistoEn })
       .from(desvio)
-      .where(and(isNull(desvio.resueltoEn), eq(desvio.tipo, DESVIO_DEL_PAQUETE.tipo), eq(desvio.clave, DESVIO_DEL_PAQUETE.clave))),
+      .where(and(isNull(desvio.resueltoEn), eq(desvio.tipo, paquete.desvio.tipo), eq(desvio.clave, paquete.desvio.clave))),
   ]);
 
   return {
@@ -99,13 +103,13 @@ export async function estadoDelPaquete(db: Db): Promise<EstadoDelPaquete> {
   };
 }
 
-/** Para el encabezado: el desvío del paquete y las publicaciones al paquete que fallaron. */
+/** Para el encabezado: el desvío de algún paquete y las publicaciones a los paquetes que fallaron. */
 export async function atencionDelPaquete(db: Db): Promise<{ desvio: boolean; fallidas: number }> {
   const [[{ desvios }], [{ fallidas }]] = await Promise.all([
     db
       .select({ desvios: count() })
       .from(desvio)
-      .where(and(isNull(desvio.resueltoEn), eq(desvio.tipo, DESVIO_DEL_PAQUETE.tipo), eq(desvio.clave, DESVIO_DEL_PAQUETE.clave))),
+      .where(and(isNull(desvio.resueltoEn), inArray(desvio.tipo, [...DESVIOS_DEL_PAQUETE]))),
     db.select({ fallidas: count() }).from(publicacion).where(fallidaVigente(db, DestinoPublicacion.PrConfiguracion)),
   ]);
   return { desvio: desvios > 0, fallidas };

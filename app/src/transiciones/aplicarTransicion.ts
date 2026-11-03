@@ -24,8 +24,8 @@ import { corridasQueCuentanPorRegla } from "@/prueba/consultas";
  *    justificación, severidad, operación masiva, parámetros; y lo que sale de la prueba de
  *    reglas (entrega 6.5): de En prueba a Incorporada, el mínimo de corridas (decisión E3),
  *    contado acá; hacia En prueba, que el job la pueda correr (decisión E7). A las reglas
- *    que el job de C# no corre (TypeScript, normas de IA) no se les pide el mínimo: no
- *    tienen cómo juntarlo.
+ *    que el job no corre (normas de IA, Sonar para JavaScript) no se les pide el mínimo: no
+ *    tienen cómo juntarlo. Las de TypeScript sí, desde la parte TypeScript de la 6.5.
  * 4. Si todas pasan, actualiza `estadoRegla` y escribe una `decision` por regla. En una
  *    operación masiva todas comparten el `loteId` y la justificación.
  * 5. Encola la publicación de las reglas que entran a Incorporada o salen

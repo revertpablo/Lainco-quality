@@ -31,6 +31,12 @@ export const Origen = {
 } as const;
 export type Origen = (typeof Origen)[keyof typeof Origen];
 
+/**
+ * Los orígenes que tienen un paquete de reglas propias con su configuración (entrega 6.4):
+ * Lainco.Analyzers (`.globalconfig`) y @lainco/eslint-config (`reglas.json`, parte ESLint).
+ */
+export type OrigenDePaquete = typeof Origen.Roslyn | typeof Origen.Eslint;
+
 export const Lenguaje = {
   CSharp: "cs",
   TypeScript: "ts",
@@ -118,6 +124,8 @@ export const TipoDesvio = {
    * sin mergear.
    */
   GlobalconfigDistinto: "globalconfigDistinto",
+  /** Lo mismo para `reglas.json` de @lainco/eslint-config (entrega 6.4, parte ESLint, decisión L4). */
+  ReglasEslintDistintas: "reglasEslintDistintas",
 } as const;
 export type TipoDesvio = (typeof TipoDesvio)[keyof typeof TipoDesvio];
 
@@ -125,7 +133,7 @@ export type TipoDesvio = (typeof TipoDesvio)[keyof typeof TipoDesvio];
  * Los desvíos del paquete de reglas propias (entrega 6.4): los detecta la revisión del
  * paquete, no la reconciliación con Sonar, y se ven en la pantalla Paquete.
  */
-export const DESVIOS_DEL_PAQUETE: readonly TipoDesvio[] = [TipoDesvio.GlobalconfigDistinto];
+export const DESVIOS_DEL_PAQUETE: readonly TipoDesvio[] = [TipoDesvio.GlobalconfigDistinto, TipoDesvio.ReglasEslintDistintas];
 
 /** En qué está un PR de configuración (entrega 6.4, paso 7), según GitHub. */
 export const EstadoPr = {
