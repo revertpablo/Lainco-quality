@@ -598,7 +598,7 @@ Escribir-Paso 'Secret del feed'
 # El secret del feed: con él restaura el workflow. No alcanza con el GITHUB_TOKEN, porque el
 # paquete es de otra cuenta (docs/nuevo-repositorio.md, "El secret del feed").
 if (-not $hayGh) {
-    Pendiente "Crear el secret $SecretDelFeed en $Repositorio: un token clásico de GitHub con read:packages (gh no está instalado o no tiene sesión: gh auth login)."
+    Pendiente "Crear el secret $SecretDelFeed en ${Repositorio}: un token clásico de GitHub con read:packages (gh no está instalado o no tiene sesión: gh auth login)."
 }
 else {
     $secretos = Invocar-Gh @('secret', 'list', '--repo', $Repositorio, '--json', 'name', '--jq', '.[].name')
