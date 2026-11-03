@@ -3,7 +3,8 @@
   <!--
     Proyecto de empaquetado. No tiene código propio: arma el paquete NuGet con
       - los analyzers y el suppressor de issues aceptados (Fase 4) en analyzers/dotnet/cs
-      - el .globalconfig con las severidades, en buildTransitive
+      - el .globalconfig con las severidades y la base que apaga todo lo demás, en
+        buildTransitive
       - sonar-sync en tools/sonar-sync, y el .targets que lo corre antes de compilar
         (Fase 4, tarea 2), en buildTransitive
 
@@ -24,7 +25,7 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
 
     <PackageId>Lainco.Analyzers</PackageId>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
     <Authors>Lainco</Authors>
     <Company>Lainco</Company>
     <Description>
@@ -96,6 +97,12 @@
     <None Include="build\Lainco.Analyzers.globalconfig"
           Pack="true"
           PackagePath="buildTransitive/Lainco.Analyzers.globalconfig"
+          Visible="false" />
+
+    <!-- La base que apaga todo lo demás (Fase 8). Fija: no la genera la app. -->
+    <None Include="build\Lainco.Analyzers.Base.globalconfig"
+          Pack="true"
+          PackagePath="buildTransitive/Lainco.Analyzers.Base.globalconfig"
           Visible="false" />
 
     <!--

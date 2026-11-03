@@ -222,8 +222,8 @@ el build:
 
 | Origen | Ejemplo | Situación actual |
 |---|---|---|
-| **Warnings del compilador de C#** (`CS####`) | `CS1591`: falta el comentario XML en un miembro público. | Sin gobierno. Cada repo lo resuelve como puede. |
-| **Analyzers del SDK de .NET** (`CA####`, `IDE####`) | `CA1822`: el método puede ser estático. | La Fase 2 los apaga en bloque con `EnableNETAnalyzers=false`, para que a Sonar solo lleguen reglas LAIN. Es una medida gruesa y temporal. |
+| **Warnings del compilador de C#** (`CS####`) | `CS1591`: falta el comentario XML en un miembro público. | Desde `Lainco.Analyzers` 0.3.0, la base del paquete los apaga todos (ver "Base del paquete", abajo). Antes: sin gobierno, cada repo lo resolvía como podía. |
+| **Analyzers del SDK de .NET** (`CA####`, `IDE####`) | `CA1822`: el método puede ser estático. | Desde la 0.3.0 se cargan siempre y la base los deja en `none`. Antes, la Fase 2 los apagaba en bloque con `EnableNETAnalyzers=false`, que no deja encender ninguno. |
 
 El síntoma concreto que motivó esta fase: en los `DataContract`, `CS1591` pide un
 comentario XML por cada property, y hoy se silencia **poniendo un comentario vacío** en
@@ -255,6 +255,48 @@ dotnet_diagnostic.CS1591.severity = none
   `GenerateDocumentationFile`, que los perdería todos.
 
 Los comentarios vacíos se borran: dejan de hacer falta.
+
+### Base del paquete (adelantada el 2026-11-03, `Lainco.Analyzers` 0.3.0)
+
+Adelanta la parte mecánica de las tareas 3 y 4, sin tocar todavía el inventario: deja todo
+apagado de manera que, cuando la app incorpore un `CS`, `CA` o `IDE`, alcance con que lo
+escriba en el `.globalconfig` que ya genera. Surgió de un repositorio real
+(`test-lainco-rules`): con `EnableNETAnalyzers=false`, el build seguía mostrando ~880
+advertencias `CS` (nulabilidad, sobre todo), y el escáner de Sonar las importaba como
+`external_roslyn:CS####`.
+
+| Pieza | Qué hace |
+|---|---|
+| `buildTransitive/Lainco.Analyzers.Base.globalconfig` | Fijo, no lo genera la app. `global_level = -1`. Apaga los diagnósticos de todos los analyzers (`dotnet_analyzer_diagnostic.severity = none`) y, uno por uno, las 347 advertencias del compilador de C# (todas las `WRN_*` de Roslyn desde VS 2019 16.11 hasta main): la configuración masiva no alcanza a las del compilador. |
+| `buildTransitive/Lainco.Analyzers.globalconfig` | El de la app, sin cambios (nivel 0). Una severidad por ID le gana a la configuración masiva, y ante una misma clave gana el de mayor nivel: lo que enciende la app se ve. |
+| `buildTransitive/Lainco.Analyzers.props` | Suma los dos archivos y fija `EnableNETAnalyzers` y `EnforceCodeStyleInBuild` en `true` y `AnalysisLevel` en `none`. Se importa después del `Directory.Build.props` del repositorio, así que manda el paquete. |
+
+Por qué así, verificado en el código de Roslyn y del SDK:
+
+- **No `NoWarn` ni `WarningLevel`.** El compilador los aplica antes que los `.globalconfig`:
+  una regla apagada así no la puede volver a encender la app. `WarningLevel=0` apagaría
+  incluso las reglas LAIN.
+- **`EnableNETAnalyzers=true`.** Sin el analyzer cargado, una regla `CA` encendida en el
+  `.globalconfig` no aparece, y nada avisa. Con todo en `none`, el compilador no ejecuta
+  esos analyzers: el costo en el build es mínimo.
+- **`AnalysisLevel=none`.** Con cualquier otro valor, el SDK suma su `.globalconfig`
+  (`global_level = -100`) con una severidad **por ID** para cada regla `CA`, y esas le ganan
+  a la configuración masiva de la base, aunque tengan menos nivel.
+- **Las reglas de Sonar no se ven afectadas.** El escáner las configura con un ruleset, que
+  el compilador aplica antes que los `.globalconfig`.
+
+Verificado (2026-11-03): `BaseGlobalconfigTests` (la base cubre todas las advertencias del
+Roslyn de los tests; con la base, `CS8618`, `CS0168` y `CS1591` desaparecen; el
+`.globalconfig` de las reglas enciende un `LAIN` y un `CS`) y un proyecto consumidor del
+0.3.0 empaquetado, con un `Directory.Build.props` como los de antes
+(`EnableNETAnalyzers=false`, `AnalysisLevel=latest`): solo LAIN001; con un `.globalconfig`
+extra que enciende `CA2200`, `CS0168` e `IDE0005`, aparecen las tres. La sample compila con
+LAIN001 como única advertencia.
+
+Queda para las tareas de abajo: que la app genere también claves `CS`/`CA`/`IDE`
+(`generarGlobalconfig` hoy rechaza todo lo que no sea `LAIN###`), y que el job de prueba
+(`.github/prueba/Prueba.targets`), que saca la referencia al paquete, cargue los analyzers
+del SDK cuando una regla `CA` entre En prueba.
 
 ### Tareas
 
@@ -289,10 +331,14 @@ El SDK de .NET trae varios cientos de reglas `CA####` e `IDE####`, que se suman 
 
 ### Diferencias con los otros orígenes
 
-- **No pasan por SonarQube.** Los warnings del compilador no se importan como issues de
-  Sonar, así que no afectan el quality gate ni tienen estados de aceptación. El ciclo de
-  vida se reduce a decidir la severidad, y el único destino de publicación es el
-  `.globalconfig`. Tampoco les aplica el suppressor de la Fase 4.
+- **No son reglas de Sonar, pero llegan a Sonar.** El escáner de .NET importa las
+  advertencias del build (`CS`, `CA`, `IDE`) como issues externos (`external_roslyn:...`),
+  igual que las LAIN. Corrección (2026-11-03): antes este punto decía que no se importaban;
+  en `test-lainco-rules` llegaban cientos. Consecuencia: una advertencia encendida entra al
+  quality gate y se acepta en Sonar como cualquier issue LAIN. El suppressor de la Fase 4,
+  en cambio, hoy solo declara las reglas LAIN: para ocultar en el IDE un `CS` o `CA`
+  aceptado habría que sumarlo a su lista. No necesitan un perfil en Sonar: el ciclo de vida se reduce a decidir la
+  severidad, y el único destino de publicación es el `.globalconfig`.
 - **Algunos no son configurables.** Ciertos diagnósticos del compilador son errores o
   están marcados como no configurables, y no se pueden ajustar por `.globalconfig`.
   El inventario tiene que distinguirlos, igual que hoy distingue las reglas de Sonar

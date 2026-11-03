@@ -8,11 +8,13 @@
 
     1. Paquete Lainco.Analyzers (las reglas propias, LAIN):
        - nuget.config del repositorio con el feed de GitHub Packages, sin credenciales;
-       - Directory.Build.props con la referencia a la última versión publicada, la clave
-         del proyecto de Sonar y los analyzers del SDK apagados (hasta la Fase 8);
+       - Directory.Build.props con la referencia a la última versión publicada y la clave
+         del proyecto de Sonar (los analyzers del SDK y las advertencias del compilador
+         los configura el paquete);
        - las credenciales del feed en el NuGet.Config del usuario (nunca en el repositorio).
     2. Workflow de GitHub Actions que analiza el repositorio en SonarQube Cloud
        (.github/workflows/sonar.yml), si no existe.
+       Con gh, además, el secret ANALYZERS_NUGET_GITHUB_TOKEN con el que restaura el paquete.
     3. SonarQube Cloud (las reglas de Sonar y el quality gate): perfil "Lainco C#",
        quality gate "Lainco", análisis automático apagado y un token de análisis, que va
        directo al secret SONAR_TOKEN del repositorio en GitHub (con gh).
@@ -89,7 +91,7 @@ param(
     [string] $QualityGate = 'Lainco',
     [string] $RepositorioDeReglas = 'revertpablo/Lainco-quality',
     [string] $DuenoDelFeed = 'revertpablo',
-    [string] $VersionDotnet = '8.0.x',
+    [string] $VersionDotnet = '10.0.x',
     [switch] $CrearProyectoSonar,
     [switch] $RenovarTokenSonar,
     [switch] $ProtegerMain,
@@ -115,6 +117,9 @@ if ($PSVersionTable.PSVersion.Major -lt 6) {
 $NombreDelFeed = 'lainco'
 $UrlDelFeed = "https://nuget.pkg.github.com/$DuenoDelFeed/index.json"
 $CheckDeSonar = 'SonarCloud Code Analysis'
+$SecretDelFeed = 'ANALYZERS_NUGET_GITHUB_TOKEN'
+# Lenguajes sin perfil de Lainco: Sonar usaría el suyo y traería reglas que nadie eligió.
+$ExclusionesSonar = '**/*.sql,**/*.css,**/*.scss,**/*.less,**/*.json,**/*.ps1,**/*.psm1,**/*.psd1,**/*.yml,**/*.yaml'
 $EsWindows = [IO.Path]::DirectorySeparatorChar -eq '\'
 
 $script:Hecho = New-Object System.Collections.Generic.List[string]
@@ -247,10 +252,9 @@ if (-not $Solucion) {
 }
 $Solucion = $Solucion -replace '\\', '/'
 if (-not (Test-Path (Join-Path $Ruta $Solucion))) { throw "No existe la solución $Solucion en $Ruta." }
-if ($Solucion -like '*.slnx' -and -not $PSBoundParameters.ContainsKey('VersionDotnet') -and $VersionDotnet -like '8.*') {
-    # dotnet build lee .slnx desde el SDK 9.0.200; el SDK 9 compila igual proyectos net8.0.
-    $VersionDotnet = '9.0.x'
-    Aviso 'La solución es .slnx, que el SDK de .NET 8 no compila: el workflow instala el SDK 9.0.x (cambialo con -VersionDotnet).'
+if ($Solucion -like '*.slnx' -and $VersionDotnet -like '8.*') {
+    # dotnet build lee .slnx desde el SDK 9.0.200.
+    Aviso "La solución es .slnx y -VersionDotnet es $VersionDotnet, que no la compila: usá 9.0.x o más."
 }
 Write-Host "   $Repositorio en $Ruta"
 Write-Host "   Solución: $Solucion · Proyecto de Sonar: $ProyectoSonar"
@@ -277,7 +281,8 @@ if (-not (Test-Path $rutaNuget)) {
 <configuration>
   <!--
     El feed de Lainco.Analyzers (GitHub Packages). Sin credenciales: cada programador las
-    tiene en su NuGet.Config de usuario, y el workflow de Sonar las toma del GITHUB_TOKEN.
+    tiene en su NuGet.Config de usuario, y el workflow de Sonar las toma del secret
+    ANALYZERS_NUGET_GITHUB_TOKEN.
     Ver docs/nuevo-repositorio.md en $RepositorioDeReglas.
   -->
   <packageSources>
@@ -322,12 +327,9 @@ if (-not (Test-Path $rutaProps)) {
 
   <PropertyGroup>
     <!--
-      A Sonar solo llegan reglas que el equipo eligió: los analyzers del SDK (CA, IDE) quedan
-      apagados hasta que entren al inventario (Fase 8).
+      Los analyzers del SDK y las advertencias del compilador no se configuran acá: el paquete
+      los apaga todos y enciende solo los que el equipo incorporó (desde la 0.3.0).
     -->
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <AnalysisLevel>none</AnalysisLevel>
 
     <!-- Proyecto de SonarQube Cloud: con LAINCO_SONAR_TOKEN, el IDE oculta los issues aceptados. -->
     <LaincoSonarProyecto>$ProyectoSonar</LaincoSonarProyecto>
@@ -371,10 +373,16 @@ else {
         $cambios.Add("referencia a Lainco.Analyzers $VersionDelPaquete")
     }
 
+    # Desde la 0.3.0, el paquete fija estas tres propiedades y pisa lo que diga el
+    # repositorio: si están, sobran. No se borran (lo que el repositorio definió no se toca),
+    # pero se avisa, porque un valor distinto confunde a quien lea el archivo.
+    foreach ($nombre in 'EnableNETAnalyzers', 'EnforceCodeStyleInBuild', 'AnalysisLevel') {
+        if ($xml.SelectSingleNode("//PropertyGroup/$nombre")) {
+            Aviso "Directory.Build.props define ${nombre}: ya no hace falta, porque lo fija Lainco.Analyzers (0.3.0 en adelante). Se puede borrar."
+        }
+    }
+
     $propiedades = [ordered]@{
-        EnableNETAnalyzers      = 'false'
-        EnforceCodeStyleInBuild = 'false'
-        AnalysisLevel           = 'none'
         LaincoSonarProyecto     = $ProyectoSonar
     }
     $grupoDePropiedades = $null
@@ -432,6 +440,7 @@ on:
     branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:      # para correrlo a mano
 
 permissions:
   contents: read
@@ -443,31 +452,38 @@ jobs:
     name: Análisis
     runs-on: ubuntu-latest
     env:
-      # Credenciales del feed "$NombreDelFeed" de nuget.config. El repositorio necesita acceso de
-      # lectura al paquete (ver docs/nuevo-repositorio.md).
-      ${variableDeCredenciales}: Username=`${{ github.actor }};Password=`${{ secrets.GITHUB_TOKEN }}
+      # Credenciales del feed "$NombreDelFeed" de nuget.config: un token de GitHub con
+      # read:packages (ver docs/nuevo-repositorio.md, "El secret del feed").
+      ${variableDeCredenciales}: Username=`${{ github.actor }};Password=`${{ secrets.$SecretDelFeed }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Sonar necesita el historial completo para el "código nuevo" del quality gate.
           fetch-depth: 0
 
       - name: Instalar Java
         # El SonarScanner corre sobre la JVM, aunque el proyecto sea .NET.
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: zulu
+          java-version: 21
 
       - name: Instalar .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: $VersionDotnet
 
+      - name: Cachear los plugins de Sonar
+        uses: actions/cache@v6
+        with:
+          path: ~/.sonar/cache
+          key: `${{ runner.os }}-sonar
+          restore-keys: `${{ runner.os }}-sonar
+
       - name: Cachear el SonarScanner
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.dotnet/tools
           key: `${{ runner.os }}-sonarscanner
@@ -486,7 +502,8 @@ jobs:
             /k:"$ProyectoSonar" \
             /o:"$OrganizacionSonar" \
             /d:sonar.token="`$SONAR_TOKEN" \
-            /d:sonar.host.url="https://sonarcloud.io"
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.exclusions="$ExclusionesSonar"
 
       - name: Build
         run: dotnet build "$Solucion" --no-incremental
@@ -498,7 +515,6 @@ jobs:
 "@
     Hecho '.github/workflows/sonar.yml creado.'
 }
-Pendiente "Dar acceso de lectura al paquete: https://github.com/users/$DuenoDelFeed/packages/nuget/Lainco.Analyzers/settings → Manage Actions access → Add repository → $Repositorio (Read). Sin eso, el workflow no puede restaurar el paquete."
 
 # ------------------------------------------------------------------- 3. credenciales locales
 
@@ -575,9 +591,32 @@ else {
 
 # ------------------------------------------------------------------- 4. SonarQube Cloud
 
-Escribir-Paso 'SonarQube Cloud'
 $hayGh = Hay-Comando gh
 if ($hayGh) { $hayGh = (Invocar-Gh @('auth', 'status')).Codigo -eq 0 }
+
+Escribir-Paso 'Secret del feed'
+# El secret del feed: con él restaura el workflow. No alcanza con el GITHUB_TOKEN, porque el
+# paquete es de otra cuenta (docs/nuevo-repositorio.md, "El secret del feed").
+if (-not $hayGh) {
+    Pendiente "Crear el secret $SecretDelFeed en $Repositorio: un token clásico de GitHub con read:packages (gh no está instalado o no tiene sesión: gh auth login)."
+}
+else {
+    $secretos = Invocar-Gh @('secret', 'list', '--repo', $Repositorio, '--json', 'name', '--jq', '.[].name')
+    if ($secretos.Codigo -ne 0) { throw "gh secret list falló: $($secretos.Salida)" }
+    if (($secretos.Salida -split "`n" | ForEach-Object { $_.Trim() }) -contains $SecretDelFeed) {
+        Igual "El secret $SecretDelFeed ya existe en $Repositorio."
+    }
+    elseif ($PSCmdlet.ShouldProcess("$Repositorio · $SecretDelFeed", 'Guardar el token del feed como secret')) {
+        $tokenDelFeed = Leer-Secreto 'LAINCO_PACKAGES_TOKEN' 'Token clásico de GitHub con read:packages'
+        $r = Invocar-Gh @('secret', 'set', $SecretDelFeed, '--repo', $Repositorio) $tokenDelFeed
+        $tokenDelFeed = $null
+        if ($r.Codigo -ne 0) { throw "gh secret set falló: $($r.Salida)" }
+        Hecho "Secret $SecretDelFeed en $Repositorio."
+        Aviso "El workflow restaura con el token de quien corrió el script: conviene reemplazarlo por el de un usuario técnico."
+    }
+}
+
+Escribir-Paso 'SonarQube Cloud'
 
 if ($SinSonar) {
     Igual 'Omitido (-SinSonar).'

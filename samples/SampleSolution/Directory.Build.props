@@ -21,16 +21,11 @@
     <Nullable>disable</Nullable>
 
     <!--
-      Fase 2, tarea 3: a Sonar solo deben llegar reglas LAIN.
-
-      Los analyzers del SDK (CA####) y las reglas de estilo (IDE####) se apagan acá
-      para que el análisis no traiga issues que nadie eligió. Es una medida gruesa y
-      temporal: en la Fase 8 estas reglas entran al inventario (decisión D8.3) y se
-      reemplaza esto por la lista explícita de las que el equipo haya incorporado.
+      Fase 2, tarea 3: a Sonar solo deben llegar reglas LAIN. Desde la 0.3.0 no se configura
+      acá: el paquete trae una base que apaga los analyzers del SDK (CA####, IDE####) y las
+      advertencias del compilador (CS####), y fija EnableNETAnalyzers, EnforceCodeStyleInBuild
+      y AnalysisLevel (ver "Qué apaga el paquete" en docs/nuevo-repositorio.md).
     -->
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <AnalysisLevel>none</AnalysisLevel>
 
     <!--
       Fase 4, tarea 2: proyecto de SonarQube del que se bajan los issues aceptados antes
@@ -46,7 +41,7 @@
       PrivateAssets="all" evita que la referencia se propague a quien consuma estos
       proyectos: cada repositorio referencia el paquete por su cuenta.
     -->
-    <PackageReference Include="Lainco.Analyzers" Version="0.1.0" PrivateAssets="all" />
+    <PackageReference Include="Lainco.Analyzers" Version="0.3.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

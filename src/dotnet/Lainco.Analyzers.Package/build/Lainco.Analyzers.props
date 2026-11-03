@@ -2,12 +2,40 @@
 
   <!--
     NuGet importa este archivo automáticamente en todo proyecto que referencie
-    Lainco.Analyzers. Su única función es sumar el .globalconfig del paquete a los
-    archivos de configuración del compilador, para que las severidades de las reglas
-    LAIN viajen con el paquete en lugar de configurarse repo por repo.
+    Lainco.Analyzers, después del Directory.Build.props del repositorio y antes del cuerpo
+    del .csproj. Hace dos cosas:
+
+      1. Suma los dos .globalconfig del paquete a la configuración del compilador:
+         - Lainco.Analyzers.Base.globalconfig apaga todo (global_level = -1).
+         - Lainco.Analyzers.globalconfig, que genera la app de catálogo, enciende las reglas
+           incorporadas. Tiene más prioridad, así que gana ante cualquier clave repetida.
+         Así las severidades viajan con el paquete en lugar de configurarse repo por repo,
+         y lo que no se eligió no aparece (principio rector, CLAUDE.md).
+
+      2. Carga los analyzers del SDK (CA####) y los de estilo (IDE####). Que estén
+         cargados no significa que informen: la base los deja en 'none'. Hace falta para
+         que la app pueda encender cualquiera de sus reglas (Fase 8, D8.3); sin esto, una
+         regla CA encendida en el .globalconfig no aparecería, sin ningún aviso, porque su
+         analyzer ni siquiera correría. Con todo en 'none' el compilador no ejecuta esos
+         analyzers, así que el costo en el build es mínimo.
+
+    AnalysisLevel queda en 'none' a propósito: con cualquier otro valor el SDK agrega su
+    propio .globalconfig con una severidad por ID para cada regla CA, y esas severidades le
+    ganan a la configuración masiva de la base.
+
+    Se fijan sin condición, así que pisan lo que diga el Directory.Build.props del
+    repositorio: el que decide es el paquete. Un .csproj todavía puede cambiarlas, porque
+    su cuerpo se evalúa después de este archivo.
   -->
 
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+  </PropertyGroup>
+
   <ItemGroup>
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.Base.globalconfig" />
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.globalconfig" />
   </ItemGroup>
 

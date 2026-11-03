@@ -18,10 +18,12 @@ correctos para verificar que los analyzers no produzcan falsos positivos.
 se construyen por reflexión y el análisis de nulabilidad solo agregaría advertencias del
 compilador que no corresponden a ninguna regla LAIN.
 
-**Estado actual (Fase 3, LAIN005 implementada):** compila con **3 advertencias**: 2 de
-LAIN004 en `Articulo.cs` (`Descripcion` y `Resumen`) y 1 de LAIN005 en
-`CalculadorDeTotales.cs`. Los 4 tests pasan. Esa es la situación deseada: las únicas advertencias que deben aparecer son
-reglas LAIN. A medida que avance la Fase 3 se van a ir sumando las demás.
+**Estado actual (Lainco.Analyzers 0.3.0):** compila con **1 advertencia**, LAIN001 en
+`Pedido.cs`: es la única regla que el `.globalconfig` del paquete enciende hoy (LAIN004 y
+LAIN005 nacen apagadas y la app no las incorporó). Ninguna advertencia del compilador ni de
+los analyzers del SDK: las apaga la base del paquete (ver "Qué apaga el paquete" en
+`docs/nuevo-repositorio.md`). Esa es la situación deseada: las únicas advertencias que deben
+aparecer son las reglas que el equipo eligió.
 
 La sample referencia el paquete `Lainco.Analyzers` desde `Directory.Build.props`, y lo
 resuelve del feed local `artifacts/nupkg` (ver `nuget.config`). Para regenerarlo:

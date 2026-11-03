@@ -26,6 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- La base del paquete, para BaseGlobalconfigTests: se prueba el archivo real. -->
+    <None Include="..\Lainco.Analyzers.Package\build\Lainco.Analyzers.Base.globalconfig"
+          Link="Lainco.Analyzers.Base.globalconfig"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Lainco.Analyzers\Lainco.Analyzers.csproj" />
     <ProjectReference Include="..\Lainco.Analyzers.Suppressor\Lainco.Analyzers.Suppressor.csproj" />
   </ItemGroup>

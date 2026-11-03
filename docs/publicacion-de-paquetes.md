@@ -50,7 +50,9 @@ Reglas de versionado:
 
 - Parche (`0.1.1`): cambios de severidad en el `.globalconfig` (los PRs de la app) y
   arreglos.
-- Menor (`0.2.0`): reglas nuevas.
+- Menor (`0.2.0`): reglas nuevas, o cambios en lo que el paquete configura en el
+  repositorio que lo usa (`0.3.0`: la base que apaga todas las advertencias, y las
+  propiedades de los analyzers del SDK).
 - Un ID de regla **nunca** se reutiliza, aunque la regla se elimine.
 
 ### Si una publicación falla a mitad de camino
