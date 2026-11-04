@@ -9,5 +9,6 @@
 
 INSERT INTO "usuario" ("nombre", "email", "rol") VALUES
   ('Federico Sánchez', 'federico.sanchez@laincosoftware.com', 'decisor'),
-  ('Pablo A. Revert', 'pablo.revert@laincosoftware.com', 'decisor')
+  ('Pablo A. Revert', 'pablo.revert@laincosoftware.com', 'decisor'),
+  ('Tobias Levy', 'tobias.levy@laincosoftware.com', 'decisor')
 ON CONFLICT ("email") DO NOTHING;
