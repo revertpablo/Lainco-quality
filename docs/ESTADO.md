@@ -59,6 +59,10 @@ Dónde está cada fase y qué sigue. **Actualizar al cerrar cada entrega.**
   `Directory.Build.props` (`docs/nuevo-repositorio.md`, "Qué apaga el paquete"; el script
   avisa si quedan las propiedades viejas). 5 tests nuevos (`BaseGlobalconfigTests`, 108 en
   total). Verificado además con un proyecto consumidor del paquete empaquetado.
+- **`LaincoCompiladorEnLocal` (0.4.0, sin publicar todavía):** la base del compilador está en
+  un archivo aparte, y un repositorio puede pedir que se aplique solo en CI: las advertencias
+  `CS` se ven en local y no llegan a Sonar. Por defecto, apagadas en los dos lados. 110 tests;
+  verificado con un proyecto consumidor en local, con `CI=true` y con `GITHUB_ACTIONS=true`.
 - **GitHub Actions** analiza la sample en cada push a `main` y en cada PR. Desde la Fase 5
   analiza también `samples/ts` con ESLint (`sonar.eslint.reportPaths`): verificado en el PR #4.
 - **Un repositorio nuevo** se suma con `docs/nuevo-repositorio.md` y el script

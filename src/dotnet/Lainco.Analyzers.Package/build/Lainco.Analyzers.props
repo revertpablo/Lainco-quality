@@ -5,8 +5,10 @@
     Lainco.Analyzers, después del Directory.Build.props del repositorio y antes del cuerpo
     del .csproj. Hace dos cosas:
 
-      1. Suma los dos .globalconfig del paquete a la configuración del compilador:
-         - Lainco.Analyzers.Base.globalconfig apaga todo (global_level = -1).
+      1. Suma los .globalconfig del paquete a la configuración del compilador:
+         - Lainco.Analyzers.Base.globalconfig apaga todos los analyzers (global_level = -1).
+         - Lainco.Analyzers.Base.Compilador.globalconfig apaga las advertencias del
+           compilador (CS####), con la misma prioridad. Ver LaincoCompiladorEnLocal, abajo.
          - Lainco.Analyzers.globalconfig, que genera la app de catálogo, enciende las reglas
            incorporadas. Tiene más prioridad, así que gana ante cualquier clave repetida.
          Así las severidades viajan con el paquete en lugar de configurarse repo por repo,
@@ -26,16 +28,34 @@
     Se fijan sin condición, así que pisan lo que diga el Directory.Build.props del
     repositorio: el que decide es el paquete. Un .csproj todavía puede cambiarlas, porque
     su cuerpo se evalúa después de este archivo.
+
+    LaincoCompiladorEnLocal (propiedad del repositorio, por defecto false): con true, las
+    advertencias del compilador se apagan solo en CI. En un build local (el IDE incluido)
+    se ven como siempre, y en CI no se generan, así que no llegan a Sonar. Las reglas que
+    la app enciende, CS#### incluidas, aparecen en los dos lados. Es una excepción al
+    principio rector que decide cada repositorio (docs/nuevo-repositorio.md).
+
+    CI se detecta igual que en Lainco.Analyzers.targets (el suppressor): GitHub Actions y la
+    mayoría de los servidores definen CI=true, Azure Pipelines define TF_BUILD, y
+    ContinuousIntegrationBuild es la propiedad estándar de .NET.
   -->
 
   <PropertyGroup>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>none</AnalysisLevel>
+
+    <_LaincoEsCI Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true'">true</_LaincoEsCI>
   </PropertyGroup>
 
   <ItemGroup>
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.Base.globalconfig" />
+    <!--
+      Los items se evalúan después de todas las propiedades del proyecto, así que la
+      condición ve LaincoCompiladorEnLocal aunque esté en el .csproj.
+    -->
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.Base.Compilador.globalconfig"
+                       Condition="'$(LaincoCompiladorEnLocal)' != 'true' or '$(_LaincoEsCI)' == 'true'" />
     <EditorConfigFiles Include="$(MSBuildThisFileDirectory)Lainco.Analyzers.globalconfig" />
   </ItemGroup>
 

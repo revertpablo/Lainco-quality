@@ -293,6 +293,17 @@ Roslyn de los tests; con la base, `CS8618`, `CS0168` y `CS1591` desaparecen; el
 extra que enciende `CA2200`, `CS0168` e `IDE0005`, aparecen las tres. La sample compila con
 LAIN001 como única advertencia.
 
+**Advertencias del compilador solo en local (2026-11-04, `Lainco.Analyzers` 0.4.0).** La base
+se separó en dos archivos: `Lainco.Analyzers.Base.globalconfig` (analyzers) y
+`Lainco.Analyzers.Base.Compilador.globalconfig` (`CS####`). Con
+`LaincoCompiladorEnLocal=true` en el repositorio, el `.props` incluye el del compilador solo
+en CI (misma detección que el suppressor): el programador ve las advertencias del compilador
+y Sonar no las recibe. Es una excepción al principio rector que decide cada repositorio; por
+defecto se apagan en los dos lados. Verificado con un proyecto consumidor del 0.4.0: sin la
+propiedad, solo LAIN001 en local y en CI; con la propiedad, en local además `CS0168`,
+`CS1591` y `CS8618`, y en CI (`CI=true` o `GITHUB_ACTIONS=true`) solo LAIN001; también con la
+propiedad en el `.csproj`.
+
 Queda para las tareas de abajo: que la app genere también claves `CS`/`CA`/`IDE`
 (`generarGlobalconfig` hoy rechaza todo lo que no sea `LAIN###`), y que el job de prueba
 (`.github/prueba/Prueba.targets`), que saca la referencia al paquete, cargue los analyzers

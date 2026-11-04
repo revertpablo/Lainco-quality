@@ -62,6 +62,12 @@
     No configura las credenciales del feed ni LAINCO_SONAR_TOKEN en esta máquina (por
     ejemplo, si ya lo hizo otro repositorio).
 
+.PARAMETER CompiladorEnLocal
+    Agrega LaincoCompiladorEnLocal=true a Directory.Build.props: las advertencias del
+    compilador (CS####) se ven en el IDE y en los builds locales, y en CI se apagan, así que
+    no llegan a Sonar. Necesita Lainco.Analyzers 0.4.0 o posterior. Sin este parámetro, el
+    script no agrega ni cambia la propiedad.
+
 .EXAMPLE
     .\Configurar-RepositorioLainco.ps1 -WhatIf
     Muestra lo que haría, sin cambiar nada.
@@ -97,6 +103,7 @@ param(
     [switch] $ProtegerMain,
     [switch] $SinSonar,
     [switch] $SinCredenciales,
+    [switch] $CompiladorEnLocal,
     # Para probar el script contra servidores simulados.
     [string] $SonarUrl = 'https://sonarcloud.io',
     [string] $GitHubApi = 'https://api.github.com'
@@ -318,6 +325,18 @@ else {
 # Directory.Build.props: la referencia y las propiedades que faltan; lo que el repositorio
 # ya definió no se pisa, salvo la versión del paquete, que se lleva a la pedida.
 $rutaProps = Join-Path $Ruta 'Directory.Build.props'
+$propiedadDelCompilador = ''
+if ($CompiladorEnLocal) {
+    $propiedadDelCompilador = @"
+
+    <!-- Las advertencias del compilador se ven en local; en CI se apagan y no llegan a Sonar. -->
+    <LaincoCompiladorEnLocal>true</LaincoCompiladorEnLocal>
+
+"@
+    if ([version]($VersionDelPaquete -replace '-.*$', '') -lt [version]'0.4.0') {
+        Aviso "LaincoCompiladorEnLocal necesita Lainco.Analyzers 0.4.0 o posterior, y se usa la ${VersionDelPaquete}: hasta que se suba, no tiene efecto."
+    }
+}
 if (-not (Test-Path $rutaProps)) {
     if ($PSCmdlet.ShouldProcess($rutaProps, "Crear con Lainco.Analyzers $VersionDelPaquete")) {
         Escribir-Archivo $rutaProps @"
@@ -333,7 +352,7 @@ if (-not (Test-Path $rutaProps)) {
 
     <!-- Proyecto de SonarQube Cloud: con LAINCO_SONAR_TOKEN, el IDE oculta los issues aceptados. -->
     <LaincoSonarProyecto>$ProyectoSonar</LaincoSonarProyecto>
-  </PropertyGroup>
+$propiedadDelCompilador  </PropertyGroup>
 
   <ItemGroup>
     <!-- Las reglas propias y su .globalconfig. Para tomar una decisión nueva de la app, subir la versión. -->
@@ -385,6 +404,7 @@ else {
     $propiedades = [ordered]@{
         LaincoSonarProyecto     = $ProyectoSonar
     }
+    if ($CompiladorEnLocal) { $propiedades['LaincoCompiladorEnLocal'] = 'true' }
     $grupoDePropiedades = $null
     foreach ($nombre in $propiedades.Keys) {
         $definida = $xml.SelectSingleNode("//PropertyGroup/$nombre")

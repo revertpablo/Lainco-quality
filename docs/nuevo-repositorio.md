@@ -66,6 +66,7 @@ Parámetros que pueden hacer falta:
 | `-VersionDelPaquete 0.2.0` | Fijar una versión en lugar de la del último release. |
 | `-CrearProyectoSonar` | Crear el proyecto de Sonar por la API si no existe. |
 | `-RenovarTokenSonar` | Reemplazar el secret `SONAR_TOKEN` por un token nuevo. |
+| `-CompiladorEnLocal` | Agregar `LaincoCompiladorEnLocal=true` a `Directory.Build.props`: las advertencias del compilador se ven en local y no llegan a Sonar (ver "Qué apaga el paquete"). Necesita el paquete 0.4.0 o posterior. |
 | `-SinSonar` / `-SinCredenciales` | Saltear la parte de Sonar, o la de esta máquina (feed y `LAINCO_SONAR_TOKEN`). |
 | `-VersionDotnet 9.0.x` | El SDK que instala el workflow, si no sirve el 10 (que compila igual proyectos de .NET 6, 8 y 9). |
 
@@ -159,7 +160,8 @@ trae dos `.globalconfig` y fija tres propiedades.
 
 | Pieza | Qué hace |
 |---|---|
-| `Lainco.Analyzers.Base.globalconfig` | Apaga todo: los diagnósticos de cualquier analyzer (`dotnet_analyzer_diagnostic.severity = none`) y, uno por uno, todas las advertencias del compilador de C# (`CS####`). Tiene `global_level = -1`. |
+| `Lainco.Analyzers.Base.globalconfig` | Apaga los diagnósticos de cualquier analyzer (`dotnet_analyzer_diagnostic.severity = none`). Tiene `global_level = -1`. |
+| `Lainco.Analyzers.Base.Compilador.globalconfig` | Apaga, uno por uno, todas las advertencias del compilador de C# (`CS####`), con la misma prioridad. Con `LaincoCompiladorEnLocal`, solo en CI (abajo). |
 | `Lainco.Analyzers.globalconfig` | El que genera la app: enciende las reglas incorporadas. Tiene más prioridad que la base, y una severidad por ID siempre le gana a la configuración masiva, así que lo que enciende se ve. |
 | `EnableNETAnalyzers` y `EnforceCodeStyleInBuild` en `true` | Cargan los analyzers del SDK (`CA`, `IDE`) también en el build y en CI. Sin esto, una regla `CA` o `IDE` que la app encendiera no aparecería, sin ningún aviso. Con todo apagado, el compilador ni los ejecuta. |
 | `AnalysisLevel` en `none` | Con cualquier otro valor, el SDK suma su propio `.globalconfig` con una severidad por ID para cada regla `CA`, que le ganaría a la base. |
@@ -167,6 +169,20 @@ trae dos `.globalconfig` y fija tres propiedades.
 El paquete fija las tres propiedades después del `Directory.Build.props` del repositorio, así
 que pisa lo que diga ese archivo. Un `.csproj` todavía puede cambiarlas, porque se evalúa
 después; no hay que hacerlo.
+
+**Advertencias del compilador solo en local (opcional).** Con
+
+```xml
+<LaincoCompiladorEnLocal>true</LaincoCompiladorEnLocal>
+```
+
+en el `PropertyGroup` del `Directory.Build.props` (o el script con `-CompiladorEnLocal`), las advertencias del compilador (`CS####`)
+se ven en el IDE y en el build de cada programador, pero en CI se apagan y no llegan a Sonar.
+Es una excepción al principio rector que decide cada repositorio: por defecto (sin la
+propiedad) se apagan en los dos lados. El paquete detecta CI con las variables `CI`,
+`GITHUB_ACTIONS` o `TF_BUILD`, o la propiedad `ContinuousIntegrationBuild`; GitHub Actions
+define las dos primeras. Los analyzers (`CA`, `IDE`, de otros paquetes) siguen apagados en los
+dos lados, y lo que encienda la app aparece en los dos.
 
 Lo que la base **no** alcanza: las reglas de Sonar del análisis de CI (las configura el
 escáner, con su propio ruleset), los errores, y los avisos de MSBuild y NuGet (`NETSDK####`,

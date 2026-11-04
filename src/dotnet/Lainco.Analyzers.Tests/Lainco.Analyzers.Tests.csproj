@@ -26,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- La base del paquete, para BaseGlobalconfigTests: se prueba el archivo real. -->
-    <None Include="..\Lainco.Analyzers.Package\build\Lainco.Analyzers.Base.globalconfig"
-          Link="Lainco.Analyzers.Base.globalconfig"
+    <!-- La base del paquete, para BaseGlobalconfigTests: se prueban los archivos reales. -->
+    <None Include="..\Lainco.Analyzers.Package\build\Lainco.Analyzers.Base*.globalconfig"
+          Link="%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

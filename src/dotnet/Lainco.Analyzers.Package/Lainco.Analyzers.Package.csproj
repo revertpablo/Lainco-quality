@@ -25,7 +25,7 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
 
     <PackageId>Lainco.Analyzers</PackageId>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Authors>Lainco</Authors>
     <Company>Lainco</Company>
     <Description>
@@ -99,10 +99,10 @@
           PackagePath="buildTransitive/Lainco.Analyzers.globalconfig"
           Visible="false" />
 
-    <!-- La base que apaga todo lo demás (Fase 8). Fija: no la genera la app. -->
-    <None Include="build\Lainco.Analyzers.Base.globalconfig"
+    <!-- La base que apaga todo lo demás (Fase 8), en dos archivos. Fija: no la genera la app. -->
+    <None Include="build\Lainco.Analyzers.Base.globalconfig;build\Lainco.Analyzers.Base.Compilador.globalconfig"
           Pack="true"
-          PackagePath="buildTransitive/Lainco.Analyzers.Base.globalconfig"
+          PackagePath="buildTransitive"
           Visible="false" />
 
     <!--
