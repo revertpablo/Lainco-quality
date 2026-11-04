@@ -1,5 +1,5 @@
 {
-  "comentario": "Reglas encendidas y su severidad. Lo va a generar la app de catálogo a partir de las decisiones registradas (entrega 6.4, parte ESLint); hasta entonces se escribe a mano, como el .globalconfig en la Fase 1. Una regla que no está, no corre. Severidades: 'warn' u 'off'; nunca 'error' (CLAUDE.md).",
+  "comentario": "Reglas encendidas y su severidad. Lo genera la app de catálogo de reglas a partir de las decisiones registradas (entrega 6.4): no editar a mano. Para cambiar una regla, se decide en la app, que abre el PR con este archivo. Las Incorporadas van en 'warn' y las demás en 'off'; una regla que no está, no corre. Nunca 'error': el que bloquea es el quality gate de SonarQube, y el processor de aceptados necesita poder actuar (ver CLAUDE.md).",
   "reglas": {
     "lainco/no-hardcoded-secrets": "warn"
   }
