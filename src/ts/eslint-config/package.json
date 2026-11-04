@@ -1,6 +1,6 @@
 {
   "name": "@lainco/eslint-config",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Configuración compartida de ESLint de Lainco: enciende solo las reglas elegidas por el equipo. Ver docs/FASE-5.md.",
   "type": "module",
   "main": "./dist/index.js",
